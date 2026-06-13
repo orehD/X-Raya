@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>X-Raya — сорсинг-агент</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#131419; --panel:#1a1c24; --panel2:#15161c; --border:#282b36;
+    --txt:#d6d9e3; --muted:#6c7180; --accent:#7aa2f7;
+    --accent-soft:rgba(122,162,247,.12);
+    --c:#7aa2f7; --cs:rgba(122,162,247,.5);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth;background:var(--bg)}
+  body{margin:0;background:transparent;color:var(--txt);
+    font-family:"Golos Text",-apple-system,Segoe UI,Roboto,sans-serif;font-size:15px;line-height:1.55}
+  .aura{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0;will-change:transform}
+  .aura span{position:absolute;border-radius:50%}
+  .aura .b1{width:440px;height:440px;left:6%;top:2%;
+    background:radial-gradient(circle,rgba(122,162,247,.14),rgba(122,162,247,0) 72%);animation:fl1 17s ease-in-out infinite alternate}
+  .aura .b2{width:360px;height:360px;right:9%;top:14%;
+    background:radial-gradient(circle,rgba(86,194,230,.12),rgba(86,194,230,0) 72%);animation:fl2 21s ease-in-out infinite alternate}
+  .aura .b3{width:320px;height:320px;left:24%;top:46%;
+    background:radial-gradient(circle,rgba(103,200,214,.10),rgba(103,200,214,0) 72%);animation:fl3 25s ease-in-out infinite alternate}
+  .aura .b4{width:400px;height:400px;right:5%;top:54%;
+    background:radial-gradient(circle,rgba(141,156,244,.11),rgba(141,156,244,0) 72%);animation:fl4 19s ease-in-out infinite alternate}
+  .aura .b5{width:300px;height:300px;left:58%;top:82%;
+    background:radial-gradient(circle,rgba(90,173,232,.10),rgba(90,173,232,0) 72%);animation:fl5 23s ease-in-out infinite alternate}
+  @keyframes fl1{to{transform:translate(34px,30px)}}
+  @keyframes fl2{to{transform:translate(-30px,40px)}}
+  @keyframes fl3{to{transform:translate(28px,-26px)}}
+  @keyframes fl4{to{transform:translate(-26px,-34px)}}
+  @keyframes fl5{to{transform:translate(22px,-28px)}}
+  header,.wrap{position:relative;z-index:1}
+  @media (prefers-reduced-motion:reduce){.aura span{animation:none}.aura{transform:none!important}}
+  ::selection{background:var(--accent-soft)}
+  a{color:inherit}
+
+  header{padding:54px 20px 24px;text-align:center}
+  .logo{font-family:"Space Grotesk",sans-serif;font-weight:700;font-size:clamp(34px,6vw,52px);
+    letter-spacing:-1.5px;margin:0}
+  .logo span{color:var(--accent)}
+  .tag{color:var(--muted);font-size:15px;margin:12px auto 0;max-width:560px}
+
+  .wrap{max-width:1160px;margin:0 auto;padding:14px 20px 40px}
+
+  .searchbox{display:flex;gap:12px;flex-wrap:wrap;background:var(--panel);
+    border:1px solid var(--border);border-radius:16px;padding:14px}
+  textarea{flex:1;min-width:260px;min-height:58px;resize:vertical;background:transparent;
+    color:var(--txt);border:none;font:inherit;padding:6px}
+  textarea:focus{outline:none}
+  textarea::placeholder{color:var(--muted)}
+  button.go{background:var(--accent);color:#0d1117;border:none;border-radius:11px;
+    font:600 15px "Golos Text",sans-serif;padding:0 30px;cursor:pointer;transition:.15s}
+  button.go:hover{filter:brightness(1.08)}
+  button.go:active{transform:scale(.985)}
+
+  .examples{margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .examples .lbl{color:var(--muted);font-size:13px;margin-right:4px}
+  .examples a{cursor:pointer;font-size:13px;color:var(--muted);background:var(--panel);
+    border:1px solid var(--border);padding:5px 12px;border-radius:999px;transition:.15s}
+  .examples a:hover{color:var(--txt);border-color:var(--muted)}
+
+  .filt-toggle{margin-top:14px;display:inline-flex;align-items:center;gap:8px;cursor:pointer;
+    color:var(--muted);font-size:13px;background:var(--panel);border:1px solid var(--border);
+    border-radius:999px;padding:7px 15px;transition:.15s}
+  .filt-toggle:hover{color:var(--txt);border-color:var(--muted)}
+  .filt-toggle .cnt{color:var(--accent);font-weight:600}
+  .filters{margin-top:12px;background:var(--panel);border:1px solid var(--border);border-radius:14px;
+    padding:16px;display:none;flex-direction:column;gap:14px}
+  .filters.open{display:flex}
+  .frow{display:flex;flex-wrap:wrap;align-items:flex-start;gap:10px}
+  .frow>label{font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);
+    min-width:118px;padding-top:8px}
+  .seg{display:inline-flex;background:var(--panel2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+  .seg button{background:transparent;border:none;color:var(--muted);font:inherit;font-size:13px;
+    padding:8px 15px;cursor:pointer;transition:.15s}
+  .seg button:hover{color:var(--txt)}
+  .seg button.on{background:var(--accent);color:#0d1117;font-weight:600}
+  select.fsel{appearance:none;-webkit-appearance:none;color:var(--txt);border:1px solid var(--border);
+    border-radius:10px;padding:8px 36px 8px 14px;font:inherit;font-size:13.5px;min-width:200px;cursor:pointer;
+    transition:border-color .15s, background-color .15s;
+    background:var(--panel2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5l3.5 3.5 3.5-3.5' fill='none' stroke='%236c7180' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 13px center}
+  select.fsel:hover{border-color:var(--muted);background-color:#1b1d26}
+  select.fsel:focus{outline:none;border-color:var(--accent)}
+  select.fsel option{background:var(--panel);color:var(--txt)}
+  select.fsel optgroup{background:var(--panel);color:var(--muted);font-style:normal}
+  .techchips{display:flex;flex-wrap:wrap;gap:7px;max-height:120px;overflow:auto;flex:1;min-width:240px}
+  .tchip{cursor:pointer;font-size:12.5px;color:var(--muted);background:var(--panel2);
+    border:1px solid var(--border);border-radius:999px;padding:5px 11px;transition:.12s;user-select:none}
+  .tchip:hover{color:var(--txt);border-color:var(--muted)}
+  .tchip.on{background:var(--accent-soft);color:#cdd6f4;border-color:var(--accent)}
+  .freset{align-self:flex-start;background:transparent;border:1px solid var(--border);color:var(--muted);
+    border-radius:10px;padding:8px 16px;font:inherit;font-size:13px;cursor:pointer;transition:.15s}
+  .freset:hover{color:var(--txt);border-color:var(--muted)}
+  .ftoggles{display:flex;gap:8px;align-items:center}
+  .aichip{display:inline-flex;align-items:center;gap:8px;margin-top:14px;cursor:pointer;
+    color:var(--muted);font-size:13px;background:var(--panel);border:1px solid var(--border);
+    border-radius:999px;padding:7px 15px;transition:.15s;user-select:none}
+  .aichip:hover{color:var(--txt);border-color:var(--muted)}
+  .aichip input{accent-color:var(--accent);width:15px;height:15px;cursor:pointer}
+  .aichk{display:flex;align-items:center;gap:9px;font-size:13.5px;color:var(--txt);cursor:pointer}
+  .aichk input{accent-color:var(--accent);width:16px;height:16px}
+  input.aiin{appearance:none;background:var(--panel2);color:var(--txt);border:1px solid var(--border);
+    border-radius:10px;padding:8px 13px;font:inherit;font-size:13.5px;min-width:260px;flex:1}
+  input.aiin:focus{outline:none;border-color:var(--accent)}
+  .aihint{font-size:12px;color:var(--muted);line-height:1.5}
+  .vrow{margin-top:8px}
+  .vbtn{flex:1;text-align:center;font-size:11.5px;color:var(--muted);background:transparent;
+    border:1px dashed var(--border);border-radius:8px;padding:6px;cursor:pointer;transition:.12s;user-select:none}
+  .vbtn:hover{color:var(--c);border-color:var(--c)}
+  .vbtn.busy{opacity:.5;pointer-events:none}
+  .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--panel);
+    border:1px solid var(--border);color:var(--txt);padding:10px 16px;border-radius:10px;z-index:50;
+    font-size:13px;box-shadow:0 10px 34px -12px rgba(0,0,0,.7);max-width:90%}
+
+  .parsed{display:flex;gap:8px;flex-wrap:wrap;margin:30px 0 0}
+  .chip{background:var(--panel);border:1px solid var(--border);border-radius:999px;
+    padding:6px 14px;font-size:13.5px;color:var(--muted)}
+  .chip b{color:var(--txt);font-weight:600}
+  .chip.role b{color:var(--accent)}
+
+  .group{margin-top:38px}
+  .ghead{display:flex;align-items:center;justify-content:space-between;gap:12px;
+    margin:0 0 16px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+  .group h2{font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin:0}
+  .group h2 span{color:var(--c);margin-left:6px}
+  .openall{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;
+    padding:6px 13px;font:inherit;font-size:12px;cursor:pointer;white-space:nowrap;transition:.15s}
+  .openall:hover{background:var(--c);border-color:var(--c);color:#0d1117}
+  .gbtns{display:flex;gap:8px}
+
+  /* холодная сине-голубая гамма: свой оттенок на категорию */
+  .g-pro{--c:#7aa2f7;--cs:rgba(122,162,247,.5)}
+  .g-community{--c:#56c2e6;--cs:rgba(86,194,230,.5)}
+  .g-comp{--c:#5fd0c6;--cs:rgba(95,208,198,.5)}
+  .g-exec{--c:#8d9cf4;--cs:rgba(141,156,244,.5)}
+  .g-social{--c:#5aade8;--cs:rgba(90,173,232,.5)}
+  .g-conf{--c:#74b6ee;--cs:rgba(116,182,238,.5)}
+  .g-role{--c:#67c8d6;--cs:rgba(103,200,214,.5)}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+  .card{position:relative;overflow:hidden;background:var(--panel);border:1px solid var(--border);
+    border-radius:14px;padding:16px;display:flex;flex-direction:column;
+    opacity:0;transform:translateY(16px);
+    transition:opacity .5s ease var(--d,0s), transform .45s cubic-bezier(.2,.7,.3,1), border-color .2s, box-shadow .2s}
+  .card.show{opacity:1;transform:none}
+  .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--c);
+    transform:scaleY(0);transform-origin:top;transition:transform .28s cubic-bezier(.2,.7,.3,1)}
+  .card:hover{border-color:var(--c);transform:translateY(-4px);
+    box-shadow:0 0 0 1px var(--cs), 0 14px 38px -14px var(--cs)}
+  .card:hover::before{transform:scaleY(1)}
+  .card:hover .ttl{color:var(--c)}
+  .card:hover code{border-color:var(--c)}
+  .card .ttl{font-weight:600;font-size:15.5px;transition:color .2s}
+  .card .desc{color:var(--muted);font-size:12.5px;margin:5px 0 11px}
+  .card code{display:block;background:var(--panel2);border:1px solid var(--border);border-radius:9px;
+    padding:10px 12px;font-size:11.5px;line-height:1.5;color:#aeb4c2;white-space:pre-wrap;
+    word-break:break-word;max-height:140px;overflow:auto;
+    font-family:"SF Mono",Menlo,Consolas,monospace}
+  .card .row{display:flex;gap:8px;margin-top:12px}
+  .btn{flex:1;text-align:center;padding:9px;border-radius:9px;font:600 13px "Golos Text",sans-serif;
+    cursor:pointer;border:1px solid var(--border);text-decoration:none;transition:.15s}
+  .btn.open{background:var(--c);color:#0d1117;border-color:var(--c)}
+  .btn.open:hover{filter:brightness(1.1)}
+  .btn.copy{background:transparent;color:var(--muted)}
+  .btn.copy:hover{color:var(--txt);border-color:var(--muted)}
+  .btn.alt{background:transparent;color:var(--c);width:100%}
+  .btn.alt:hover{background:var(--cs);color:#0d1117}
+
+  .empty{background:var(--panel);border:1px solid var(--border);border-radius:14px;
+    padding:46px 24px;text-align:center;color:var(--muted);margin-top:28px}
+
+</style>
+</head>
+<body>
+<div class="aura"><span class="b1"></span><span class="b2"></span><span class="b3"></span><span class="b4"></span><span class="b5"></span></div>
+<header>
+  <h1 class="logo">X-<span>Raya</span></h1>
+  <div class="tag">Опиши кого хочешь найти — роль, стек, город (например «сеньор Python‑разработчик в Москве с Kafka»). X‑Raya соберет готовые поисковые ссылки по 20+ площадкам: LinkedIn, hh.ru, Habr Career, GitHub, Telegram, VK, TenChat, конференции, соревнования и профильные сайты. Работает для IT и non‑IT ролей.</div>
+</header>
+
+<div class="wrap">
+  <div class="searchbox">
+    <textarea id="q" placeholder="Напиши как человеку: «сеньор python разработчик в Москве с Django», «маркетолог таргетолог спб», «коммерческий директор», «логист ВЭД»…"></textarea>
+    <button class="go" onclick="run()">Найти</button>
+  </div>
+  <div class="examples">
+    <span class="lbl">Примеры:</span>
+    <a onclick="ex('сеньор python разработчик Москва Django Kafka')">python senior</a>
+    <a onclick="ex('go разработчик')">go developer</a>
+    <a onclick="ex('маркетолог таргетолог seo')">маркетолог</a>
+    <a onclick="ex('коммерческий директор')">C-level</a>
+    <a onclick="ex('продуктовый дизайнер figma')">дизайнер</a>
+  </div>
+
+  <div class="ftoggles">
+    <div class="filt-toggle" onclick="toggleFilters()">Фильтры<span class="cnt" id="filtCnt"></span></div>
+    <label class="aichip"><input type="checkbox" id="aiOn" onchange="toggleAIon(this.checked)"> AI-интерпретация</label>
+  </div>
+  <div class="filters" id="filters"></div>
+
+  <div id="parsed" class="parsed" style="display:none"></div>
+  <div id="results">
+    <div class="empty">Введи запрос и нажми «Найти». Соберу ссылки по hh.ru, Habr, LinkedIn, GitHub, Telegram, VK, TenChat, конференциям, соревнованиям и профильным площадкам — под IT и non-IT.</div>
+  </div>
+</div>
+
+<script>
+/* ===================== ДАННЫЕ ===================== */
+const CITIES = [
+  {ru:'Москва', en:['Moscow'], hh:1, habr:'c_678', al:['москва','мск','msk','moscow','нерезиновая']},
+  {ru:'Санкт-Петербург', en:['Saint Petersburg','St Petersburg','SPb'], hh:2, habr:'c_679', al:['санкт-петербург','спб','питер','петербург','spb','saint petersburg','st petersburg']},
+  {ru:'Новосибирск', en:['Novosibirsk'], hh:4, habr:'c_717', al:['новосибирск','новосиб','нск']},
+  {ru:'Екатеринбург', en:['Yekaterinburg','Ekaterinburg'], hh:3, habr:'c_693', al:['екатеринбург','екб']},
+  {ru:'Казань', en:['Kazan'], hh:88, habr:'c_698', al:['казань']},
+  {ru:'Нижний Новгород', en:['Nizhny Novgorod'], hh:66, habr:'c_715', al:['нижний новгород','нино','нижний']},
+  {ru:'Воронеж', en:['Voronezh'], hh:26, habr:'c_692', al:['воронеж']},
+  {ru:'Самара', en:['Samara'], hh:78, habr:'c_728', al:['самара']},
+  {ru:'Краснодар', en:['Krasnodar'], hh:53, habr:'c_707', al:['краснодар']},
+  {ru:'Уфа', en:['Ufa'], hh:99, habr:'c_740', al:['уфа']},
+  {ru:'Пермь', en:['Perm'], hh:72, habr:'c_722', al:['пермь']},
+  {ru:'Ростов-на-Дону', en:['Rostov-on-Don'], hh:76, habr:'c_726', al:['ростов-на-дону','ростов']},
+  {ru:'Челябинск', en:['Chelyabinsk'], hh:104, habr:'c_744', al:['челябинск']},
+  {ru:'Красноярск', en:['Krasnoyarsk'], hh:54, habr:'c_708', al:['красноярск']},
+  {ru:'Томск', en:['Tomsk'], hh:90, habr:'c_736', al:['томск']},
+  {ru:'Владивосток', en:['Vladivostok'], hh:22, habr:'c_688', al:['владивосток']},
+  {ru:'Сочи', en:['Sochi'], hh:237, habr:'c_3394', al:['сочи']},
+  {ru:'Калининград', en:['Kaliningrad'], hh:41, habr:'c_699', al:['калининград']},
+  {ru:'Минск', en:['Minsk'], hh:1002, habr:'r_7847', al:['минск']},
+  {ru:'Алматы', en:['Almaty'], hh:160, habr:'c_680', al:['алматы','алма-ата']},
+  {ru:'Астана', en:['Astana','Nur-Sultan'], hh:159, habr:'c_682', al:['астана','нур-султан']},
+];
+
+const TECH = [
+  {c:'Python', lang:1, gh:'python', al:['python','питон','пайтон']},
+  {c:'Java', lang:1, gh:'java', al:['java','джава','джавы','джаве']},
+  {c:'Go', lang:1, gh:'go', al:['golang','голанг',' go ',' го ']},
+  {c:'JavaScript', lang:1, gh:'javascript', al:['javascript',' js ','джаваскрипт']},
+  {c:'TypeScript', lang:1, gh:'typescript', al:['typescript',' ts ','тайпскрипт']},
+  {c:'C++', lang:1, gh:'"C++"', al:['c++','с++','си++','cpp','плюсы']},
+  {c:'C#', lang:1, gh:'"C#"', al:['c#','си шарп','шарп']},
+  {c:'.NET', lang:0, gh:'', al:['.net','dotnet','дотнет']},
+  {c:'PHP', lang:1, gh:'php', al:['php','пхп']},
+  {c:'Ruby', lang:1, gh:'ruby', al:['ruby','руби']},
+  {c:'Kotlin', lang:1, gh:'kotlin', al:['kotlin','котлин']},
+  {c:'Swift', lang:1, gh:'swift', al:['swift','свифт']},
+  {c:'Rust', lang:1, gh:'rust', al:['rust','раст']},
+  {c:'Scala', lang:1, gh:'scala', al:['scala','скала']},
+  {c:'SQL', lang:0, gh:'', al:['sql','скуль']},
+  {c:'PostgreSQL', lang:0, gh:'', al:['postgres','postgresql','постгрес']},
+  {c:'React', lang:0, gh:'', al:['react','реакт','реакте']},
+  {c:'Vue', lang:0, gh:'', al:['vue','вью','vue.js']},
+  {c:'Angular', lang:0, gh:'', al:['angular','ангуляр']},
+  {c:'Node.js', lang:1, gh:'javascript', al:['node','nodejs','node.js','нода','ноде']},
+  {c:'Django', lang:0, gh:'', al:['django','джанго']},
+  {c:'Flask', lang:0, gh:'', al:['flask','фласк']},
+  {c:'FastAPI', lang:0, gh:'', al:['fastapi']},
+  {c:'Spring', lang:0, gh:'', al:['spring','спринг']},
+  {c:'Docker', lang:0, gh:'', al:['docker','докер']},
+  {c:'Kubernetes', lang:0, gh:'', al:['kubernetes','k8s','кубер','кубернетес']},
+  {c:'Kafka', lang:0, gh:'', al:['kafka','кафка']},
+  {c:'Spark', lang:0, gh:'', al:['spark','спарк']},
+  {c:'Airflow', lang:0, gh:'', al:['airflow','эйрфлоу']},
+  {c:'Terraform', lang:0, gh:'', al:['terraform','терраформ']},
+  {c:'Flutter', lang:1, gh:'dart', al:['flutter','флаттер']},
+  {c:'ML', lang:0, gh:'', al:[' ml ','machine learning','машинное обучение','машинн']},
+  {c:'1С', lang:0, gh:'', al:['1с','1c']},
+  {c:'Excel', lang:0, gh:'', al:['excel','эксель']},
+  {c:'SAP', lang:0, gh:'', al:['sap','сап ']},
+  {c:'Bitrix24', lang:0, gh:'', al:['битрикс','bitrix']},
+  {c:'amoCRM', lang:0, gh:'', al:['amocrm','амосрм','амо срм']},
+  {c:'Salesforce', lang:0, gh:'', al:['salesforce']},
+  {c:'Figma', lang:0, gh:'', al:['figma','фигма']},
+  {c:'Photoshop', lang:0, gh:'', al:['photoshop','фотошоп',' ps ']},
+  {c:'Illustrator', lang:0, gh:'', al:['illustrator','иллюстратор']},
+  {c:'Яндекс.Директ', lang:0, gh:'', al:['яндекс директ','яндекс.директ','я.директ']},
+  {c:'Google Ads', lang:0, gh:'', al:['google ads','гугл адс','контекст']},
+];
+
+const GRADES = [
+  {key:'Lead', kw:'lead', qids:6, al:['lead','лид','лида','principal','стафф','staff']},
+  {key:'Senior', kw:'senior', qids:5, al:['senior','синьор','сеньор','ведущий','старший']},
+  {key:'Middle', kw:'middle', qids:4, al:['middle','мидл','миддл']},
+  {key:'Junior', kw:'junior', qids:3, al:['junior','джуниор','джун','младший']},
+  {key:'Intern', kw:'intern', qids:1, al:['intern','стажер','стажёр','интерн']},
+];
+
+// Словарь титулов. Порядок = от частного к общему (первое совпадение выигрывает).
+// Поля: key, cat('it'|'nonit'), flags(['exec']), extra(площадки), syn(для запросов), ghKw, ru, al(алиасы детекции RU/EN/аббревиатуры).
+const TITLES = [
+  /* ── C-level и руководители ── */
+  {key:'CTO', cat:'it', flags:['exec'], syn:['CTO','Chief Technology Officer','технический директор','VP of Engineering','Head of Engineering'], ghKw:'cto', ru:'технический директор',
+   al:['cto','chief technology officer','технический директор','vp of engineering','vp engineering','head of engineering','директор по технологиям']},
+  {key:'CIO', cat:'it', flags:['exec'], syn:['CIO','Chief Information Officer','ИТ-директор','IT Director','директор по ИТ'], ghKw:'cio', ru:'ит-директор',
+   al:['cio','chief information officer','ит-директор','it-директор','директор по ит','it director']},
+  {key:'CISO', cat:'it', flags:['exec'], syn:['CISO','Chief Information Security Officer','директор по ИБ','Head of Security'], ghKw:'security', ru:'директор по информационной безопасности',
+   al:['ciso','chief information security officer','директор по иб','директор по информационной безопасности','head of security']},
+  {key:'CPO', cat:'it', flags:['exec'], syn:['CPO','Chief Product Officer','директор по продукту','Head of Product'], ghKw:'product', ru:'директор по продукту',
+   al:['cpo','chief product officer','директор по продукту','head of product']},
+  {key:'CDO', cat:'it', flags:['exec'], extra:['kaggle'], syn:['CDO','Chief Data Officer','директор по данным','Head of Data'], ghKw:'data', ru:'директор по данным',
+   al:['cdo','chief data officer','директор по данным','head of data']},
+  {key:'CEO', cat:'nonit', flags:['exec'], syn:['CEO','Chief Executive Officer','генеральный директор','Managing Director'], ru:'генеральный директор',
+   al:['ceo','chief executive officer','генеральный директор','гендиректор','управляющий директор']},
+  {key:'CFO', cat:'nonit', flags:['exec'], syn:['CFO','Chief Financial Officer','финансовый директор'], ru:'финансовый директор',
+   al:['cfo','chief financial officer','финансовый директор']},
+  {key:'COO', cat:'nonit', flags:['exec'], syn:['COO','Chief Operating Officer','операционный директор'], ru:'операционный директор',
+   al:['coo','chief operating officer','операционный директор']},
+  {key:'CMO', cat:'nonit', flags:['exec'], syn:['CMO','Chief Marketing Officer','директор по маркетингу'], ru:'директор по маркетингу',
+   al:['cmo','chief marketing officer','директор по маркетингу']},
+  {key:'HRD', cat:'nonit', flags:['exec'], syn:['HRD','CHRO','HR Director','директор по персоналу'], ru:'директор по персоналу',
+   al:['chro','hrd','hr director','директор по персоналу','hr-директор']},
+  {key:'Commercial', cat:'nonit', flags:['exec'], syn:['Коммерческий директор','Commercial Director','CCO','Sales Director'], ru:'коммерческий директор',
+   al:['коммерческий директор','commercial director','cco','директор по продажам']},
+  {key:'TeamLead', cat:'it', flags:['exec'], syn:['Team Lead','Tech Lead','Lead Developer','Engineering Manager','тимлид','техлид'], ghKw:'lead', ru:'тимлид',
+   al:['team lead','teamlead','тимлид','tech lead','техлид','тех лид','lead developer','engineering manager','руководитель разработки','руководитель отдела разработки','руководитель группы разработки']},
+
+  /* ── IT-специальности ── */
+  {key:'Frontend', cat:'it', syn:['Frontend Developer','Front-end Developer','Frontend Engineer','фронтенд разработчик','фронтендер'], ghKw:'frontend developer', ru:'фронтенд разработчик', stack:['JavaScript','React'],
+   al:['frontend','front-end','фронтенд','фронтендер','фронтенд-разработчик','ui developer','верстальщик']},
+  {key:'Backend', cat:'it', syn:['Backend Developer','Back-end Developer','Backend Engineer','бэкенд разработчик','серверный разработчик'], ghKw:'backend developer', ru:'бэкенд разработчик',
+   al:['backend','back-end','бэкенд','бекенд','бэкендер','бэкенд-разработчик','серверный разработчик','серверная разработка']},
+  {key:'Fullstack', cat:'it', syn:['Fullstack Developer','Full stack Developer','Full-stack Developer','фулстек разработчик'], ghKw:'fullstack developer', ru:'фулстек разработчик',
+   al:['fullstack','full stack','full-stack','фулстек','фуллстек']},
+  {key:'Mobile', cat:'it', syn:['Mobile Developer','Android Developer','iOS Developer','React Native Developer','мобильный разработчик'], ghKw:'mobile developer', ru:'мобильный разработчик',
+   al:['mobile developer','мобильный разработчик','мобильная разработка','android developer','android-разработчик','андроид разработчик','android','андроид',' ios ','ios developer','ios-разработчик','разработчик ios','react native','flutter developer']},
+  {key:'DevOps', cat:'it', syn:['DevOps Engineer','SRE','Site Reliability Engineer','Platform Engineer','девопс инженер'], ghKw:'devops', ru:'девопс инженер', stack:['Docker','Kubernetes'],
+   al:['devops','девопс','sre','site reliability','platform engineer','infrastructure engineer','инженер инфраструктуры']},
+  {key:'Data', cat:'it', extra:['kaggle'], syn:['Data Scientist','Data Engineer','ML Engineer','Machine Learning Engineer','аналитик данных','дата инженер'], ghKw:'data scientist', ru:'аналитик данных', stack:['Python','SQL'],
+   al:['data scientist','дата сайентист','датасайнтист','data engineer','дата инженер','инженер данных','ml engineer','machine learning engineer','ml-инженер','mlops','ml ops','data analyst','аналитик данных','data science']},
+  {key:'QA', cat:'it', syn:['QA Engineer','QA Automation','SDET','Test Engineer','тестировщик','инженер по тестированию'], ghKw:'qa engineer', ru:'тестировщик',
+   al:['qa engineer','qa automation','automation qa','sdet','тестировщик','инженер по тестированию','автотестировщик','quality assurance','qa']},
+  {key:'Security', cat:'it', syn:['Security Engineer','Information Security','AppSec Engineer','Penetration Tester','специалист по ИБ'], ghKw:'security', ru:'специалист по информационной безопасности',
+   al:['информационная безопасность','специалист по иб','application security','appsec','pentester','пентестер','security engineer','безопасник']},
+  {key:'DBA', cat:'it', syn:['Database Administrator','DBA','Oracle DBA','Postgres DBA','администратор баз данных'], ghKw:'dba', ru:'администратор баз данных',
+   al:['администратор баз данных','database administrator',' dba ','oracle dba','postgres dba']},
+  {key:'SysAdmin', cat:'it', syn:['System Administrator','Системный администратор','Sysadmin','администратор серверов'], ghKw:'system administrator', ru:'системный администратор',
+   al:['системный администратор','system administrator','sysadmin','сисадмин','администратор серверов']},
+  {key:'GameDev', cat:'it', syn:['Game Developer','Unity Developer','Unreal Developer','разработчик игр'], ghKw:'game developer', ru:'разработчик игр',
+   al:['game developer','геймдев','разработчик игр','unity developer','unreal developer']},
+  {key:'Embedded', cat:'it', syn:['Embedded Developer','Firmware Engineer','разработчик встраиваемых систем'], ghKw:'embedded', ru:'разработчик встраиваемых систем',
+   al:['embedded','встраиваемые системы','прошивки','микроконтроллеры','firmware']},
+  {key:'PM', cat:'it', syn:['Project Manager','Product Manager','Product Owner','проджект менеджер','продакт менеджер'], ghKw:'product manager', ru:'менеджер продукта',
+   al:['product manager','продакт менеджер','продакт-менеджер','продакт','project manager','проджект менеджер','проджект-менеджер','проджект','product owner','продакт оунер','руководитель проекта']},
+  {key:'Architect', cat:'it', syn:['Solution Architect','Software Architect','System Architect','Системный архитектор','Архитектор ПО'], ghKw:'architect', ru:'архитектор',
+   al:['solution architect','software architect','system architect','системный архитектор','архитектор по','архитектор решений','технический архитектор']},
+  {key:'Cloud', cat:'it', syn:['Cloud Engineer','Cloud Architect','инженер облачной инфраструктуры'], ghKw:'cloud engineer', ru:'облачный инженер',
+   al:['cloud engineer','cloud architect','облачный инженер','инженер облачной','aws engineer']},
+  {key:'Network', cat:'it', syn:['Network Engineer','Сетевой инженер','Network Administrator'], ghKw:'network engineer', ru:'сетевой инженер',
+   al:['network engineer','сетевой инженер','сетевой администратор','network administrator','инженер сетей']},
+  {key:'ScrumMaster', cat:'it', syn:['Scrum Master','Agile Coach','Скрам-мастер','Аджайл-коуч'], ghKw:'scrum master', ru:'скрам-мастер',
+   al:['scrum master','скрам-мастер','скрам мастер','agile coach','аджайл коуч','agile-коуч']},
+  {key:'OneC', cat:'it', syn:['1С-разработчик','1C Developer','Программист 1С'], ghKw:'1c developer', ru:'1с разработчик',
+   al:['1с-разработчик','1c developer','программист 1с','разработчик 1с','1с разработчик','1с программист']},
+  {key:'Bitrix', cat:'it', syn:['Bitrix-разработчик','1C-Bitrix Developer','разработчик Битрикс'], ghKw:'bitrix developer', ru:'битрикс разработчик',
+   al:['битрикс-разработчик','bitrix developer','разработчик битрикс','1с-битрикс']},
+  {key:'ProductAnalyst', cat:'it', syn:['Продуктовый аналитик','Product Analyst','Маркетинговый аналитик'], ghKw:'product analyst', ru:'продуктовый аналитик',
+   al:['продуктовый аналитик','product analyst','маркетинговый аналитик']},
+  {key:'Analyst', cat:'it', syn:['Системный аналитик','Бизнес-аналитик','Systems Analyst','Business Analyst','BI-аналитик'], ghKw:'analyst', ru:'аналитик',
+   al:['системный аналитик','system analyst','systems analyst','бизнес-аналитик','бизнес аналитик','business analyst','bi analyst','bi-аналитик','аналитик']},
+  {key:'Developer', cat:'it', syn:['Developer','Software Engineer','разработчик','программист','инженер-программист'], ghKw:'developer', ru:'разработчик',
+   al:['разработчик','программист','software engineer','software developer','developer',' dev ','кодер','инженер-программист']},
+
+  /* ── non-IT ── */
+  {key:'Designer', cat:'nonit', extra:['behance','dribbble','dprofile'], syn:['Product Designer','UX/UI Designer','UX Designer','UI Designer','Graphic Designer','продуктовый дизайнер'], ru:'дизайнер',
+   al:['ux designer','ui designer','ux/ui','ux-дизайнер','ui-дизайнер','продуктовый дизайнер','product designer','графический дизайнер','graphic designer','motion designer','моушн дизайнер','веб-дизайнер','дизайнер интерфейсов','дизайнер']},
+  {key:'Marketing', cat:'nonit', syn:['Маркетолог','Интернет-маркетолог','Digital Marketing','SMM-менеджер','Таргетолог','SEO-специалист'], ru:'маркетолог',
+   al:['маркетолог','интернет-маркетолог','digital marketing','диджитал маркетолог','smm','smm-менеджер','таргетолог','seo','seo-специалист','ppc','контекстолог','директолог','crm-маркетолог','email-маркетолог','бренд-менеджер','маркетинг']},
+  {key:'PR', cat:'nonit', syn:['PR-менеджер','PR Manager','Специалист по связям с общественностью','Public Relations'], ru:'pr-менеджер',
+   al:['pr-менеджер','пиар','public relations','связям с общественностью','pr manager']},
+  {key:'Sales', cat:'nonit', flags:['exec'], syn:['Менеджер по продажам','Sales Manager','Account Manager','Key Account Manager','Руководитель отдела продаж'], ru:'менеджер по продажам',
+   al:['менеджер по продажам','sales manager','sales executive','account manager','аккаунт менеджер','key account','руководитель отдела продаж','роп','менеджер активных продаж','b2b продажи','продаж']},
+  {key:'HR', cat:'nonit', syn:['HR-менеджер','Рекрутер','IT-рекрутер','Talent Acquisition','HR Business Partner','Sourcer'], ru:'рекрутер',
+   al:['hr-менеджер','эйчар','рекрутер','recruiter','it-рекрутер','talent acquisition','сорсер','sourcer','менеджер по персоналу','подбор персонала','hrbp','hr бизнес-партнер','c&b','компенсации и льготы','обучение и развитие',' hr ']},
+  {key:'Finance', cat:'nonit', syn:['Финансовый аналитик','Бухгалтер','Financial Analyst','Аудитор','Финансовый контролёр'], ru:'бухгалтер',
+   al:['финансовый аналитик','financial analyst','бухгалтер','accountant','главный бухгалтер','аудитор','auditor','финансовый менеджер','финансовый контролер','controller','казначей','экономист']},
+  {key:'Lawyer', cat:'nonit', syn:['Юрист','Юрисконсульт','Legal Counsel','Корпоративный юрист'], ru:'юрист',
+   al:['юрист','юрисконсульт','legal counsel','lawyer','адвокат','корпоративный юрист','руководитель юридического отдела','правовое сопровождение']},
+  {key:'Procurement', cat:'nonit', syn:['Специалист по закупкам','Procurement Manager','Менеджер по закупкам','Категорийный менеджер'], ru:'специалист по закупкам',
+   al:['закупки','специалист по закупкам','procurement','снабжение','менеджер по закупкам','категорийный менеджер']},
+  {key:'Logistics', cat:'nonit', extra:['logist'], syn:['Логист','Менеджер по логистике','Специалист по ВЭД','Supply Chain Manager'], ru:'логист',
+   al:['логист','логистика','менеджер по логистике','вэд','специалист по вэд','supply chain','цепочки поставок','складская логистика']},
+  {key:'Support', cat:'nonit', syn:['Специалист поддержки','Customer Support','Service Desk','Helpdesk','Менеджер поддержки'], ru:'специалист поддержки',
+   al:['специалист поддержки','customer support','техподдержка','служба поддержки','оператор call-центра','helpdesk','service desk','саппорт','поддержк']},
+  {key:'Content', cat:'nonit', syn:['Копирайтер','Контент-менеджер','Редактор','Content Manager','Технический писатель'], ru:'копирайтер',
+   al:['копирайтер','copywriter','контент-менеджер','content manager','редактор','editor','автор текстов','ux-редактор','технический писатель','technical writer','контент']},
+];
+const GENERIC = {key:'Специалист', cat:'nonit', syn:['Specialist','Manager','специалист','менеджер'], ru:'специалист'};
+const GENERIC_DEV = {key:'Developer', cat:'it', syn:['Developer','Software Engineer','разработчик','программист'], ghKw:'developer', ru:'разработчик'};
+const NONIT_TOOLS = new Set(['1С','Excel','SAP','Bitrix24','amoCRM','Salesforce','Figma','Photoshop','Illustrator','Яндекс.Директ','Google Ads']);
+
+const NOISE = '-вакансия -vacancy -работодатель -ищем -hiring -job -career -резюме';
+
+/* ===================== ПАРСИНГ ===================== */
+function norm(s){ return ' ' + s.toLowerCase().replace(/ё/g,'е').replace(/[«»]/g,' ') + ' '; }
+function hit(text, token){
+  token = token.toLowerCase().replace(/ё/g,'е');
+  if(token.length<=3 && !/[+#.]/.test(token) && !token.endsWith(' ')){
+    return new RegExp('(^|[^a-zа-я0-9])'+token.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'($|[^a-zа-я0-9])','i').test(text);
+  }
+  return text.includes(token);
+}
+function parse(raw){
+  const t = norm(raw);
+  const techs=[];
+  for(const tch of TECH){ if(tch.al.some(a=>hit(t,a)) && !techs.find(x=>x.c===tch.c)) techs.push(tch); }
+  let city=null; for(const c of CITIES){ if(c.al.some(a=>hit(t,a))){ city=c; break; } }
+  let grade=null; for(const g of GRADES){ if(g.al.some(a=>hit(t,a))){ grade=g; break; } }
+  let role=null, matched=false;
+  for(const r of TITLES){ if(r.al.some(a=>hit(t,a))){ role=r; matched=true; break; } }
+  if(!role){ const itSignal=techs.some(x=>x.lang || !NONIT_TOOLS.has(x.c)); role = itSignal?GENERIC_DEV:GENERIC; }
+  return {raw:raw.trim(), role, techs, city, grade, matched};
+}
+
+/* ===================== ХЕЛПЕРЫ ===================== */
+const enc = encodeURIComponent;
+const Q = s => '"'+s+'"';
+const orQ = arr => '('+arr.map(Q).join(' OR ')+')';
+const G = s => 'https://www.google.com/search?q='+enc(s);
+const Y = s => 'https://yandex.ru/search/?text='+enc(s);
+
+/* ===================== ГЕНЕРАЦИЯ ===================== */
+function build(p){
+  const isIT = p.role.cat==='it';
+  const exec = (p.role.flags||[]).includes('exec');
+  const langs = p.techs.filter(x=>x.lang).map(x=>x.c);
+  const allTech = p.techs.map(x=>x.c);
+  const kw = allTech.length?allTech:(p.role.stack||[]);
+  const roleSyn = p.role.syn.slice(0,5);
+  const extra = p.role.extra||[];
+  const cards = [];
+  const cityG = p.city ? '('+[...p.city.en, p.city.ru].map(Q).join(' OR ')+')' : '';
+  const langG = langs.length ? '('+langs.map(Q).join(' OR ')+')' : '';
+  const techG = allTech.length ? '('+allTech.map(Q).join(' OR ')+')' : '';
+  const gradeG = p.grade && p.grade.key!=='Intern' ? Q(p.grade.kw) : '';
+  const techStr = allTech.length?allTech.join(' '):p.role.syn[0];
+
+  /* ---- pro ---- */
+  let li = ['site:linkedin.com/in', isIT?langG:techG, orQ(roleSyn), cityG, gradeG, NOISE].filter(Boolean).join(' ');
+  cards.push({grp:'pro', ttl:'LinkedIn (X-Ray)', desc:'Google + Yandex. В РФ доступен только через поисковик.', str:li, url:G(li), url2:Y(li), alt:'Открыть в Yandex'});
+
+  const rc = roleSyn.map(Q).join(' OR ');
+  let pos = (isIT && langs.length) ? 'POSITION:(('+langs.join(' OR ')+') AND ('+rc+'))' : 'POSITION:('+rc+')';
+  let hhTxt = pos + (kw.length?' AND KEYWORDS:('+kw.join(' OR ')+')':'') + ' NOT POSITION:("стажер" OR "trainee" OR "intern")';
+  let hhUrl = 'https://hh.ru/search/resume?text='+enc(hhTxt)+(p.city?'&area='+p.city.hh:'')+'&logic=normal&pos=position&exp_period=all_time&job_search_status=active_search';
+  cards.push({grp:'pro', ttl:'hh.ru', desc:'Расширенный язык запросов (POSITION + KEYWORDS).', str:hhTxt, url:hhUrl});
+
+  let tc = ['site:tenchat.ru', p.city?'intitle:'+p.city.ru.toLowerCase():'', orQ(roleSyn.slice(0,3)), techG].filter(Boolean).join(' ');
+  cards.push({grp:'pro', ttl:'TenChat', desc:'Российская профессиональная сеть (приём из @booleansearch).', str:tc, url:G(tc)});
+
+  if(isIT){
+    const q = [p.role.syn[0], ...allTech].join(' ');
+    let url = 'https://career.habr.com/resumes?q='+enc(q)+(p.grade?'&qids[]='+p.grade.qids:'')+(p.city?'&locations[]='+p.city.habr:'');
+    cards.push({grp:'pro', ttl:'Habr Career', desc:'Резюме разработчиков. Грейд и город — параметрами.', str:q+(p.grade?'  | грейд: '+p.grade.key:'')+(p.city?'  | '+p.city.ru:''), url});
+    const ghLang = p.techs.find(x=>x.lang && x.gh);
+    let parts=['type:user']; if(p.city) parts.push('location:'+Q(p.city.en[0])); if(ghLang) parts.push('language:'+ghLang.gh);
+    parts.push('"'+p.role.ghKw+'" OR "'+p.role.ru+'"');
+    let gq=parts.join(' ');
+    cards.push({grp:'pro', ttl:'GitHub — пользователи', desc:'Нативный поиск: type:user, location, language.', str:gq, url:'https://github.com/search?q='+enc(gq)+'&type=users'});
+  }
+
+  /* ---- community ---- */
+  if(isIT){
+    let gx = ['site:github.com', orQ(roleSyn.slice(0,3)), langs.join(' '), p.city?Q(p.city.en[0]):''].filter(Boolean).join(' ');
+    cards.push({grp:'community', ttl:'GitHub (X-Ray)', desc:'Ловит README-портфолио, скрытые от нативного поиска.', str:gx, url:G(gx)});
+    const ghLang = p.techs.find(x=>x.lang && x.gh);
+    if(ghLang){ let q2='language:'+ghLang.gh+(p.city?' location:'+Q(p.city.en[0]):''); cards.push({grp:'community', ttl:'GitHub — по коду', desc:'Кто реально пишет на стеке.', str:q2, url:'https://github.com/search?q='+enc(q2)+'&type=users'}); }
+    let so = ['site:stackoverflow.com/users', allTech.map(Q).join(' '), p.role.ghKw, p.city?p.city.en[0]:''].filter(Boolean).join(' ');
+    cards.push({grp:'community', ttl:'Stack Overflow', desc:'Активные отвечающие по стеку.', str:so, url:G(so)});
+    let hu = ['site:habr.com/ru/users', allTech.map(Q).join(' '), p.city?Q(p.city.ru):''].filter(Boolean).join(' ');
+    cards.push({grp:'community', ttl:'Habr — авторы', desc:'Авторы статей по теме.', str:hu, url:G(hu)});
+  }
+  let tg = ['inurl:t.me', isIT?(langG||techG):techG, orQ(roleSyn.slice(0,3)), p.city?Q(p.city.ru):''].filter(Boolean).join(' ');
+  cards.push({grp:'community', ttl:'Telegram (X-Ray)', desc:'Профили, каналы и чаты. Ключевой канал для РФ.', str:tg, url:G(tg), url2:Y(tg), alt:'Открыть в Yandex'});
+  let tg2 = ['inurl:t.me/s/', techG, '("ищу работу" OR "ищу команду" OR резюме)'].filter(Boolean).join(' ');
+  cards.push({grp:'community', ttl:'Telegram — посты в чатах', desc:'Сообщения «ищу работу» в профильных чатах.', str:tg2, url:G(tg2)});
+  let vk = ['site:vk.com', orQ([p.role.ru, ...roleSyn.slice(0,2)]), techG, p.city?Q(p.city.ru):''].filter(Boolean).join(' ');
+  cards.push({grp:'community', ttl:'VK (X-Ray)', desc:'Профили во ВКонтакте.', str:vk, url:G(vk), url2:Y(vk), alt:'Открыть в Yandex'});
+
+  /* ---- competitive (IT) ---- */
+  if(isIT){
+    let cf='site:codeforces.com/profile '+(p.city?p.city.ru+' OR '+p.city.en[0]+' ':'')+'(vk.com OR mail.ru OR yandex.ru)';
+    cards.push({grp:'comp', ttl:'Codeforces', desc:'Сильные алгоритмисты + контакты в профиле.', str:cf, url:G(cf)});
+    let lc='site:leetcode.com intitle:"LeetCode Profile" '+(p.city?p.city.en[0]:'Russia');
+    cards.push({grp:'comp', ttl:'LeetCode', desc:'Профили по алгоритмическим задачам.', str:lc, url:G(lc)});
+    let hk='site:hackerrank.com '+(allTech.join(' ')||'developer')+(p.city?' '+p.city.en[0]:'');
+    cards.push({grp:'comp', ttl:'HackerRank', desc:'Соревнования по кодингу.', str:hk, url:G(hk)});
+    let gio='site:github.io '+(allTech.join(' ')||p.role.ghKw)+(p.city?' '+p.city.en[0]:'');
+    cards.push({grp:'comp', ttl:'GitHub Pages', desc:'Личные сайты-портфолио на github.io.', str:gio, url:G(gio)});
+    if(langs.includes('Go')){ let gc='site:golang.cafe/developer/ '+(p.city?p.city.en[0]+' OR russia':'russia'); cards.push({grp:'comp', ttl:'golang.cafe', desc:'Профили Go-разработчиков.', str:gc, url:G(gc)}); }
+    if(p.role.key==='Data'){ let hf='site:huggingface.co/ "AI & ML interests" '+(p.city?p.city.en[0]:'moscow'); cards.push({grp:'comp', ttl:'Hugging Face', desc:'ML/AI инженеры.', str:hf, url:G(hf)}); }
+  }
+
+  /* ---- exec ---- */
+  if(exec){
+    let cb='site:crunchbase.com/person '+(p.city?p.city.en[0]+' ':'')+orQ(roleSyn.slice(0,2));
+    cards.push({grp:'exec', ttl:'Crunchbase', desc:'Founders и руководители.', str:cb, url:G(cb)});
+    let ex='site:e-xecutive.ru/users '+orQ(roleSyn.slice(0,2))+(p.city?' '+Q(p.city.ru):'');
+    cards.push({grp:'exec', ttl:'E-xecutive', desc:'Сообщество менеджеров и руководителей.', str:ex, url:G(ex)});
+    let c4='site:4cio.ru/people/user '+(p.city?Q(p.city.ru)+' ':'')+orQ(roleSyn.slice(0,2));
+    cards.push({grp:'exec', ttl:'4CIO', desc:'IT-директора и топ-менеджмент.', str:c4, url:G(c4)});
+  }
+
+  /* ---- social (все) ---- */
+  let fb='site:facebook.com '+orQ([p.role.ru, ...roleSyn.slice(0,2)])+(techG?' '+techG:'')+(p.city?' '+Q(p.city.ru):'');
+  cards.push({grp:'social', ttl:'Facebook (X-Ray)', desc:'Профили в Facebook.', str:fb, url:G(fb)});
+  let vc='site:vc.ru/u '+orQ(roleSyn.slice(0,2))+(p.city?' '+p.city.ru:'');
+  cards.push({grp:'social', ttl:'vc.ru', desc:'Авторы и профили на vc.ru.', str:vc, url:G(vc)});
+  let xx='(site:twitter.com OR site:x.com) '+(techG||orQ(roleSyn.slice(0,2)))+(p.city?' '+p.city.en[0]:'');
+  cards.push({grp:'social', ttl:'X / Twitter', desc:'Профили в X.', str:xx, url:G(xx)});
+
+  /* ---- конференции (все) ---- */
+  [
+    {t:'SpeakerDeck', s:'site:speakerdeck.com '+techStr+(p.city?' '+p.city.en[0]:''), d:'Слайды докладчиков.'},
+    {t:'Sessionize', s:'site:sessionize.com '+techStr, d:'Профили спикеров конференций.'},
+    {t:'Timepad / Meetup', s:'(site:timepad.ru OR site:meetup.com) '+techStr+' (митап OR meetup OR конференция)'+(p.city?' '+p.city.ru:''), d:'Афиши митапов и участники.'},
+    {t:'YouTube — доклады', s:'site:youtube.com '+techStr+' (доклад OR meetup OR конференция)', d:'Спикеры записанных докладов.'},
+    {t:'Программы конф (PDF)', s:'('+techStr+') filetype:pdf (доклад OR speaker OR программа OR conference)', d:'Программы конференций со спикерами.'},
+  ].forEach(c=>cards.push({grp:'conf', ttl:c.t, desc:c.d, str:c.s, url:G(c.s)}));
+
+  /* ---- профильные ---- */
+  if(extra.includes('kaggle')){ let s='site:kaggle.com '+allTech.map(Q).join(' ')+(p.city?' '+p.city.en[0]:''); cards.push({grp:'role', ttl:'Kaggle', desc:'Data scientist-ы по соревнованиям.', str:s, url:G(s)}); }
+  if(extra.includes('behance')){ let s='site:behance.net '+orQ(roleSyn.slice(0,3))+(p.city?' '+p.city.en[0]:''); cards.push({grp:'role', ttl:'Behance', desc:'Портфолио дизайнеров.', str:s, url:G(s)}); }
+  if(extra.includes('dribbble')){ let s='site:dribbble.com '+orQ(roleSyn.slice(0,3))+(p.city?' '+p.city.en[0]:''); cards.push({grp:'role', ttl:'Dribbble', desc:'Портфолио дизайнеров.', str:s, url:G(s)}); }
+  if(extra.includes('dprofile')){ let s='site:dprofile.ru/*/cv '+(p.city?p.city.ru.toLowerCase()+' ':'')+'дизайнер'; cards.push({grp:'role', ttl:'dProfile', desc:'CV дизайнеров (приём из @booleansearch).', str:s, url:G(s)}); }
+  if(extra.includes('logist')){ let s='site:logist.ru/user '+orQ(roleSyn.slice(0,2))+(p.city?' '+p.city.ru:''); cards.push({grp:'role', ttl:'Logist.ru', desc:'Профили в логистике (приём из @booleansearch).', str:s, url:G(s)}); }
+
+  return cards;
+}
+
+/* ===================== РЕНДЕР ===================== */
+const GROUPS = [
+  {k:'pro', t:'Профессиональные площадки'},
+  {k:'community', t:'Соцсети и комьюнити'},
+  {k:'comp', t:'Соревнования и код'},
+  {k:'exec', t:'Руководители и founders'},
+  {k:'social', t:'Соцсети (X-Ray)'},
+  {k:'conf', t:'Конференции и митапы'},
+  {k:'role', t:'Профильные площадки'},
+];
+function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+async function run(){
+  const res = document.getElementById('results');
+  const pr = document.getElementById('parsed');
+  const raw = document.getElementById('q').value.trim();
+  let p;
+  if(AI_ON && raw){
+    res.innerHTML='<div class="empty">AI интерпретирует запрос…</div>'; pr.style.display='none';
+    try{ p = await aiState(raw); }
+    catch(e){ p = currentState(); toast('AI недоступен: '+e.message+' — показываю обычный результат'); }
+  } else { p = currentState(); }
+  _state = p;
+  if(!p.active){ res.innerHTML='<div class="empty">Введи запрос или выбери фильтры.</div>'; pr.style.display='none'; return; }
+  if(!p.resolved){ res.innerHTML='<div class="empty">Не удалось распознать роль или специализацию.<br>Переформулируй запрос (например «backend-разработчик на Go» или «финансовый аналитик») либо выбери специализацию в фильтрах.</div>'; pr.style.display='none'; return; }
+  const chips=[];
+  chips.push(['role','Роль','<b>'+p.role.key+'</b> · '+(p.role.cat==='it'?'IT':'non-IT')]);
+  if(p.techs.length) chips.push(['','Стек','<b>'+p.techs.map(x=>x.c).join(', ')+'</b>']);
+  if(p.grade) chips.push(['','Грейд','<b>'+p.grade.key+'</b>']);
+  if(p.city) chips.push(['','Город','<b>'+p.city.ru+'</b>']);
+  pr.innerHTML = chips.map(c=>'<span class="chip '+c[0]+'">'+c[1]+': '+c[2]+'</span>').join('');
+  pr.style.display='flex';
+
+  const cards = build(p);
+  let html='';
+  for(const g of GROUPS){
+    const gc = cards.filter(c=>c.grp===g.k); if(!gc.length) continue;
+    html += '<div class="group g-'+g.k+'"><div class="ghead"><h2>'+g.t+'<span>'+gc.length+'</span></h2>'+
+      '<div class="gbtns">'+
+        '<button class="openall" onclick="copyGroup(\''+g.k+'\')">Копировать все</button>'+
+        '<button class="openall" onclick="openGroup(\''+g.k+'\')">Открыть все</button>'+
+      '</div></div><div class="cards">';
+    let j=0;
+    for(const c of gc){
+      const delay=Math.min(j++ *0.05, 0.3).toFixed(2);
+      const eng = /google\.com\/search/.test(c.url)?'google':(/yandex\.ru\/search/.test(c.url)?'yandex':'');
+      const vrow = eng ? '<div class="row vrow">'+
+          '<span class="vbtn" onclick="aiVariant(this,\'broad\')">шире</span>'+
+          '<span class="vbtn" onclick="aiVariant(this,\'narrow\')">уже</span>'+
+          '<span class="vbtn" onclick="aiVariant(this,\'alt\')">по-другому</span>'+
+        '</div>' : '';
+      html += '<div class="card g-'+c.grp+'" data-eng="'+eng+'" data-src="'+esc(c.ttl).replace(/"/g,'&quot;')+'" style="--d:'+delay+'s">'+
+        '<div class="ttl">'+c.ttl+'</div>'+
+        '<div class="desc">'+c.desc+'</div>'+
+        '<code>'+esc(c.str)+'</code>'+
+        '<div class="row">'+
+          '<a class="btn open" href="'+c.url.replace(/"/g,'&quot;')+'" target="_blank" rel="noopener">Открыть</a>'+
+          '<span class="btn copy" onclick="cp(this)" data-s="'+esc(c.str).replace(/"/g,'&quot;')+'">Копировать</span>'+
+        '</div>'+ vrow +
+      '</div>';
+    }
+    html += '</div></div>';
+  }
+  res.innerHTML = html;
+  revealOnScroll();
+}
+
+let _io;
+function revealOnScroll(){
+  if(_io) _io.disconnect();
+  _io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('show'); _io.unobserve(e.target); } });
+  }, {threshold:.12, rootMargin:'0px 0px -40px 0px'});
+  document.querySelectorAll('.card').forEach(c=>_io.observe(c));
+}
+function cp(el){
+  const s = el.getAttribute('data-s').replace(/&quot;/g,'"').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&');
+  navigator.clipboard.writeText(s).then(()=>{ const o=el.textContent; el.textContent='Скопировано'; setTimeout(()=>el.textContent=o,1100); });
+}
+function ex(s){ document.getElementById('q').value=s; run(); }
+function openGroup(k){
+  const links=[...document.querySelectorAll('.group.g-'+k+' .btn.open')];
+  links.forEach(a=>{
+    const el=document.createElement('a');
+    el.href=a.href; el.target='_blank'; el.rel='noopener';
+    document.body.appendChild(el); el.click(); el.remove();
+  });
+  if(links.length>1) toast('Если открылась только часть вкладок — разреши всплывающие окна (pop-ups) для сайта: Safari → Настройки → Веб-сайты → Всплывающие окна.');
+}
+function copyGroup(k){
+  const codes=[...document.querySelectorAll('.group.g-'+k+' code')].map(c=>c.textContent);
+  if(!codes.length) return;
+  navigator.clipboard.writeText(codes.join('\n\n')).then(()=>toast('Скопировано строк: '+codes.length+' — вставляй куда нужно'));
+}
+
+/* ===================== ФИЛЬТРЫ ===================== */
+const F = {cat:'auto', grade:'', role:'', city:'', tech:new Set()};
+const ROLE_LABELS = {CTO:'CTO / Технический директор',CIO:'CIO / ИТ-директор',CISO:'CISO / Директор по ИБ',CPO:'CPO / Директор по продукту',CDO:'CDO / Директор по данным',TeamLead:'Team Lead / Тимлид',Frontend:'Frontend',Backend:'Backend',Fullstack:'Fullstack',Mobile:'Mobile',DevOps:'DevOps / SRE',Data:'Data / ML',QA:'QA',Security:'Security / ИБ',DBA:'DBA',SysAdmin:'Сисадмин',GameDev:'GameDev',Embedded:'Embedded',Architect:'Архитектор',Cloud:'Cloud Engineer',Network:'Сетевой инженер',ScrumMaster:'Scrum Master / Agile',OneC:'1С-разработчик',Bitrix:'Bitrix-разработчик',ProductAnalyst:'Продуктовый аналитик',PM:'Product / Project Manager',Analyst:'Аналитик',Developer:'Разработчик (общий)',CEO:'CEO / Гендиректор',CFO:'CFO / Финдиректор',COO:'COO / Операционный директор',CMO:'CMO / Директор по маркетингу',HRD:'HRD / Директор по персоналу',Commercial:'Коммерческий директор',Designer:'Дизайнер',Marketing:'Маркетинг',PR:'PR',Sales:'Продажи',HR:'HR / Рекрутинг',Finance:'Финансы / Бухгалтерия',Lawyer:'Юрист',Procurement:'Закупки',Logistics:'Логистика',Support:'Поддержка',Content:'Копирайтер / Контент'};
+const FILTER_IT = ['CTO','CIO','CISO','CPO','TeamLead','Architect','Frontend','Backend','Fullstack','Mobile','DevOps','Cloud','Network','Data','ProductAnalyst','QA','Security','DBA','SysAdmin','GameDev','Embedded','OneC','Bitrix','ScrumMaster','PM','Analyst','Developer'];
+const FILTER_NONIT = ['CEO','CFO','COO','CMO','HRD','Commercial','Designer','Marketing','PR','Sales','HR','Finance','Lawyer','Procurement','Logistics','Support','Content'];
+
+function initFilters(){
+  const opt = k => '<option value="'+k+'">'+(ROLE_LABELS[k]||k)+'</option>';
+  const cityOpts = '<option value="">Любой город</option>'+CITIES.map(c=>'<option value="'+c.ru+'">'+c.ru+'</option>').join('');
+  const langs = TECH.filter(t=>t.lang), tools = TECH.filter(t=>!t.lang);
+  const chip = t => '<span class="tchip" data-t="'+t.c+'" onclick="onTech(this)">'+t.c+'</span>';
+
+  document.getElementById('filters').innerHTML =
+    '<div class="frow"><label>Категория</label>'+
+      '<div class="seg" data-f="cat">'+
+        '<button data-v="auto" class="on" onclick="onSeg(this,\'cat\')">Авто</button>'+
+        '<button data-v="it" onclick="onSeg(this,\'cat\')">IT</button>'+
+        '<button data-v="nonit" onclick="onSeg(this,\'cat\')">non-IT</button>'+
+      '</div></div>'+
+    '<div class="frow"><label>Специализация</label>'+
+      '<select class="fsel" id="fRole" onchange="onRole()">'+
+        '<option value="">Авто (из запроса)</option>'+
+        '<optgroup label="IT"><option value="__dev">Любой IT / разработчик</option>'+FILTER_IT.map(opt).join('')+'</optgroup>'+
+        '<optgroup label="non-IT"><option value="__spec">Любой специалист</option>'+FILTER_NONIT.map(opt).join('')+'</optgroup>'+
+      '</select></div>'+
+    '<div class="frow"><label>Грейд</label>'+
+      '<div class="seg" data-f="grade">'+
+        '<button data-v="" class="on" onclick="onSeg(this,\'grade\')">Любой</button>'+
+        ['Junior','Middle','Senior','Lead'].map(g=>'<button data-v="'+g+'" onclick="onSeg(this,\'grade\')">'+g+'</button>').join('')+
+      '</div></div>'+
+    '<div class="frow"><label>Город</label><select class="fsel" id="fCity" onchange="onCity()">'+cityOpts+'</select></div>'+
+    '<div class="frow"><label>Языки</label><div class="techchips">'+langs.map(chip).join('')+'</div></div>'+
+    '<div class="frow"><label>Стек / инструменты</label><div class="techchips">'+tools.map(chip).join('')+'</div></div>'+
+    '<button class="freset" onclick="resetFilters()">Сбросить фильтры</button>';
+}
+
+function onSeg(el, key){
+  el.parentNode.querySelectorAll('button').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on'); F[key]=el.dataset.v; updateFiltCnt(); run();
+}
+function onRole(){ F.role=document.getElementById('fRole').value; updateFiltCnt(); run(); }
+function onCity(){ F.city=document.getElementById('fCity').value; updateFiltCnt(); run(); }
+function onTech(el){ const t=el.dataset.t; if(F.tech.has(t)){F.tech.delete(t);el.classList.remove('on');}else{F.tech.add(t);el.classList.add('on');} updateFiltCnt(); run(); }
+function toggleFilters(){ document.getElementById('filters').classList.toggle('open'); }
+function resetFilters(){
+  F.cat='auto'; F.grade=''; F.role=''; F.city=''; F.tech.clear();
+  initFilters(); document.getElementById('filters').classList.add('open'); updateFiltCnt(); run();
+}
+function updateFiltCnt(){
+  let n=0; if(F.cat!=='auto')n++; if(F.grade)n++; if(F.role)n++; if(F.city)n++; n+=F.tech.size;
+  document.getElementById('filtCnt').textContent = n? ' · '+n : '';
+}
+
+/* слияние нативного запроса с фильтрами */
+function mergeState(raw, base){
+  const m = new Map(); base.techs.forEach(t=>m.set(t.c,t));
+  F.tech.forEach(name=>{ const t=TECH.find(x=>x.c===name); if(t) m.set(t.c,t); });
+  const techs = [...m.values()];
+  const itSignal = techs.some(t=>t.lang || !NONIT_TOOLS.has(t.c));
+  let role, resolved=true;
+  if(F.role==='__dev') role=GENERIC_DEV;
+  else if(F.role==='__spec') role=GENERIC;
+  else if(F.role) role=TITLES.find(r=>r.key===F.role)||GENERIC;
+  else if(F.cat==='it') role=(base.matched && base.role.cat==='it')?base.role:GENERIC_DEV;
+  else if(F.cat==='nonit') role=(base.matched && base.role.cat==='nonit')?base.role:GENERIC;
+  else if(base.matched) role=base.role;
+  else if(itSignal) role=GENERIC_DEV;
+  else { role=GENERIC; resolved=false; }
+  const city = F.city ? CITIES.find(c=>c.ru===F.city) : base.city;
+  const grade = F.grade ? GRADES.find(g=>g.key===F.grade) : base.grade;
+  const active = !!(raw || F.role || F.city || F.grade || F.cat!=='auto' || F.tech.size);
+  return {raw, role, techs, city, grade, active, resolved};
+}
+function currentState(){
+  const raw = document.getElementById('q').value.trim();
+  const base = raw ? parse(raw) : {role:null, techs:[], city:null, grade:null, matched:false};
+  return mergeState(raw, base);
+}
+initFilters();
+document.getElementById('q').addEventListener('keydown', e=>{ if((e.metaKey||e.ctrlKey)&&e.key==='Enter') run(); });
+
+/* ===================== AI-СЛОЙ (через серверный прокси) ===================== */
+let _state=null;
+// Эндпоинт прокси, который хранит ключ на сервере (Vercel/Cloudflare). Можно переопределить window.XRAYA_AI_ENDPOINT.
+const AI_ENDPOINT = (typeof window!=='undefined' && window.XRAYA_AI_ENDPOINT) || '/api/ai';
+// безопасный доступ к localStorage (в инкогнито/при блокировке cookie он может бросать ошибку)
+function lsGet(k){ try{ return localStorage.getItem(k); }catch(_){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(_){} }
+let AI_ON = lsGet('xraya_ai_on')==='1';
+function toggleAIon(v){ AI_ON=v; lsSet('xraya_ai_on', v?'1':'0'); run(); }
+function toast(m){ const t=document.createElement('div'); t.className='toast'; t.textContent=m; document.body.appendChild(t); setTimeout(()=>t.remove(),4500); }
+
+async function aiCall(system, user){
+  const r=await fetch(AI_ENDPOINT,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({system,user})});
+  if(!r.ok){ let msg='HTTP '+r.status; try{ const e=await r.json(); if(e&&e.error) msg=e.error; }catch(_){} throw new Error(msg); }
+  const d=await r.json(); return d.text||'';
+}
+function parseJson(txt){ const m=txt.match(/\{[\s\S]*\}/); if(!m) throw new Error('ответ не JSON'); return JSON.parse(m[0]); }
+
+const SYS_INTERPRET='Ты ассистент сорсера. По запросу рекрутера верни СТРОГО JSON без markdown и пояснений: {"category":"it"|"nonit","role":"каноничное название роли","synonyms":["8-14 названий должности на русском и английском, включая аббревиатуры и частые формулировки; без слов вакансия/работа"],"technologies":["ключевые технологии/инструменты"],"city":"город или пустая строка","seniority":"junior|middle|senior|lead или пустая строка"}.';
+async function aiInterpret(q){ return parseJson(await aiCall(SYS_INTERPRET,'Запрос: '+q)); }
+function specToBase(spec){
+  const cat=(spec.category==='nonit')?'nonit':'it';
+  let syn=Array.isArray(spec.synonyms)?spec.synonyms.filter(Boolean):[];
+  if(!syn.length) syn=[spec.role||'специалист'];
+  syn=syn.slice(0,10);
+  const role={key:(spec.role||'AI'),cat,flags:[],extra:[],syn,ghKw:String(spec.role||'specialist').toLowerCase(),ru:(spec.role||syn[0])};
+  const techs=[];
+  (Array.isArray(spec.technologies)?spec.technologies:[]).forEach(n=>{ n=String(n); const low=n.toLowerCase(); const t=TECH.find(x=>x.c.toLowerCase()===low||x.al.some(a=>a.trim()===low)); techs.push(t||{c:n,lang:0,gh:''}); });
+  let city=null; if(spec.city){ const cl=String(spec.city).toLowerCase().trim(); if(cl) city=CITIES.find(c=>c.ru.toLowerCase()===cl||c.al.includes(cl)||c.en.some(e=>e.toLowerCase()===cl))||null; }
+  let grade=null; if(spec.seniority){ const sl=String(spec.seniority).toLowerCase().trim(); if(sl) grade=GRADES.find(g=>g.key.toLowerCase()===sl||g.al.includes(sl))||null; }
+  return {role,techs,city,grade,matched:true};
+}
+async function aiState(raw){ return mergeState(raw, specToBase(await aiInterpret(raw))); }
+
+const SYS_VARIANT='Ты эксперт по boolean / X-Ray сорсингу. Дают текущую поисковую строку для конкретного источника и режим. Верни СТРОГО JSON без markdown: {"expr":"новая поисковая строка","note":"кратко по-русски что изменил"}. Сохраняй синтаксис источника (операторы site:/inurl:/intitle:, кавычки, OR/AND, минус-слова). Только строка запроса, без URL и пояснений вне JSON.';
+const VMODES={broad:'Сделай выборку ШИРЕ: добавь синонимы и смежные формулировки роли, ослабь часть ограничений.',narrow:'Сделай выборку УЖЕ: добавь уточнения — конкретные навыки, грейд, точные фразы в кавычках, минус-слова.',alt:'Предложи ДРУГОЙ подход к поиску на этом же источнике: другие операторы/поля/формулировки.'};
+async function aiVariant(el, mode){
+  const card=el.closest('.card'), codeEl=card.querySelector('code'), openEl=card.querySelector('.btn.open'), copyEl=card.querySelector('.btn.copy');
+  const eng=card.dataset.eng, src=card.dataset.src, expr=codeEl.textContent, st=_state||{};
+  const ctx='Роль: '+(st.role?st.role.key:'')+'; синонимы: '+(st.role?st.role.syn.join(', '):'')+'; город: '+(st.city?st.city.ru:'-')+'; стек: '+(st.techs?st.techs.map(t=>t.c).join(', '):'-')+'; грейд: '+(st.grade?st.grade.key:'-');
+  const row=el.parentNode, btns=row.querySelectorAll('.vbtn'), old=el.textContent;
+  btns.forEach(b=>b.classList.add('busy')); el.textContent='…';
+  try{
+    const j=parseJson(await aiCall(SYS_VARIANT,'Источник: '+src+'\nРежим: '+VMODES[mode]+'\nТекущая строка:\n'+expr+'\nКонтекст поиска: '+ctx));
+    codeEl.textContent=j.expr; openEl.href=(eng==='yandex')?Y(j.expr):G(j.expr); copyEl.setAttribute('data-s', j.expr);
+    if(j.note){ codeEl.title=j.note; toast(card.dataset.src+': '+j.note); }
+  }catch(e){ toast('AI: '+e.message); }
+  finally{ btns.forEach(b=>b.classList.remove('busy')); el.textContent=old; }
+}
+(function(){ const c=document.getElementById('aiOn'); if(c) c.checked=AI_ON; })();
+
+/* лёгкий параллакс свечения от скролла */
+(function(){
+  const aura=document.querySelector('.aura'); let ticking=false;
+  window.addEventListener('scroll',()=>{
+    if(ticking) return; ticking=true;
+    requestAnimationFrame(()=>{ aura.style.transform='translate3d(0,'+(window.scrollY*0.12)+'px,0)'; ticking=false; });
+  }, {passive:true});
+})();
+</script>
+</body>
+</html>
