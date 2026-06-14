@@ -57,6 +57,15 @@ function handleAI(req, res) {
 
 const server = http.createServer((req, res) => {
   if (req.method === 'POST' && req.url === '/api/ai') return handleAI(req, res);
+  // локальные шрифты
+  if (req.method === 'GET' && req.url.startsWith('/fonts/') && req.url.indexOf('.woff2') !== -1) {
+    const name = path.basename(req.url.split('?')[0]); // защита от path traversal
+    return fs.readFile(path.join(__dirname, 'fonts', name), (err, data) => {
+      if (err) return send(res, 404, 'text/plain', 'not found');
+      res.writeHead(200, { 'content-type': 'font/woff2', 'cache-control': 'public, max-age=31536000, immutable' });
+      res.end(data);
+    });
+  }
   // всё остальное — отдаём одностраничник
   fs.readFile(INDEX, (err, data) => {
     if (err) return send(res, 500, 'text/plain', 'index.html not found');
