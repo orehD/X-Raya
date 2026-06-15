@@ -509,7 +509,6 @@ function build(p){
     cards.push({grp:'comp', ttl:'HackerRank', desc:'Соревнования по кодингу. По стеку фильтрует слабо.', str:hk, url:G(hk)});
     let gio='site:github.io '+(allTech.join(' ')||p.role.ghKw)+(p.city?' '+p.city.en[0]:'');
     cards.push({grp:'community', ttl:'GitHub Pages — портфолио', desc:'Личные сайты на github.io (часто указан стек и контакты).', str:gio, url:G(gio)});
-    if(langs.includes('Go')){ let gc='site:golang.cafe/developer/ '+(p.city?p.city.en[0]+' OR russia':'russia'); cards.push({grp:'role', ttl:'golang.cafe', desc:'Профили Go-разработчиков (нишевый джоб-борд).', str:gc, url:G(gc)}); }
     if(p.role.key==='Data'){ let hf='site:huggingface.co/ "AI & ML interests" '+(p.city?p.city.en[0]:'moscow'); cards.push({grp:'role', ttl:'Hugging Face', desc:'ML/AI инженеры.', str:hf, url:G(hf)}); }
   }
 
