@@ -502,15 +502,15 @@ function build(p){
   /* ---- competitive (IT) ---- */
   if(isIT){
     let cf='site:codeforces.com/profile '+(allTech.length?allTech.join(' ')+' ':'')+(p.city?p.city.ru+' OR '+p.city.en[0]+' ':'')+'(vk.com OR mail.ru OR yandex.ru)';
-    cards.push({grp:'comp', ttl:'Codeforces', desc:'Сильные алгоритмисты + контакты в профиле.', str:cf, url:G(cf)});
+    cards.push({grp:'comp', ttl:'Codeforces', desc:'Сильные алгоритмисты + контакты. По стеку фильтрует слабо — язык в профиле почти не указан.', str:cf, url:G(cf)});
     let lc='site:leetcode.com intitle:"LeetCode Profile" '+(allTech.length?allTech.join(' ')+' ':'')+(p.city?p.city.en[0]:'Russia');
-    cards.push({grp:'comp', ttl:'LeetCode', desc:'Профили по алгоритмическим задачам.', str:lc, url:G(lc)});
+    cards.push({grp:'comp', ttl:'LeetCode', desc:'Профили по алгозадачам. По стеку фильтрует слабо.', str:lc, url:G(lc)});
     let hk='site:hackerrank.com '+(allTech.join(' ')||'developer')+(p.city?' '+p.city.en[0]:'');
-    cards.push({grp:'comp', ttl:'HackerRank', desc:'Соревнования по кодингу.', str:hk, url:G(hk)});
+    cards.push({grp:'comp', ttl:'HackerRank', desc:'Соревнования по кодингу. По стеку фильтрует слабо.', str:hk, url:G(hk)});
     let gio='site:github.io '+(allTech.join(' ')||p.role.ghKw)+(p.city?' '+p.city.en[0]:'');
-    cards.push({grp:'comp', ttl:'GitHub Pages', desc:'Личные сайты-портфолио на github.io.', str:gio, url:G(gio)});
-    if(langs.includes('Go')){ let gc='site:golang.cafe/developer/ '+(p.city?p.city.en[0]+' OR russia':'russia'); cards.push({grp:'comp', ttl:'golang.cafe', desc:'Профили Go-разработчиков.', str:gc, url:G(gc)}); }
-    if(p.role.key==='Data'){ let hf='site:huggingface.co/ "AI & ML interests" '+(p.city?p.city.en[0]:'moscow'); cards.push({grp:'comp', ttl:'Hugging Face', desc:'ML/AI инженеры.', str:hf, url:G(hf)}); }
+    cards.push({grp:'community', ttl:'GitHub Pages — портфолио', desc:'Личные сайты на github.io (часто указан стек и контакты).', str:gio, url:G(gio)});
+    if(langs.includes('Go')){ let gc='site:golang.cafe/developer/ '+(p.city?p.city.en[0]+' OR russia':'russia'); cards.push({grp:'role', ttl:'golang.cafe', desc:'Профили Go-разработчиков (нишевый джоб-борд).', str:gc, url:G(gc)}); }
+    if(p.role.key==='Data'){ let hf='site:huggingface.co/ "AI & ML interests" '+(p.city?p.city.en[0]:'moscow'); cards.push({grp:'role', ttl:'Hugging Face', desc:'ML/AI инженеры.', str:hf, url:G(hf)}); }
   }
 
   /* ---- exec ---- */
@@ -553,12 +553,12 @@ function build(p){
 /* ===================== РЕНДЕР ===================== */
 const GROUPS = [
   {k:'pro', t:'Профессиональные площадки'},
-  {k:'community', t:'Соцсети и комьюнити'},
-  {k:'comp', t:'Соревнования и код'},
+  {k:'community', t:'Комьюнити и портфолио'},
+  {k:'role', t:'Профильные по роли'},
   {k:'exec', t:'Руководители и founders'},
-  {k:'social', t:'Соцсети (X-Ray)'},
   {k:'conf', t:'Конференции и митапы'},
-  {k:'role', t:'Профильные площадки'},
+  {k:'social', t:'Соцсети (X-Ray)'},
+  {k:'comp', t:'Соревнования по коду · слабо фильтруется по стеку'},
 ];
 function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
