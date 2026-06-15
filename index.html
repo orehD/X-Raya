@@ -501,9 +501,9 @@ function build(p){
 
   /* ---- competitive (IT) ---- */
   if(isIT){
-    let cf='site:codeforces.com/profile '+(p.city?p.city.ru+' OR '+p.city.en[0]+' ':'')+'(vk.com OR mail.ru OR yandex.ru)';
+    let cf='site:codeforces.com/profile '+(allTech.length?allTech.join(' ')+' ':'')+(p.city?p.city.ru+' OR '+p.city.en[0]+' ':'')+'(vk.com OR mail.ru OR yandex.ru)';
     cards.push({grp:'comp', ttl:'Codeforces', desc:'Сильные алгоритмисты + контакты в профиле.', str:cf, url:G(cf)});
-    let lc='site:leetcode.com intitle:"LeetCode Profile" '+(p.city?p.city.en[0]:'Russia');
+    let lc='site:leetcode.com intitle:"LeetCode Profile" '+(allTech.length?allTech.join(' ')+' ':'')+(p.city?p.city.en[0]:'Russia');
     cards.push({grp:'comp', ttl:'LeetCode', desc:'Профили по алгоритмическим задачам.', str:lc, url:G(lc)});
     let hk='site:hackerrank.com '+(allTech.join(' ')||'developer')+(p.city?' '+p.city.en[0]:'');
     cards.push({grp:'comp', ttl:'HackerRank', desc:'Соревнования по кодингу.', str:hk, url:G(hk)});
@@ -526,7 +526,7 @@ function build(p){
   /* ---- social (все) ---- */
   let fb='site:facebook.com '+orQ([p.role.ru, ...roleSyn.slice(0,2)])+(techG?' '+techG:'')+(p.city?' '+Q(p.city.ru):'');
   cards.push({grp:'social', ttl:'Facebook (X-Ray)', desc:'Профили в Facebook.', str:fb, url:G(fb)});
-  let vc='site:vc.ru/u '+orQ(roleSyn.slice(0,2))+(p.city?' '+p.city.ru:'');
+  let vc='site:vc.ru/u '+orQ(roleSyn.slice(0,2))+(techG?' '+techG:'')+(p.city?' '+p.city.ru:'');
   cards.push({grp:'social', ttl:'vc.ru', desc:'Авторы и профили на vc.ru.', str:vc, url:G(vc)});
   let xx='(site:twitter.com OR site:x.com) '+(techG||orQ(roleSyn.slice(0,2)))+(p.city?' '+p.city.en[0]:'');
   cards.push({grp:'social', ttl:'X / Twitter', desc:'Профили в X.', str:xx, url:G(xx)});
@@ -631,13 +631,11 @@ function cp(el){
 }
 function ex(s){ document.getElementById('q').value=s; run(); }
 function openGroup(k){
-  const links=[...document.querySelectorAll('.group.g-'+k+' .btn.open')];
-  links.forEach(a=>{
-    const el=document.createElement('a');
-    el.href=a.href; el.target='_blank'; el.rel='noopener';
-    document.body.appendChild(el); el.click(); el.remove();
-  });
-  if(links.length>1) toast('Если открылась только часть вкладок — разреши всплывающие окна (pop-ups) для сайта: Safari → Настройки → Веб-сайты → Всплывающие окна.');
+  const links=[...document.querySelectorAll('.group.g-'+k+' .btn.open')].map(a=>a.href);
+  if(!links.length) return;
+  let opened=0;
+  for(const href of links){ const w=window.open(href,'_blank','noopener'); if(w) opened++; }
+  if(opened<links.length) toast('Открылось '+opened+' из '+links.length+'. Разреши всплывающие окна для сайта (Safari → Настройки → Веб-сайты → Всплывающие окна → Разрешить), затем нажми снова.');
 }
 function copyGroup(k){
   const codes=[...document.querySelectorAll('.group.g-'+k+' code')].map(c=>c.textContent);
