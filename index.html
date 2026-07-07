@@ -616,10 +616,20 @@ const GROUPS = [
 ];
 function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+// Уровень 0 — детерминированная валидация текста запроса (без ИИ, до парсинга).
+// Пустой текст = ок (может быть поиск по фильтрам); режем только явный брак.
+function validateQuery(raw){
+  if(!raw) return {ok:true};
+  if(raw.length > 200) return {ok:false, msg:'Слишком длинный запрос. Опиши роль короче — например «senior python разработчик Москва».'};
+  if(raw.length < 2 || !/[a-zа-яё]/i.test(raw)) return {ok:false, msg:'Не похоже на запрос. Введи название профессии — например «тракторист» или «backend-разработчик».'};
+  return {ok:true};
+}
 async function run(){
   const res = document.getElementById('results');
   const pr = document.getElementById('parsed');
   const raw = document.getElementById('q').value.trim();
+  const v = validateQuery(raw);
+  if(!v.ok){ res.innerHTML='<div class="empty">'+v.msg+'</div>'; pr.style.display='none'; return; }
   let p;
   if(AI_ON && raw){
     res.innerHTML='<div class="empty">AI интерпретирует запрос…</div>'; pr.style.display='none';
