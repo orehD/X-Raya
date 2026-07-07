@@ -414,22 +414,42 @@ const NONIT_TOOLS = new Set(['1С','Excel','SAP','Bitrix24','amoCRM','Salesforce
 const NOISE = '-вакансия -vacancy -работодатель -ищем -hiring -job -career -резюме';
 
 /* ===================== ПАРСИНГ ===================== */
-function norm(s){ return ' ' + s.toLowerCase().replace(/ё/g,'е').replace(/[«»]/g,' ') + ' '; }
+function norm(s){ return ' ' + s.toLowerCase().replace(/ё/g,'е').replace(/[«»"']/g,' ').replace(/[-–—]/g,' ').replace(/\s+/g,' ') + ' '; }
 function hit(text, token){
-  token = token.toLowerCase().replace(/ё/g,'е');
+  token = token.toLowerCase().replace(/ё/g,'е').replace(/[-–—]/g,' ').replace(/\s+/g,' ');
   if(token.length<=3 && !/[+#.]/.test(token) && !token.endsWith(' ')){
     return new RegExp('(^|[^a-zа-я0-9])'+token.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'($|[^a-zа-я0-9])','i').test(text);
   }
   return text.includes(token);
 }
+// Карта заимствований RU→EN: транслитерированные формы («дата аналитик») матчатся к англ. алиасам.
+const LOAN = {'дата':'data','девелопер':'developer','разработчик':'developer','инженер':'engineer',
+  'аналитик':'analyst','менеджер':'manager','дизайнер':'designer','архитектор':'architect',
+  'сайентист':'scientist','сайнтист':'scientist','фронтенд':'frontend','бэкенд':'backend','бекенд':'backend',
+  'фулстек':'fullstack','фуллстек':'fullstack','тестировщик':'tester','продакт':'product','проджект':'project',
+  'маркетолог':'marketer','мл':'ml'};
+function translit(t){ return t.replace(/[а-я]+/g, w => LOAN[w] || w); }
+// длина алиаса без разделителей — мера специфичности (специфичное бьёт общее)
+function specLen(a){ return a.toLowerCase().replace(/[-–—\s]/g,'').length; }
 function parse(raw){
   const t = norm(raw);
+  const tt = t + ' ' + translit(t); // оригинал + транслитерация, чтобы ловить обе формы
   const techs=[];
   for(const tch of TECH){ if(tch.al.some(a=>hit(t,a)) && !techs.find(x=>x.c===tch.c)) techs.push(tch); }
   let city=null; for(const c of CITIES){ if(c.al.some(a=>hit(t,a))){ city=c; break; } }
   let grade=null; for(const g of GRADES){ if(g.al.some(a=>hit(t,a))){ grade=g; break; } }
-  let role=null, matched=false;
-  for(const r of TITLES){ if(r.al.some(a=>hit(t,a))){ role=r; matched=true; break; } }
+  // роль: самое специфичное (длинное) совпадение; generic 'Developer' — только как fallback
+  let role=null, matched=false, bestLen=0, gen=null;
+  for(const r of TITLES){
+    const isGeneric = r.key==='Developer';
+    for(const a of r.al){
+      if(!hit(tt,a)) continue;
+      if(isGeneric){ gen = gen||r; continue; }
+      const L = specLen(a);
+      if(L>bestLen){ bestLen=L; role=r; matched=true; }
+    }
+  }
+  if(!role && gen){ role=gen; matched=true; }
   if(!role){ const itSignal=techs.some(x=>x.lang || !NONIT_TOOLS.has(x.c)); role = itSignal?GENERIC_DEV:GENERIC; }
   return {raw:raw.trim(), role, techs, city, grade, matched};
 }
