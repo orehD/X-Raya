@@ -73,4 +73,4 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(PORT, () => console.log('Пеленг запущен на порту ' + PORT));
+server.listen(PORT, () => console.log('Peleng запущен на порту ' + PORT));
