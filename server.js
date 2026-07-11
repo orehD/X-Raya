@@ -1,4 +1,4 @@
-// X-Raya self-hosted сервер (без зависимостей, Node 18+).
+// Пеленг (ex-X-Raya) self-hosted сервер (без зависимостей, Node 18+).
 // Отдаёт index.html и держит POST /api/ai как прокси к OpenRouter (ключ — из env).
 // Запуск: node server.js   (PORT по умолчанию 3000)
 //
@@ -34,7 +34,7 @@ function handleAI(req, res) {
         headers: {
           'content-type': 'application/json',
           'authorization': 'Bearer ' + key,
-          'X-Title': 'X-Raya',
+          'X-Title': 'Peleng',
         },
         body: JSON.stringify({
           model: MODEL,
@@ -73,4 +73,4 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(PORT, () => console.log('X-Raya запущен на порту ' + PORT));
+server.listen(PORT, () => console.log('Пеленг запущен на порту ' + PORT));
