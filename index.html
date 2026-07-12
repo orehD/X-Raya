@@ -63,6 +63,16 @@ a{color:inherit}
 .tb-mid{color:#6E6753}
 .tb-right{color:var(--amber);font-variant-numeric:tabular-nums}
 
+/* ── тикер перехвата ── */
+.ticker{position:relative;z-index:1;overflow:hidden;border-bottom:1px solid var(--line);
+  padding:6px 0;-webkit-mask:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
+  mask:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+.tk{display:inline-flex;gap:0;white-space:nowrap;animation:tick var(--tkd,80s) linear infinite;will-change:transform}
+.tk span{font:400 10.5px/1 var(--f-mono);color:#57503E;padding-right:46px}
+.tk span::after{content:"◦";color:rgba(242,169,59,.4);margin-left:46px}
+@keyframes tick{to{transform:translateX(-50%)}}
+@media (hover:hover){ .ticker:hover .tk{animation-play-state:paused} }
+
 /* ── герой: консоль + радар ── */
 .hero{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:48px;
   max-width:1160px;margin:0 auto;padding:58px 20px 6px;align-items:start}
@@ -382,6 +392,7 @@ body.working .radar{width:238px;height:238px}
   .fold,.hero{transition:none}
   .radar::before{animation:none;opacity:.25}
   .radar .blip{animation:none;opacity:.4}
+  .ticker{display:none}
   body.glitching .logo{animation:none}
   #boot{display:none}
   .radar .blip{animation:none;opacity:.5}
@@ -400,6 +411,8 @@ body.working .radar{width:238px;height:238px}
   <span class="tb-mid">Peleng // сорсинг-разведка</span>
   <span class="tb-right" id="clock">--:--:--</span>
 </div>
+
+<div class="ticker" aria-hidden="true"><div class="tk" id="tk"></div></div>
 
 <header class="hero">
   <div class="hero-l">
@@ -861,7 +874,7 @@ async function run(){
   _state = p;
   if(!p.active){ document.body.classList.remove('working');
     const rd0=document.querySelector('.radar'); if(rd0) rd0.classList.remove('live');
-    _cards=[]; renderBlips(); res.innerHTML='<div class="empty">Задай цель или выбери параметры операции.</div>'; pr.style.display='none'; return; }
+    _cards=[]; renderBlips(); renderTicker(); res.innerHTML='<div class="empty">Задай цель или выбери параметры операции.</div>'; pr.style.display='none'; return; }
   if(!p.resolved && raw && AIFB_ON && !AI_ON){
     res.innerHTML='<div class="empty">Анализирую цель…</div>'; pr.style.display='none';
     try{
@@ -904,6 +917,7 @@ async function run(){
   acquirePulse();
   countUp(pr);
   renderBlips();
+  renderTicker();
   const rc=document.getElementById('rCore'); if(rc) rc.textContent=cards.length;
   const rl=document.getElementById('rCoreLbl'); if(rl){ const n=cards.length%100, n1=n%10;
     rl.textContent=(n>10&&n<20)?'сигналов':(n1===1?'сигнал':(n1>1&&n1<5?'сигнала':'сигналов')); }
@@ -1058,6 +1072,19 @@ function renderBlips(){
     const x=50+r*Math.sin(ang*Math.PI/180), y=50-r*Math.cos(ang*Math.PI/180);
     return '<i class="blip" data-ch="'+o.k+'" style="left:'+x.toFixed(1)+'%;top:'+y.toFixed(1)+'%;animation-delay:'+(ang/360*5.5).toFixed(2)+'s"'+(o.k?' onclick="switchTab(\''+o.k+'\')" title="Открыть канал"':'')+'></i>';
   }).join('');
+}
+/* тикер перехвата: в простое — протоколы, после поиска — реальные строки выдачи */
+function renderTicker(){
+  const el=document.getElementById('tk'); if(!el) return;
+  let items;
+  if(_cards.length){
+    items=_cards.slice(0,12).map(c=>c.ttl+' → '+(c.str.length>72?c.str.slice(0,72)+'…':c.str));
+  } else {
+    items=['site:linkedin.com/in','inurl:t.me','POSITION:(…) AND KEYWORDS:(…)','intitle:профиль','boolean · x-ray · нативный поиск','130 ролей · 30+ каналов','site:github.com type:user','-вакансия -hiring -резюме','filetype:pdf (speaker OR доклад)'];
+  }
+  const half=items.map(s=>'<span>'+esc(s)+'</span>').join('');
+  el.innerHTML=half+half; /* дубль для бесшовной петли */
+  el.style.setProperty('--tkd', Math.max(40, items.join('').length*0.55)+'s');
 }
 function blipHi(k,on){ document.querySelectorAll('.blip[data-ch="'+k+'"]').forEach(b=>b.classList.toggle('hi',!!on)); }
 /* расшифровка перехвата: названия источников декодируются из шифра */
@@ -1316,6 +1343,7 @@ async function aiVariant(el, mode){
   },9);
 })();
 renderBlips();
+renderTicker();
 
 /* часы сеанса в верхней ленте */
 (function(){
