@@ -76,7 +76,7 @@ a{color:inherit}
 /* ── герой: консоль + радар ── */
 .hero{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:48px;
   max-width:1160px;margin:0 auto;padding:58px 20px 6px;align-items:start}
-.logo{font:700 clamp(38px,6.4vw,60px)/1 var(--f-disp);letter-spacing:.015em;margin:0;color:var(--txt)}
+.logo{font:700 clamp(38px,6.4vw,60px)/1 var(--f-disp);letter-spacing:.015em;margin:0;color:var(--txt);cursor:pointer;user-select:none;width:fit-content}
 .logo .lx{color:var(--amber)}
 .logo .cur{display:inline-block;width:.14em;height:.78em;background:var(--red);margin-left:.1em;
   vertical-align:-.04em;animation:blink 1.15s steps(2) infinite}
@@ -244,6 +244,8 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
   border-radius:8px;padding:8px 15px;font:400 11.5px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;
   cursor:pointer;transition:color .2s var(--ease), border-color .2s var(--ease)}
 .freset:hover{color:var(--txt);border-color:var(--line2)}
+.fbtns{display:flex;gap:10px;flex-wrap:wrap}
+.freset.hard:hover{color:#E2705A;border-color:rgba(224,71,47,.55)}
 
 /* ── досье цели ── */
 .wrap{position:relative;z-index:1;max-width:1160px;margin:0 auto;padding:10px 20px 56px}
@@ -372,6 +374,11 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
 /* ── колода: тулбар, рейл каналов, вкладки ── */
 .toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:28px 0 14px}
 .tl-lab{font:500 10.5px/1 var(--f-mono);letter-spacing:.24em;text-transform:uppercase;color:#6E6753}
+.tl-r{display:inline-flex;align-items:center;gap:14px;flex-wrap:wrap}
+.tl-x{background:transparent;border:1px dashed var(--line2);border-radius:8px;cursor:pointer;
+  font:500 10.5px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:9px 13px;
+  transition:color .18s var(--ease), border-color .18s var(--ease)}
+.tl-x:hover{color:#E2705A;border-color:rgba(224,71,47,.55)}
 .sort{display:inline-flex;align-items:center;gap:9px;font:500 10px/1 var(--f-mono);letter-spacing:.18em;
   text-transform:uppercase;color:#6E6753}
 .deck{display:grid;grid-template-columns:222px minmax(0,1fr);gap:22px;align-items:start;animation:deckIn .6s var(--ease) backwards}
@@ -471,7 +478,7 @@ body.working .radar{width:238px;height:238px}
 
 <header class="hero">
   <div class="hero-l">
-    <h1 class="logo"><span class="lx">P</span>ELENG<span class="cur" aria-hidden="true"></span></h1>
+    <h1 class="logo" onclick="resetAll()" title="На главный экран"><span class="lx">P</span>ELENG<span class="cur" aria-hidden="true"></span></h1>
     <div class="fold"><div class="fold-in"><p class="tag">Опиши цель — роль, стек, город. Peleng соберёт готовые поисковые запросы по LinkedIn, hh.ru, GitHub, Telegram, VK, TenChat, конференциям и профильным площадкам. Для IT и non-IT ролей.</p></div></div>
 
     <div class="console">
@@ -1169,8 +1176,9 @@ function mainHTML(){
 function renderDeck(){
   document.getElementById('results').innerHTML=
     '<div class="toolbar"><span class="tl-lab">Перехват // результаты</span>'+
-      '<div class="sort"><span>сортировка</span><div class="seg sortseg">'+
-        [["prio","приоритет"],["narrow","точные"],["az","А–Я"]].map(o=>'<button data-v="'+o[0]+'"'+(UI.sort===o[0]?' class="on"':'')+' onclick="setSort(\''+o[0]+'\')">'+o[1]+'</button>').join('')+'</div></div></div>'+
+      '<div class="tl-r"><div class="sort"><span>сортировка</span><div class="seg sortseg">'+
+        [["prio","приоритет"],["narrow","точные"],["az","А–Я"]].map(o=>'<button data-v="'+o[0]+'"'+(UI.sort===o[0]?' class="on"':'')+' onclick="setSort(\''+o[0]+'\')">'+o[1]+'</button>').join('')+'</div></div>'+
+      '<button class="tl-x" onclick="resetAll()" title="Очистить всё и вернуться на главный экран">✕ завершить операцию</button></div></div>'+
     '<div class="deck"><nav class="rail" id="rail">'+railHTML()+'</nav>'+
     '<div class="deck-main" id="deckMain">'+mainHTML()+'</div></div>';
 }
@@ -1460,7 +1468,8 @@ function initFilters(){
     '<div class="frow"><label>Стек / инструменты</label><div class="techchips tall">'+tools.map(chip).join('')+'</div></div>'+
     '</div></div>'+
     '<div class="aihint">Фильтр компаний применяется к X-Ray запросам (Google / Yandex). Чипы стека в досье: клик — желательно → <b>обязательно</b> → исключить; кнопка «⇄ любой брокер» расширяет технологию до всей группы аналогов.</div>'+
-    '<button class="freset" onclick="resetFilters()">Сбросить фильтры</button>';
+    '<div class="fbtns"><button class="freset" onclick="resetFilters()">Сбросить фильтры</button>'+
+    '<button class="freset hard" onclick="resetAll()">✕ Сбросить всё и вернуться</button></div>';
   const fi=document.getElementById('fInc'), fe=document.getElementById('fExc');
   if(fi) fi.value=F.inc.join(', ');
   if(fe) fe.value=F.exc.join(', ');
@@ -1477,9 +1486,30 @@ function onRole(v){ F.role=v; updateFiltCnt(); run(); }
 function onCity(v){ F.city=v; updateFiltCnt(); run(); }
 function onTech(el){ const t=el.dataset.t; if(F.tech.has(t)){F.tech.delete(t);el.classList.remove('on');}else{F.tech.add(t);F.techOff.delete(t);el.classList.add('on');} updateFiltCnt(); run(); }
 function toggleFilters(){ document.getElementById('filters').classList.toggle('open'); }
-function resetFilters(){
+function clearF(){
   F.cat='auto'; F.grade=''; F.role=''; F.city=''; F.tech.clear(); F.techOff.clear(); F.inc=[]; F.exc=[]; F.tmode={}; F.tconc={}; F.ct=false; const ct0=document.getElementById('ctOn'); if(ct0) ct0.checked=false;
+}
+function resetFilters(){
+  clearF();
   initFilters(); document.getElementById('filters').classList.add('open'); updateFiltCnt(); run();
+}
+/* полный сброс: чистое состояние + возврат на главный экран */
+const EMPTY_HOME='Задай цель и нажми «Выследить». Соберу готовые запросы по hh.ru, Habr, LinkedIn, GitHub, Telegram, VK, TenChat, конференциям и профильным каналам — под IT и non-IT.';
+function resetAll(){
+  const q=document.getElementById('q'); if(q) q.value='';
+  clearF();
+  if(UI.qmode!=='goal') setQmode('goal');
+  initFilters(); updateFiltCnt();
+  document.getElementById('filters').classList.remove('open');
+  document.body.classList.remove('working');
+  const rd=document.querySelector('.radar'); if(rd) rd.classList.remove('live','acquire');
+  _cards=[]; renderBlips(); renderTicker();
+  const rc=document.getElementById('rCore'); if(rc) rc.textContent='';
+  const rl=document.getElementById('rCoreLbl'); if(rl) rl.textContent='сигналов';
+  document.getElementById('parsed').style.display='none';
+  document.getElementById('results').innerHTML='<div class="empty">'+EMPTY_HOME+'</div>';
+  try{ history.replaceState(null,'',location.pathname); }catch(_){}
+  window.scrollTo({top:0, behavior:MOTION_OK?'smooth':'auto'});
 }
 function updateFiltCnt(){
   let n=0; if(F.cat!=='auto')n++; if(F.grade)n++; if(F.role)n++; if(F.city)n++; n+=F.tech.size;
