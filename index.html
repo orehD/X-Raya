@@ -114,12 +114,31 @@ button.go:hover .go-ic{transform:translateX(3px)}
 @keyframes sweep{to{transform:rotate(360deg)}}
 .radar::after{content:"";position:absolute;left:50%;top:50%;width:5px;height:5px;margin:-2.5px;
   border-radius:50%;background:var(--amber)}
-.radar .blip{position:absolute;width:6px;height:6px;border-radius:50%;background:var(--amber-hi);opacity:0;
-  animation:blip 5.5s ease-out infinite}
-.radar .b1{left:64%;top:30%}
-.radar .b2{left:30%;top:58%;animation-delay:1.7s}
-.radar .b3{left:56%;top:72%;animation-delay:3.4s;background:var(--red-hi)}
-@keyframes blip{0%,4%{opacity:0;transform:scale(.4)}9%{opacity:1;transform:scale(1)}38%{opacity:.18}60%,100%{opacity:0}}
+.r-ticks{position:absolute;inset:5px;border-radius:50%;pointer-events:none;
+  background:repeating-conic-gradient(rgba(242,169,59,.4) 0 .55deg, transparent .55deg 30deg);
+  -webkit-mask:radial-gradient(circle, transparent 0 84%, #000 85% 97%, transparent 98%);
+  mask:radial-gradient(circle, transparent 0 84%, #000 85% 97%, transparent 98%)}
+.radar .blip{position:absolute;width:7px;height:7px;margin:-3.5px;border-radius:50%;background:var(--amber-hi);
+  opacity:.12;pointer-events:auto;cursor:pointer;animation:blipFlash 5.5s linear infinite;
+  transition:transform .2s var(--ease)}
+@keyframes blipFlash{0%{opacity:.14}2.5%{opacity:1;box-shadow:0 0 12px 2px rgba(255,201,107,.55)}30%{opacity:.3;box-shadow:none}100%{opacity:.14}}
+.radar .blip.hi{transform:scale(1.9);opacity:1;background:var(--amber-hi);box-shadow:0 0 14px 3px rgba(255,201,107,.6);animation-play-state:paused}
+.r-core{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);text-align:center;display:none;pointer-events:none}
+.r-core b{display:block;font:700 26px var(--f-disp);color:var(--amber-hi);text-shadow:0 0 18px rgba(242,169,59,.45)}
+.r-core span{display:block;margin-top:2px;font:500 8.5px var(--f-mono);letter-spacing:.34em;text-transform:uppercase;color:#6E6753}
+.radar.live .r-core{display:block}
+.radar.live::after{display:none}
+body.glitching .logo{animation:glitch .4s steps(3,end) 1}
+@keyframes glitch{
+  0%{text-shadow:2px 0 rgba(224,71,47,.8), -2px 0 rgba(255,201,107,.55);transform:translate(0)}
+  30%{text-shadow:-3px 0 rgba(224,71,47,.8), 3px 0 rgba(255,201,107,.55);transform:translate(1px,-1px) skewX(-1.5deg)}
+  60%{text-shadow:2px 0 rgba(224,71,47,.8), -2px 0 rgba(255,201,107,.55);transform:translate(-1px,1px)}
+  100%{text-shadow:none;transform:none}}
+#boot{position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:opacity .45s var(--ease)}
+#boot.out{opacity:0;pointer-events:none}
+#boot pre{font:400 13px/2 var(--f-mono);color:var(--muted);margin:0;min-width:min(360px,84vw);white-space:pre-wrap}
+#boot pre::after{content:"▍";color:var(--red);animation:blink 1s steps(2) infinite}
 .radar .r-label{position:absolute;left:50%;bottom:13px;transform:translateX(-50%);
   font:500 9.5px/1 var(--f-mono);letter-spacing:.4em;text-transform:uppercase;color:#6E6753}
 
@@ -362,6 +381,9 @@ body.working .radar{width:238px;height:238px}
   .radar{transition:none}
   .fold,.hero{transition:none}
   .radar::before{animation:none;opacity:.25}
+  .radar .blip{animation:none;opacity:.4}
+  body.glitching .logo{animation:none}
+  #boot{display:none}
   .radar .blip{animation:none;opacity:.5}
   .topbar .rec,.logo .cur,.empty::after{animation:none}
   .card{opacity:1;transform:none;transition:border-color .2s, box-shadow .2s}
@@ -371,6 +393,7 @@ body.working .radar{width:238px;height:238px}
 </style>
 </head>
 <body>
+<div id="boot"><pre></pre></div>
 <div class="grain" aria-hidden="true"></div>
 <div class="topbar">
   <span class="tb-left"><i class="rec"></i>Сеанс активен</span>
@@ -409,8 +432,10 @@ body.working .radar{width:238px;height:238px}
     <div class="history" id="hist" style="display:none"></div>
   </div>
 
-  <div class="radar" aria-hidden="true">
-    <i class="blip b1"></i><i class="blip b2"></i><i class="blip b3"></i>
+  <div class="radar">
+    <div class="r-ticks" aria-hidden="true"></div>
+    <div id="blips" aria-hidden="true"></div>
+    <div class="r-core"><b id="rCore"></b><span id="rCoreLbl">сигналов</span></div>
     <div class="r-label">peleng</div>
   </div>
 </header>
@@ -834,7 +859,9 @@ async function run(){
     catch(e){ p = currentState(); toast('AI недоступен: '+e.message+' — показываю обычный результат'); }
   } else { p = currentState(); }
   _state = p;
-  if(!p.active){ document.body.classList.remove('working'); res.innerHTML='<div class="empty">Задай цель или выбери параметры операции.</div>'; pr.style.display='none'; return; }
+  if(!p.active){ document.body.classList.remove('working');
+    const rd0=document.querySelector('.radar'); if(rd0) rd0.classList.remove('live');
+    _cards=[]; renderBlips(); res.innerHTML='<div class="empty">Задай цель или выбери параметры операции.</div>'; pr.style.display='none'; return; }
   if(!p.resolved && raw && AIFB_ON && !AI_ON){
     res.innerHTML='<div class="empty">Анализирую цель…</div>'; pr.style.display='none';
     try{
@@ -876,6 +903,12 @@ async function run(){
   renderDeck();
   acquirePulse();
   countUp(pr);
+  renderBlips();
+  const rc=document.getElementById('rCore'); if(rc) rc.textContent=cards.length;
+  const rl=document.getElementById('rCoreLbl'); if(rl){ const n=cards.length%100, n1=n%10;
+    rl.textContent=(n>10&&n<20)?'сигналов':(n1===1?'сигнал':(n1>1&&n1<5?'сигнала':'сигналов')); }
+  const rd=document.querySelector('.radar'); if(rd) rd.classList.add('live');
+  decryptAll();
   if(raw){
     saveHist(raw);
     try{
@@ -966,7 +999,7 @@ function railHTML(){
     items.push([g.k, chCode(g)+' · '+g.t, n]);
   }
   if(!items.find(x=>x[0]===UI.tab)) UI.tab='all';
-  return items.map(x=>'<button class="'+(UI.tab===x[0]?'on':'')+'" onclick="switchTab(\''+x[0]+'\')"><span>'+x[1]+'</span><b>'+x[2]+'</b></button>').join('');
+  return items.map(x=>'<button class="'+(UI.tab===x[0]?'on':'')+'" onclick="switchTab(\''+x[0]+'\')" onmouseenter="blipHi(\''+x[0]+'\',1)" onmouseleave="blipHi(\''+x[0]+'\',0)"><span>'+x[1]+'</span><b>'+x[2]+'</b></button>').join('');
 }
 function mainHTML(){
   if(UI.tab==='fav'){
@@ -1013,6 +1046,37 @@ function toggleFav(el){
 function acquirePulse(){
   const r=document.querySelector('.radar'); if(!r||!MOTION_OK) return;
   r.classList.add('acquire'); setTimeout(()=>r.classList.remove('acquire'),1500);
+  document.body.classList.add('glitching'); setTimeout(()=>document.body.classList.remove('glitching'),450);
+}
+/* блипы радара = каналы выдачи; вспыхивают под лучом (задержка = азимут/360 × период) */
+function renderBlips(){
+  const box=document.getElementById('blips'); if(!box) return;
+  const chs=_cards.length ? GROUPS.filter(g=>_cards.some(c=>c.grp===g.k)) : [];
+  const items=chs.length ? chs.map((g,i)=>({k:g.k,i})) : [{k:'',i:0},{k:'',i:1},{k:'',i:2}];
+  box.innerHTML=items.map(o=>{
+    const ang=(o.i*137.5+24)%360, r=24+((o.i*17)%20);
+    const x=50+r*Math.sin(ang*Math.PI/180), y=50-r*Math.cos(ang*Math.PI/180);
+    return '<i class="blip" data-ch="'+o.k+'" style="left:'+x.toFixed(1)+'%;top:'+y.toFixed(1)+'%;animation-delay:'+(ang/360*5.5).toFixed(2)+'s"'+(o.k?' onclick="switchTab(\''+o.k+'\')" title="Открыть канал"':'')+'></i>';
+  }).join('');
+}
+function blipHi(k,on){ document.querySelectorAll('.blip[data-ch="'+k+'"]').forEach(b=>b.classList.toggle('hi',!!on)); }
+/* расшифровка перехвата: названия источников декодируются из шифра */
+const DCHARS='ABCDEFGHKMNPRSTUVXZ0123456789#$%&';
+function decryptEl(el,dur){
+  const fin=el.textContent; if(!fin) return;
+  const t0=performance.now();
+  const tick=t=>{
+    const k=Math.min((t-t0)/dur,1), n=Math.floor(fin.length*k);
+    let s=fin.slice(0,n);
+    for(let i=n;i<fin.length;i++) s+= fin[i]===' '?' ':DCHARS[(Math.random()*DCHARS.length)|0];
+    el.textContent=s;
+    if(k<1) requestAnimationFrame(tick); else el.textContent=fin;
+  };
+  requestAnimationFrame(tick);
+}
+function decryptAll(){
+  if(!MOTION_OK) return;
+  document.querySelectorAll('#deckMain .card .ttl').forEach((el,i)=>{ if(i<18) setTimeout(()=>decryptEl(el,360), i*26); });
 }
 function countUp(scope){
   scope.querySelectorAll('.cnt').forEach(el=>{
@@ -1233,6 +1297,25 @@ async function aiVariant(el, mode){
     if(q){ document.getElementById('q').value=q; run(); }
   }catch(_){}
 })();
+
+/* boot-секвенция (раз в сессию, скип по клику) */
+(function(){
+  const el=document.getElementById('boot'); if(!el) return;
+  let seen=null; try{ seen=sessionStorage.getItem('peleng_boot'); }catch(_){}
+  if(seen==='1' || !MOTION_OK){ el.remove(); return; }
+  const lines=['> PELENG // сорсинг-разведка','> инициализация каналов… 30+ OK','> словарь ролей… 130 OK','> протоколы: boolean · x-ray · native OK','> система готова. задай цель'];
+  const pre=el.querySelector('pre'); let li=0, ci=0, done=false;
+  function fin(){ if(done) return; done=true; try{ sessionStorage.setItem('peleng_boot','1'); }catch(_){}
+    el.classList.add('out'); setTimeout(()=>el.remove(),500); }
+  el.addEventListener('click',fin);
+  const iv=setInterval(()=>{
+    if(li>=lines.length){ clearInterval(iv); setTimeout(fin,500); return; }
+    ci++;
+    if(ci>=lines[li].length){ pre.textContent=lines.slice(0,li+1).join('\n'); li++; ci=0; }
+    else pre.textContent=lines.slice(0,li).join('\n')+(li?'\n':'')+lines[li].slice(0,ci);
+  },9);
+})();
+renderBlips();
 
 /* часы сеанса в верхней ленте */
 (function(){
