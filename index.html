@@ -24,6 +24,7 @@
 @font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:600;font-display:swap;src:url('/fonts/JetBrainsMono-600-latin.woff2') format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
 
 :root{
+  color-scheme:dark;
   --bg:#0B0A07; --panel:#14110B; --panel2:#0E0C07; --ink:#080705;
   --line:#282213; --line2:#3B3219;
   --amber:#F2A93B; --amber-hi:#FFC96B; --amber-dim:rgba(242,169,59,.14); --amber-ghost:rgba(242,169,59,.05);
@@ -34,6 +35,11 @@
   --c:var(--amber); --cs:var(--amber-dim);
 }
 *{box-sizing:border-box}
+html{scrollbar-color:var(--line2) var(--bg)}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--line2);border-radius:5px;border:2px solid var(--bg)}
+::-webkit-scrollbar-thumb:hover{background:#4A3F22}
 html{scroll-behavior:smooth;background:var(--bg)}
 body{margin:0;color:var(--txt);font-family:var(--f-body);font-size:15px;line-height:1.55;
   background:var(--bg)}
@@ -152,12 +158,19 @@ select.fsel{appearance:none;-webkit-appearance:none;color:var(--txt);border:1px 
 select.fsel:hover{border-color:var(--line2)}
 select.fsel:focus{outline:none;border-color:rgba(242,169,59,.5)}
 select.fsel option,select.fsel optgroup{background:var(--panel);color:var(--txt);font-style:normal}
-.techchips{display:flex;flex-wrap:wrap;gap:7px;max-height:120px;overflow:auto;flex:1;min-width:240px}
+.techchips{display:flex;flex-wrap:wrap;gap:7px;max-height:120px;overflow:auto;flex:1;min-width:240px;padding-right:6px;scrollbar-width:thin;scrollbar-color:var(--line2) transparent}
 .tchip{cursor:pointer;font:400 11.5px var(--f-mono);color:var(--muted);background:var(--panel2);
   border:1px solid var(--line);border-radius:6px;padding:5px 10px;user-select:none;
   transition:color .15s var(--ease), border-color .15s var(--ease), background-color .15s var(--ease)}
 .tchip:hover{color:var(--txt);border-color:var(--line2)}
 .tchip.on{background:var(--amber-dim);color:var(--amber-hi);border-color:rgba(242,169,59,.45)}
+input.aiin{flex:1;min-width:260px;background:var(--panel2);color:var(--txt);border:1px solid var(--line);
+  border-radius:8px;padding:8px 12px;font:400 12.5px var(--f-mono);
+  transition:border-color .2s var(--ease)}
+input.aiin::placeholder{color:#6E6753}
+input.aiin:hover{border-color:var(--line2)}
+input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
+.aihint{font:400 11.5px var(--f-body);color:#6E6753;line-height:1.5}
 .freset{align-self:flex-start;background:transparent;border:1px solid var(--line);color:var(--muted);
   border-radius:8px;padding:8px 15px;font:400 11.5px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;
   cursor:pointer;transition:color .2s var(--ease), border-color .2s var(--ease)}
@@ -224,6 +237,9 @@ select.fsel option,select.fsel optgroup{background:var(--panel);color:var(--txt)
 .card code{display:block;flex-shrink:0;background:var(--ink);border:1px solid var(--line);border-radius:8px;
   padding:10px 12px;font:400 11.5px/1.55 var(--f-mono);color:var(--data);white-space:pre-wrap;
   word-break:break-word;max-height:140px;overflow:auto}
+.card code .op{color:var(--amber)}
+.card code .bool{color:var(--amber-hi);font-weight:600}
+.card code .neg{color:#E2705A}
 .card code::-webkit-scrollbar{width:8px}
 .card code::-webkit-scrollbar-thumb{background:var(--line2);border-radius:4px}
 .card .row{display:flex;gap:8px;margin-top:auto;padding-top:12px}
@@ -241,6 +257,35 @@ select.fsel option,select.fsel optgroup{background:var(--panel);color:var(--txt)
   transition:color .18s var(--ease), border-color .18s var(--ease)}
 .vbtn:hover{color:var(--amber);border-color:rgba(242,169,59,.5)}
 .vbtn.busy{opacity:.45;pointer-events:none}
+
+/* ── контролы досье ── */
+.df .dv{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-height:24px}
+.df .dv>b{font:600 14px var(--f-mono);color:var(--txt)}
+.dsel{appearance:none;-webkit-appearance:none;background:transparent;border:none;border-bottom:1px dashed var(--line2);
+  color:var(--txt);font:600 14px var(--f-mono);padding:1px 16px 2px 0;cursor:pointer;max-width:240px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5l3.5 3.5 3.5-3.5' fill='none' stroke='%23F2A93B' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 1px center;
+  transition:border-color .2s var(--ease), color .2s var(--ease)}
+.dsel:hover{border-color:var(--amber)}
+.dsel:focus{outline:none;border-bottom-style:solid;border-color:var(--amber)}
+.df.hot .dsel{color:var(--amber-hi)}
+.dchip{display:inline-flex;align-items:center;gap:5px;font:500 12.5px var(--f-mono);font-style:normal;color:var(--txt);
+  background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:3px 8px}
+.dchip b{cursor:pointer;color:#6E6753;font-weight:600;padding:0 1px;transition:color .15s var(--ease)}
+.dchip b:hover{color:#E2705A}
+.dchip.plus{cursor:pointer;color:#6E6753;transition:color .15s var(--ease), border-color .15s var(--ease)}
+.dchip.plus:hover{color:var(--amber);border-color:rgba(242,169,59,.5)}
+
+/* ── история целей ── */
+.history{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.history .lbl{color:#6E6753;font:500 10.5px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;margin-right:4px}
+.history a{cursor:pointer;font:400 12px var(--f-mono);color:var(--muted);background:var(--panel);
+  border:1px solid var(--line);padding:6px 11px;border-radius:7px;max-width:320px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap;transition:color .2s var(--ease), border-color .2s var(--ease)}
+.history a:hover{color:var(--amber);border-color:rgba(242,169,59,.5)}
+.hclear{cursor:pointer;color:#6E6753;font:400 13px var(--f-mono);border:1px solid var(--line);
+  border-radius:7px;padding:5px 10px;transition:color .2s var(--ease), border-color .2s var(--ease)}
+.hclear:hover{color:#E2705A;border-color:#E2705A}
 
 /* ── колода: тулбар, рейл каналов, вкладки ── */
 .toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:28px 0 14px}
@@ -361,6 +406,7 @@ body.working .radar{width:238px;height:238px}
       <label class="aichip"><input type="checkbox" id="aiOn" onchange="toggleAIon(this.checked)"> AI-анализ цели</label>
     </div>
     <div class="filters" id="filters"></div>
+    <div class="history" id="hist" style="display:none"></div>
   </div>
 
   <div class="radar" aria-hidden="true">
@@ -799,17 +845,30 @@ async function run(){
   }
   if(!p.resolved){ res.innerHTML='<div class="empty">Не удалось распознать роль или специализацию.<br>Переформулируй запрос (например «backend-разработчик на Go» или «финансовый аналитик») либо выбери специализацию в фильтрах.</div>'; pr.style.display='none'; return; }
   const cards = build(p);
+  const xt = companyTerms();
+  if(xt) for(const c of cards){
+    const isG=/google\.com\/search/.test(c.url), isY=/yandex\.ru\/search/.test(c.url);
+    if(isG||isY){ c.str+=xt; c.url=isG?G(c.str):Y(c.str); if(c.url2) c.url2=Y(c.str); }
+  }
   const nGroups = new Set(cards.map(c=>c.grp)).size;
+  /* досье редактируемое: контролы пишут в параметры операции (F) и перезапускают поиск */
+  const dsel=(opts,cur,fn)=>'<select class="dsel" onchange="'+fn+'(this.value)">'+
+    opts.map(o=>'<option value="'+esc(o[0]).replace(/"/g,'&quot;')+'"'+(o[0]===cur?' selected':'')+'>'+esc(o[1])+'</option>').join('')+'</select>';
+  const roleOpts=[['','авто']].concat(FILTER_IT.map(k=>[k,ROLE_LABELS[k]||k]), FILTER_NONIT.map(k=>[k,ROLE_LABELS[k]||k]));
+  if(!roleOpts.find(o=>o[0]===p.role.key)) roleOpts.splice(1,0,[p.role.key,p.role.key]);
+  const techChips = p.techs.map(t=>'<i class="dchip">'+esc(t.c)+
+      '<b onclick="dTechOff(\''+t.c.replace(/'/g,"\\'")+'\')" title="Убрать из поиска">×</b></i>').join('')+
+    '<i class="dchip plus" onclick="openFiltersTech()" title="Добавить технологии">+</i>';
   const df=[];
-  df.push(['Цель', esc(p.role.key), 1]);
-  df.push(['Категория', p.role.cat==='it'?'IT':'non-IT', 0]);
-  if(p.grade) df.push(['Грейд', esc(p.grade.key), 0]);
-  if(p.techs.length) df.push(['Стек', esc(p.techs.map(x=>x.c).join(' · ')), 0]);
-  if(p.city) df.push(['Локация', esc(p.city.ru), 0]);
+  df.push(['Цель', dsel(roleOpts, F.role||p.role.key, 'dRole'), 1]);
+  df.push(['Категория', '<b>'+(p.role.cat==='it'?'IT':'non-IT')+'</b>', 0]);
+  df.push(['Грейд', dsel([['','любой'],['Junior','Junior'],['Middle','Middle'],['Senior','Senior'],['Lead','Lead']], F.grade||(p.grade?p.grade.key:''), 'dGrade'), 0]);
+  df.push(['Стек', techChips, 0]);
+  df.push(['Локация', dsel([['','любая']].concat(CITIES.map(c=>[c.ru,c.ru])), F.city||(p.city?p.city.ru:''), 'dCity'), 0]);
   pr.innerHTML =
     '<i class="ck tl"></i><i class="ck tr"></i><i class="ck bl"></i><i class="ck br"></i>'+
     '<div class="dhead"><span>Профиль цели</span><span class="dmeta">каналов: <b class="cnt" data-v="'+nGroups+'">0</b> · запросов: <b class="cnt" data-v="'+cards.length+'">0</b></span></div>'+
-    '<div class="dfields">'+df.map((f,i)=>'<span class="df'+(f[2]?' hot':'')+'" style="--d:'+(i*70)+'ms"><label>'+f[0]+'</label><b>'+f[1]+'</b></span>').join('')+'</div>';
+    '<div class="dfields">'+df.map((f,i)=>'<span class="df'+(f[2]?' hot':'')+'" style="--d:'+(i*70)+'ms"><label>'+f[0]+'</label><span class="dv">'+f[1]+'</span></span>').join('')+'</div>';
   pr.style.display='flex';
 
   document.body.classList.add('working');
@@ -817,8 +876,37 @@ async function run(){
   renderDeck();
   acquirePulse();
   countUp(pr);
+  if(raw){
+    saveHist(raw);
+    try{
+      const sp=new URLSearchParams(); sp.set('q',raw);
+      if(F.inc.length) sp.set('inc',F.inc.join(','));
+      if(F.exc.length) sp.set('exc',F.exc.join(','));
+      history.replaceState(null,'','?'+sp.toString());
+    }catch(_){}
+  }
   if(MOTION_OK) pr.scrollIntoView({behavior:'smooth', block:'start'});
 }
+
+/* ── история целей ── */
+function saveHist(q){
+  try{
+    let a=JSON.parse(lsGet('peleng_hist')||'[]');
+    const n=q.trim();
+    a=a.filter(x=>x.toLowerCase()!==n.toLowerCase()); a.unshift(n); a=a.slice(0,10);
+    lsSet('peleng_hist', JSON.stringify(a)); renderHist();
+  }catch(_){}
+}
+function renderHist(){
+  const el=document.getElementById('hist'); if(!el) return;
+  let a=[]; try{ a=JSON.parse(lsGet('peleng_hist')||'[]'); }catch(_){}
+  if(!a.length){ el.style.display='none'; return; }
+  el.style.display='flex';
+  el.innerHTML='<span class="lbl">Недавние цели</span>'+
+    a.map(q=>'<a onclick="ex(this.textContent)">'+esc(q)+'</a>').join('')+
+    '<span class="hclear" onclick="histClear()" title="Очистить историю">×</span>';
+}
+function histClear(){ lsSet('peleng_hist','[]'); renderHist(); }
 
 /* ── колода результатов: рейл каналов + вкладки + сортировка + избранное ── */
 let _cards=[];
@@ -836,6 +924,14 @@ function sortCards(arr){
 function favCount(){ return _cards.filter(c=>FAVS.has(c.ttl)).length; }
 function chCode(g){ return 'CH-'+String(GROUPS.indexOf(g)+1).padStart(2,'0'); }
 
+/* подсветка синтаксиса поисковых строк */
+function hiQ(s){
+  let h=esc(s);
+  h=h.replace(/(^|[\s(])(site:|inurl:|intitle:|filetype:|language:|location:|type:|followers:|POSITION:|KEYWORDS:)/g,'$1<span class="op">$2</span>');
+  h=h.replace(/\b(OR|AND|NOT)\b/g,'<span class="bool">$1</span>');
+  h=h.replace(/(^|\s)(-&quot;.*?&quot;|-[^\s)]+)/g,'$1<span class="neg">$2</span>');
+  return h;
+}
 function cardHTML(c, i){
   const eng = /google\.com\/search/.test(c.url)?'google':(/yandex\.ru\/search/.test(c.url)?'yandex':'');
   const vrow = eng ? '<div class="row vrow">'+
@@ -848,7 +944,7 @@ function cardHTML(c, i){
     '<span class="fav'+(FAVS.has(c.ttl)?' on':'')+'" onclick="toggleFav(this)" data-t="'+t+'" title="В избранное">★</span>'+
     '<div class="ttl">'+c.ttl+'</div>'+
     '<div class="desc">'+c.desc+'</div>'+
-    '<code>'+esc(c.str)+'</code>'+
+    '<code>'+hiQ(c.str)+'</code>'+
     '<div class="row">'+
       '<a class="btn open" href="'+c.url.replace(/"/g,'&quot;')+'" target="_blank" rel="noopener">Открыть</a>'+
       '<span class="btn copy" onclick="cp(this)" data-s="'+esc(c.str).replace(/"/g,'&quot;')+'">Копировать</span>'+
@@ -892,12 +988,8 @@ function mainHTML(){
 function renderDeck(){
   document.getElementById('results').innerHTML=
     '<div class="toolbar"><span class="tl-lab">Перехват // результаты</span>'+
-      '<label class="sort">сортировка'+
-        '<select class="fsel sm" onchange="setSort(this.value)">'+
-          '<option value="prio"'+(UI.sort==='prio'?' selected':'')+'>приоритет</option>'+
-          '<option value="narrow"'+(UI.sort==='narrow'?' selected':'')+'>сначала точные</option>'+
-          '<option value="az"'+(UI.sort==='az'?' selected':'')+'>А–Я</option>'+
-        '</select></label></div>'+
+      '<div class="sort"><span>сортировка</span><div class="seg sortseg">'+
+        [["prio","приоритет"],["narrow","точные"],["az","А–Я"]].map(o=>'<button data-v="'+o[0]+'"'+(UI.sort===o[0]?' class="on"':'')+' onclick="setSort(\''+o[0]+'\')">'+o[1]+'</button>').join('')+'</div></div></div>'+
     '<div class="deck"><nav class="rail" id="rail">'+railHTML()+'</nav>'+
     '<div class="deck-main" id="deckMain">'+mainHTML()+'</div></div>';
 }
@@ -909,7 +1001,7 @@ function repaintMain(){
   setTimeout(()=>{ m.innerHTML=mainHTML(); requestAnimationFrame(()=>m.classList.remove('sw')); },130);
 }
 function switchTab(k){ if(UI.tab===k) return; UI.tab=k; refreshRail(); repaintMain(); }
-function setSort(v){ UI.sort=v; lsSet('peleng_sort',v); repaintMain(); }
+function setSort(v){ UI.sort=v; lsSet('peleng_sort',v); document.querySelectorAll('.sortseg button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); repaintMain(); }
 function toggleFav(el){
   const t=el.getAttribute('data-t').replace(/&quot;/g,'"');
   if(FAVS.has(t)) FAVS.delete(t); else FAVS.add(t);
@@ -954,7 +1046,22 @@ function copyGroup(k){
 }
 
 /* ===================== ФИЛЬТРЫ ===================== */
-const F = {cat:'auto', grade:'', role:'', city:'', tech:new Set()};
+const F = {cat:'auto', grade:'', role:'', city:'', tech:new Set(), inc:[], exc:[]};
+/* компании: inc — искать только в этих, exc — исключить. Применяется к X-Ray (Google/Yandex) запросам. */
+function companyTerms(){
+  let s='';
+  if(F.inc.length) s+=' ('+F.inc.map(x=>'"'+x+'"').join(' OR ')+')';
+  if(F.exc.length) s+=' '+F.exc.map(x=>'-"'+x+'"').join(' ');
+  return s;
+}
+function parseCSV(id){ const el=document.getElementById(id); return el?el.value.split(',').map(s=>s.trim()).filter(Boolean):[]; }
+function onComp(){ F.inc=parseCSV('fInc'); F.exc=parseCSV('fExc'); updateFiltCnt(); run(); }
+F.techOff=new Set(); /* технологии, убранные из досье крестиком */
+function dRole(v){ F.role=v; initFilters(); updateFiltCnt(); run(); }
+function dGrade(v){ F.grade=v; initFilters(); updateFiltCnt(); run(); }
+function dCity(v){ F.city=v; initFilters(); updateFiltCnt(); run(); }
+function dTechOff(n){ F.techOff.add(n); F.tech.delete(n); initFilters(); updateFiltCnt(); run(); }
+function openFiltersTech(){ document.getElementById('filters').classList.add('open'); }
 const ROLE_LABELS = {CTO:'CTO / Технический директор',CIO:'CIO / ИТ-директор',CISO:'CISO / Директор по ИБ',CPO:'CPO / Директор по продукту',CDO:'CDO / Директор по данным',TeamLead:'Team Lead / Тимлид',Frontend:'Frontend',Backend:'Backend',Fullstack:'Fullstack',Mobile:'Mobile',DevOps:'DevOps / SRE',Data:'Data / ML',QA:'QA',Security:'Security / ИБ',DBA:'DBA',SysAdmin:'Сисадмин',GameDev:'GameDev',Embedded:'Embedded',Architect:'Архитектор',Cloud:'Cloud Engineer',Network:'Сетевой инженер',ScrumMaster:'Scrum Master / Agile',OneC:'1С-разработчик',Bitrix:'Bitrix-разработчик',ProductAnalyst:'Продуктовый аналитик',PM:'Product / Project Manager',Analyst:'Аналитик',Developer:'Разработчик (общий)',CEO:'CEO / Гендиректор',CFO:'CFO / Финдиректор',COO:'COO / Операционный директор',CMO:'CMO / Директор по маркетингу',HRD:'HRD / Директор по персоналу',Commercial:'Коммерческий директор',Designer:'Дизайнер',Marketing:'Маркетинг',PR:'PR',Sales:'Продажи',HR:'HR / Рекрутинг',Finance:'Финансы / Бухгалтерия',Lawyer:'Юрист',Procurement:'Закупки',Logistics:'Логистика',Support:'Поддержка',Content:'Копирайтер / Контент'};
 const FILTER_IT = ['CTO','CIO','CISO','CPO','TeamLead','Architect','Frontend','Backend','Fullstack','Mobile','DevOps','Cloud','Network','Data','ProductAnalyst','QA','Security','DBA','SysAdmin','GameDev','Embedded','OneC','Bitrix','ScrumMaster','PM','Analyst','Developer'];
 const FILTER_NONIT = ['CEO','CFO','COO','CMO','HRD','Commercial','Designer','Marketing','PR','Sales','HR','Finance','Lawyer','Procurement','Logistics','Support','Content'];
@@ -986,7 +1093,18 @@ function initFilters(){
     '<div class="frow"><label>Город</label><select class="fsel" id="fCity" onchange="onCity()">'+cityOpts+'</select></div>'+
     '<div class="frow"><label>Языки</label><div class="techchips">'+langs.map(chip).join('')+'</div></div>'+
     '<div class="frow"><label>Стек / инструменты</label><div class="techchips">'+tools.map(chip).join('')+'</div></div>'+
+    '<div class="frow"><label>Компании — искать в</label><input class="aiin" id="fInc" placeholder="Сбер, Тинькофф — через запятую" onchange="onComp()"></div>'+
+    '<div class="frow"><label>Компании — исключить</label><input class="aiin" id="fExc" placeholder="Яндекс, VK — через запятую" onchange="onComp()"></div>'+
+    '<div class="aihint">Фильтр компаний применяется к X-Ray запросам (Google / Yandex).</div>'+
     '<button class="freset" onclick="resetFilters()">Сбросить фильтры</button>';
+  const fi=document.getElementById('fInc'), fe=document.getElementById('fExc');
+  if(fi) fi.value=F.inc.join(', ');
+  if(fe) fe.value=F.exc.join(', ');
+  const fr=document.getElementById('fRole'); if(fr) fr.value=F.role;
+  const fc=document.getElementById('fCity'); if(fc) fc.value=F.city;
+  document.querySelectorAll('.seg[data-f]').forEach(sg=>{ const f=sg.dataset.f;
+    sg.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===F[f])); });
+  document.querySelectorAll('.tchip').forEach(ch=>ch.classList.toggle('on',F.tech.has(ch.dataset.t)));
 }
 
 function onSeg(el, key){
@@ -995,14 +1113,15 @@ function onSeg(el, key){
 }
 function onRole(){ F.role=document.getElementById('fRole').value; updateFiltCnt(); run(); }
 function onCity(){ F.city=document.getElementById('fCity').value; updateFiltCnt(); run(); }
-function onTech(el){ const t=el.dataset.t; if(F.tech.has(t)){F.tech.delete(t);el.classList.remove('on');}else{F.tech.add(t);el.classList.add('on');} updateFiltCnt(); run(); }
+function onTech(el){ const t=el.dataset.t; if(F.tech.has(t)){F.tech.delete(t);el.classList.remove('on');}else{F.tech.add(t);F.techOff.delete(t);el.classList.add('on');} updateFiltCnt(); run(); }
 function toggleFilters(){ document.getElementById('filters').classList.toggle('open'); }
 function resetFilters(){
-  F.cat='auto'; F.grade=''; F.role=''; F.city=''; F.tech.clear();
+  F.cat='auto'; F.grade=''; F.role=''; F.city=''; F.tech.clear(); F.techOff.clear(); F.inc=[]; F.exc=[];
   initFilters(); document.getElementById('filters').classList.add('open'); updateFiltCnt(); run();
 }
 function updateFiltCnt(){
   let n=0; if(F.cat!=='auto')n++; if(F.grade)n++; if(F.role)n++; if(F.city)n++; n+=F.tech.size;
+  if(F.inc.length)n++; if(F.exc.length)n++; n+=F.techOff.size;
   document.getElementById('filtCnt').textContent = n? ' · '+n : '';
 }
 
@@ -1010,7 +1129,7 @@ function updateFiltCnt(){
 function mergeState(raw, base){
   const m = new Map(); base.techs.forEach(t=>m.set(t.c,t));
   F.tech.forEach(name=>{ const t=TECH.find(x=>x.c===name); if(t) m.set(t.c,t); });
-  const techs = [...m.values()];
+  const techs = [...m.values()].filter(t=>!F.techOff.has(t.c));
   const itSignal = techs.some(t=>t.lang || !NONIT_TOOLS.has(t.c));
   let role, resolved=true;
   if(F.role==='__dev') role=GENERIC_DEV;
@@ -1023,7 +1142,7 @@ function mergeState(raw, base){
   else { role=GENERIC; resolved=false; }
   const city = F.city ? CITIES.find(c=>c.ru===F.city) : base.city;
   const grade = F.grade ? GRADES.find(g=>g.key===F.grade) : base.grade;
-  const active = !!(raw || F.role || F.city || F.grade || F.cat!=='auto' || F.tech.size);
+  const active = !!(raw || F.role || F.city || F.grade || F.cat!=='auto' || F.tech.size || F.inc.length || F.exc.length);
   return {raw, role, techs, city, grade, active, resolved};
 }
 function currentState(){
@@ -1095,12 +1214,25 @@ async function aiVariant(el, mode){
   btns.forEach(b=>b.classList.add('busy')); el.textContent='…';
   try{
     const j=parseJson(await aiCall(SYS_VARIANT,'Источник: '+src+'\nРежим: '+VMODES[mode]+'\nТекущая строка:\n'+expr+'\nКонтекст поиска: '+ctx));
-    codeEl.textContent=j.expr; openEl.href=(eng==='yandex')?Y(j.expr):G(j.expr); copyEl.setAttribute('data-s', j.expr);
+    codeEl.innerHTML=hiQ(j.expr); openEl.href=(eng==='yandex')?Y(j.expr):G(j.expr); copyEl.setAttribute('data-s', j.expr);
     if(j.note){ codeEl.title=j.note; toast(card.dataset.src+': '+j.note); }
   }catch(e){ toast('AI: '+e.message); }
   finally{ btns.forEach(b=>b.classList.remove('busy')); el.textContent=old; }
 }
 (function(){ const c=document.getElementById('aiOn'); if(c) c.checked=AI_ON; })();
+
+/* восстановление из URL (deep link) + история целей */
+(function(){
+  try{
+    const sp=new URLSearchParams(location.search);
+    const q=sp.get('q'), inc=sp.get('inc'), exc=sp.get('exc');
+    if(inc) F.inc=inc.split(',').map(s=>s.trim()).filter(Boolean);
+    if(exc) F.exc=exc.split(',').map(s=>s.trim()).filter(Boolean);
+    if(inc||exc){ initFilters(); updateFiltCnt(); }
+    renderHist();
+    if(q){ document.getElementById('q').value=q; run(); }
+  }catch(_){}
+})();
 
 /* часы сеанса в верхней ленте */
 (function(){
