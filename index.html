@@ -91,6 +91,12 @@ a{color:inherit}
 .console-cap{display:flex;justify-content:space-between;gap:10px;padding:7px 12px 9px;
   font:500 10px/1 var(--f-mono);letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
 .console-cap .cap-r{color:#6E6753}
+.qmode{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.qmode button{background:transparent;border:none;color:#6E6753;font:500 9.5px var(--f-mono);
+  letter-spacing:.14em;text-transform:uppercase;padding:4px 11px;cursor:pointer;
+  transition:color .18s var(--ease), background-color .18s var(--ease)}
+.qmode button:hover{color:var(--txt)}
+.qmode button.on{background:var(--amber-dim);color:var(--amber-hi)}
 .console-in{display:flex;gap:10px;flex-wrap:wrap;background:var(--panel2);border:1px solid var(--line);
   border-radius:11px;padding:10px;transition:border-color .25s var(--ease), box-shadow .25s var(--ease)}
 .console-in:focus-within{border-color:rgba(242,169,59,.5);box-shadow:0 0 0 3px var(--amber-ghost)}
@@ -242,7 +248,9 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
 .openall:hover{background:var(--amber);border-color:var(--amber);color:#150B07}
 
 /* ── карточки-перехваты ── */
-.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
+.g-nick{--c:var(--red-hi);--cs:rgba(255,106,77,.42)}
+  .g-nickx{--c:var(--amber);--cs:var(--amber-dim)}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px}
 .card{position:relative;background:var(--panel);border:1px solid var(--line);
   border-radius:12px;padding:16px;display:flex;flex-direction:column;
   animation:cardIn .85s var(--ease) backwards;animation-delay:var(--d,0s);
@@ -311,6 +319,7 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
 .dchip b:hover{color:#E2705A}
 .dchip.plus{cursor:pointer;color:#6E6753;transition:color .15s var(--ease), border-color .15s var(--ease)}
 .dchip.plus:hover{color:var(--amber);border-color:rgba(242,169,59,.5)}
+
 
 /* ── история целей ── */
 .history{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -431,9 +440,9 @@ body.working .radar{width:238px;height:238px}
     <div class="fold"><div class="fold-in"><p class="tag">Опиши цель — роль, стек, город. Peleng соберёт готовые поисковые запросы по LinkedIn, hh.ru, GitHub, Telegram, VK, TenChat, конференциям и профильным площадкам. Для IT и non-IT ролей.</p></div></div>
 
     <div class="console">
-      <div class="console-cap"><span>Постановка задачи</span><span class="cap-r">boolean · x-ray · нативный поиск</span></div>
+      <div class="console-cap"><span id="capLbl">Постановка задачи</span><span class="qmode"><button class="on" data-m="goal" onclick="setQmode('goal')">цель</button><button data-m="vac" onclick="setQmode('vac')">вакансия</button></span></div>
       <div class="console-in">
-        <textarea id="q" placeholder="Опиши цель: «сеньор python разработчик в Москве с Django», «маркетолог таргетолог спб», «коммерческий директор», «логист ВЭД»…"></textarea>
+        <textarea id="q" placeholder="Опиши цель: «сеньор python разработчик в Москве с Django», «маркетолог спб», «логист ВЭД» — или @никнейм для поиска профилей…"></textarea>
         <button class="go" onclick="run()">Выследить<span class="go-ic">→</span></button>
       </div>
     </div>
@@ -450,6 +459,7 @@ body.working .radar{width:238px;height:238px}
     <div class="ftoggles">
       <div class="filt-toggle" onclick="toggleFilters()">Параметры операции<span class="cnt" id="filtCnt"></span></div>
       <label class="aichip"><input type="checkbox" id="aiOn" onchange="toggleAIon(this.checked)"> AI-анализ цели</label>
+      <label class="aichip"><input type="checkbox" id="ctOn" onchange="toggleCt(this.checked)"> Контакты в профилях</label>
     </div>
     <div class="filters" id="filters"></div>
     <div class="history" id="hist" style="display:none"></div>
@@ -526,6 +536,21 @@ const TECH = [
   {c:'Docker', lang:0, gh:'', al:['docker','докер']},
   {c:'Kubernetes', lang:0, gh:'', al:['kubernetes','k8s','кубер','кубернетес']},
   {c:'Kafka', lang:0, gh:'', al:['kafka','кафка']},
+  {c:'RabbitMQ', lang:0, gh:'', al:['rabbitmq','rabbit mq','рэббит','кролик']},
+  {c:'Redis', lang:0, gh:'', al:['redis','редис']},
+  {c:'MongoDB', lang:0, gh:'', al:['mongodb','mongo','монго']},
+  {c:'ClickHouse', lang:0, gh:'', al:['clickhouse','кликхаус']},
+  {c:'Elasticsearch', lang:0, gh:'', al:['elasticsearch','elastic','эластик']},
+  {c:'MySQL', lang:0, gh:'', al:['mysql']},
+  {c:'Terraform', lang:0, gh:'', al:['terraform','терраформ']},
+  {c:'Ansible', lang:0, gh:'', al:['ansible','ансибл']},
+  {c:'Jenkins', lang:0, gh:'', al:['jenkins','дженкинс']},
+  {c:'GitLab CI', lang:0, gh:'', al:['gitlab','гитлаб']},
+  {c:'PyTorch', lang:0, gh:'', al:['pytorch','пайторч','торч']},
+  {c:'TensorFlow', lang:0, gh:'', al:['tensorflow','тензорфлоу']},
+  {c:'Power BI', lang:0, gh:'', al:['power bi','powerbi']},
+  {c:'Tableau', lang:0, gh:'', al:['tableau','табло']},
+  {c:'Grafana', lang:0, gh:'', al:['grafana','графана']},
   {c:'Spark', lang:0, gh:'', al:['spark','спарк']},
   {c:'Airflow', lang:0, gh:'', al:['airflow','эйрфлоу']},
   {c:'Terraform', lang:0, gh:'', al:['terraform','терраформ']},
@@ -865,7 +890,7 @@ function esc(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/
 // Пустой текст = ок (может быть поиск по фильтрам); режем только явный брак.
 function validateQuery(raw){
   if(!raw) return {ok:true};
-  if(raw.length > 200) return {ok:false, msg:'Слишком длинный запрос. Опиши роль короче — например «senior python разработчик Москва».'};
+  if(raw.length > (UI.qmode==='vac'?9000:200)) return {ok:false, msg: UI.qmode==='vac'?'Текст вакансии слишком длинный — оставь суть (до 9000 символов).':'Слишком длинный запрос. Опиши роль короче — например «senior python разработчик Москва» — или переключись в режим «вакансия».'};
   if(raw.length < 2 || !/[a-zа-яё]/i.test(raw)) return {ok:false, msg:'Не похоже на запрос. Введи название профессии — например «тракторист» или «backend-разработчик».'};
   return {ok:true};
 }
@@ -875,6 +900,8 @@ async function run(){
   const raw = document.getElementById('q').value.trim();
   const v = validateQuery(raw);
   if(!v.ok){ res.innerHTML='<div class="empty">'+v.msg+'</div>'; pr.style.display='none'; return; }
+  if(raw && /^@[\w.\-]{2,32}$/.test(raw)){ renderNick(raw.slice(1)); return; }
+  if(UI.qmode==='vac' && raw) vacPrepare(raw);
   let p;
   if(AI_ON && raw){
     res.innerHTML='<div class="empty">AI анализирует цель…</div>'; pr.style.display='none';
@@ -897,7 +924,7 @@ async function run(){
   const cards = build(p);
   const tp = termParts();
   const xt = companyTerms();
-  const extra = tp.mq + xt + tp.xq;
+  const extra = tp.mq + xt + tp.xq + contactTerms();
   for(const c of cards){
     const isG=/google\.com\/search/.test(c.url), isY=/yandex\.ru\/search/.test(c.url);
     if((isG||isY) && extra){ c.str+=extra; c.url=isG?G(c.str):Y(c.str); if(c.url2) c.url2=Y(c.str); }
@@ -948,7 +975,7 @@ async function run(){
     rl.textContent=(n>10&&n<20)?'сигналов':(n1===1?'сигнал':(n1>1&&n1<5?'сигнала':'сигналов')); }
   const rd=document.querySelector('.radar'); if(rd) rd.classList.add('live');
   decryptAll();
-  if(raw){
+  if(raw && UI.qmode!=='vac'){
     saveHist(raw);
     try{
       const sp=new URLSearchParams(); sp.set('q',raw);
@@ -958,10 +985,53 @@ async function run(){
       if(tm) sp.set('tm',tm);
       const tc=Object.entries(F.tconc).map(([n,k])=>n+':'+k).join(',');
       if(tc) sp.set('tc',tc);
+      if(F.ct) sp.set('ct','1');
       history.replaceState(null,'','?'+sp.toString());
     }catch(_){}
   }
   if(MOTION_OK) pr.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+/* ── идентификация по нику: @nickname → прямые профили ── */
+function renderNick(n){
+  const res=document.getElementById('results'), pr=document.getElementById('parsed');
+  const ne=encodeURIComponent(n);
+  const direct=[
+    ['GitHub','https://github.com/'+ne],['GitLab','https://gitlab.com/'+ne],
+    ['Telegram','https://t.me/'+ne],['VK','https://vk.com/'+ne],
+    ['Habr','https://habr.com/ru/users/'+ne+'/'],['Habr Career','https://career.habr.com/'+ne],
+    ['LeetCode','https://leetcode.com/u/'+ne+'/'],['Codeforces','https://codeforces.com/profile/'+ne],
+    ['Kaggle','https://www.kaggle.com/'+ne],['Stack Overflow','https://stackoverflow.com/users?tab=Reputation&filter=all&search='+ne],
+    ['Behance','https://www.behance.net/'+ne],['Dribbble','https://dribbble.com/'+ne],
+    ['X / Twitter','https://x.com/'+ne],['Instagram','https://www.instagram.com/'+ne+'/'],
+    ['Pinterest','https://www.pinterest.com/'+ne+'/'],['Reddit','https://www.reddit.com/user/'+ne+'/'],
+  ];
+  const xr=[
+    ['Google — точное совпадение','"'+n+'"'],
+    ['Google — с контактами','"'+n+'" (контакты OR профиль OR резюме OR email)'],
+    ['Google — соцпрофили','"'+n+'" (site:t.me OR site:vk.com OR site:github.com OR site:habr.com)'],
+  ];
+  document.body.classList.add('working');
+  pr.innerHTML='<i class="ck tl"></i><i class="ck tr"></i><i class="ck bl"></i><i class="ck br"></i>'+
+    '<div class="dhead"><span>Идентификация</span><span class="dmeta">прямых профилей: '+direct.length+' · поисков: '+xr.length+'</span></div>'+
+    '<div class="dfields"><span class="df hot" style="--d:0ms"><label>Ник</label><span class="dv"><b>@'+esc(n)+'</b></span></span>'+
+    '<span class="df" style="--d:80ms"><label>Режим</label><span class="dv"><b>поиск профилей по нику</b></span></span></div>';
+  pr.style.display='flex';
+  const card=(t,u,s)=>'<div class="card g-nick" data-src="'+esc(t)+'" style="--d:0ms">'+
+    '<div class="ttl">'+esc(t)+'</div><code>'+esc(s||u)+'</code>'+
+    '<div class="row"><a class="btn open" href="'+u.replace(/"/g,'&quot;')+'" target="_blank" rel="noopener">Открыть</a>'+
+    '<span class="btn copy" onclick="cp(this)" data-s="'+esc(s||u).replace(/"/g,'&quot;')+'">Копировать</span></div></div>';
+  res.innerHTML=
+    '<div class="group g-nick"><div class="ghead"><h2><i>CH-ID</i>Прямые профили<span>'+direct.length+'</span></h2>'+
+    '<div class="gbtns"><button class="openall" onclick="openGroup(\'nick\')">Открыть все</button></div></div>'+
+    '<div class="cards">'+direct.map(d=>card(d[0],d[1])).join('')+'</div></div>'+
+    '<div class="group g-nickx"><div class="ghead"><h2><i>CH-XR</i>Поиск упоминаний<span>'+xr.length+'</span></h2>'+
+    '<div class="gbtns"><button class="openall" onclick="openGroup(\'nickx\')">Открыть все</button></div></div>'+
+    '<div class="cards">'+xr.map(d=>card(d[0],G(d[1]),d[1])).join('')+'</div></div>';
+  saveHist('@'+n);
+  try{ const sp=new URLSearchParams(); sp.set('q','@'+n); history.replaceState(null,'','?'+sp.toString()); }catch(_){}
+  acquirePulse();
+  if(MOTION_OK){ decryptAll(); pr.scrollIntoView({behavior:'smooth',block:'start'}); }
 }
 
 /* ── история целей ── */
@@ -987,7 +1057,7 @@ function histClear(){ lsSet('peleng_hist','[]'); renderHist(); }
 /* ── колода результатов: рейл каналов + вкладки + сортировка + избранное ── */
 let _cards=[];
 const MOTION_OK = !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
-const UI = { tab:'all', sort: lsGet('peleng_sort')||'prio' };
+const UI = { tab:'all', sort: lsGet('peleng_sort')||'prio', qmode:'goal' };
 const FAVS = new Set(JSON.parse(lsGet('peleng_favs')||'[]'));
 const SORT_W = {pro:0, role:1, community:2, exec:2, conf:3, social:3, comp:4};
 
@@ -1212,6 +1282,34 @@ function termParts(){
   }
   return {mq,xq,hhm,hhx};
 }
+/* режим «вакансия»: текст → роль/грейд/город/стек; секции «Требования»→must, «Будет плюсом»→nice */
+let _lastVac='';
+function setQmode(m){
+  UI.qmode=m;
+  document.querySelectorAll('.qmode button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));
+  const q=document.getElementById('q'), cap=document.getElementById('capLbl');
+  if(m==='vac'){
+    q.placeholder='Вставь текст вакансии целиком — роль, грейд, город, требования и «будет плюсом» разложатся по фильтрам сами…';
+    q.style.minHeight='170px'; if(cap) cap.textContent='Текст вакансии';
+  } else {
+    q.placeholder='Опиши цель: «сеньор python разработчик в Москве с Django», «маркетолог таргетолог спб», «коммерческий директор», «логист ВЭД»…';
+    q.style.minHeight='76px'; if(cap) cap.textContent='Постановка задачи';
+  }
+}
+const VAC_MUST=/(требовани|обязательн|ожидаем от тебя|что нужно|необходимо|ты умеешь|мы ждём|мы ждем|важно)/i;
+const VAC_NICE=/(будет плюсом|плюсом будет|желательно|nice to have|преимуществом|бонусом|необязательно|хорошо бы)/i;
+function vacPrepare(raw){
+  if(raw===_lastVac) return; _lastVac=raw;
+  const t=norm(raw), low=raw.toLowerCase();
+  const mi=raw.search(VAC_MUST), ni=raw.search(VAC_NICE);
+  if(mi<0) return; /* нет секции требований — всё остаётся желательным */
+  const mustEnd=(ni>mi)?ni:raw.length;
+  const tMust=norm(raw.slice(mi,mustEnd));
+  for(const tch of TECH){
+    if(!tch.al.some(a=>hit(t,a))) continue;
+    if(tch.al.some(a=>hit(tMust,a))) F.tmode[tch.c]='must';
+  }
+}
 function cycTerm(n){
   const cur=F.tmode[n]||'nice', next=cur==='nice'?'must':(cur==='must'?'x':'nice');
   if(next==='nice') delete F.tmode[n]; else F.tmode[n]=next;
@@ -1225,6 +1323,9 @@ function concTerm(n){
 function parseCSV(id){ const el=document.getElementById(id); return el?el.value.split(',').map(s=>s.trim()).filter(Boolean):[]; }
 function onComp(){ F.inc=parseCSV('fInc'); F.exc=parseCSV('fExc'); updateFiltCnt(); run(); }
 F.techOff=new Set(); /* технологии, убранные из досье крестиком */
+F.ct=false; /* тумблер «контакты в профилях»: маркеры почты/телефона в X-Ray */
+function toggleCt(v){ F.ct=!!v; updateFiltCnt(); run(); }
+function contactTerms(){ return F.ct? ' ("@gmail.com" OR "@mail.ru" OR "@yandex.ru" OR "t.me" OR телефон OR email)' : ''; }
 function dRole(v){ F.role=v; initFilters(); updateFiltCnt(); run(); }
 function dGrade(v){ F.grade=v; initFilters(); updateFiltCnt(); run(); }
 function dCity(v){ F.city=v; initFilters(); updateFiltCnt(); run(); }
@@ -1284,12 +1385,12 @@ function onCity(){ F.city=document.getElementById('fCity').value; updateFiltCnt(
 function onTech(el){ const t=el.dataset.t; if(F.tech.has(t)){F.tech.delete(t);el.classList.remove('on');}else{F.tech.add(t);F.techOff.delete(t);el.classList.add('on');} updateFiltCnt(); run(); }
 function toggleFilters(){ document.getElementById('filters').classList.toggle('open'); }
 function resetFilters(){
-  F.cat='auto'; F.grade=''; F.role=''; F.city=''; F.tech.clear(); F.techOff.clear(); F.inc=[]; F.exc=[]; F.tmode={}; F.tconc={};
+  F.cat='auto'; F.grade=''; F.role=''; F.city=''; F.tech.clear(); F.techOff.clear(); F.inc=[]; F.exc=[]; F.tmode={}; F.tconc={}; F.ct=false; const ct0=document.getElementById('ctOn'); if(ct0) ct0.checked=false;
   initFilters(); document.getElementById('filters').classList.add('open'); updateFiltCnt(); run();
 }
 function updateFiltCnt(){
   let n=0; if(F.cat!=='auto')n++; if(F.grade)n++; if(F.role)n++; if(F.city)n++; n+=F.tech.size;
-  if(F.inc.length)n++; if(F.exc.length)n++; n+=F.techOff.size; n+=Object.keys(F.tmode).length;
+  if(F.inc.length)n++; if(F.exc.length)n++; if(F.ct)n++; n+=F.techOff.size; n+=Object.keys(F.tmode).length;
   document.getElementById('filtCnt').textContent = n? ' · '+n : '';
 }
 
@@ -1397,6 +1498,7 @@ async function aiVariant(el, mode){
     if(inc) F.inc=inc.split(',').map(s=>s.trim()).filter(Boolean);
     if(exc) F.exc=exc.split(',').map(s=>s.trim()).filter(Boolean);
     const tm=sp.get('tm'); if(tm) tm.split(',').forEach(p2=>{ const i=p2.lastIndexOf(':'); if(i>0) F.tmode[p2.slice(0,i)]=(p2.slice(i+1)==='m'?'must':'x'); });
+    if(sp.get('ct')==='1'){ F.ct=true; const ce=document.getElementById('ctOn'); if(ce) ce.checked=true; }
     const tc=sp.get('tc'); if(tc) tc.split(',').forEach(p2=>{ const i=p2.lastIndexOf(':'); if(i>0) F.tconc[p2.slice(0,i)]=p2.slice(i+1); });
     if(inc||exc){ initFilters(); updateFiltCnt(); }
     renderHist();
