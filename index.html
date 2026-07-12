@@ -175,9 +175,14 @@ body.glitching .logo{animation:glitch .4s steps(3,end) 1}
 .aichip input{accent-color:var(--amber);width:14px;height:14px;cursor:pointer}
 
 /* ── фильтры: параметры операции ── */
-.filters{margin-top:12px;background:var(--panel);border:1px solid var(--line);border-radius:12px;
-  padding:16px;display:none;flex-direction:column;gap:14px}
+.filters{grid-column:1/-1;margin-top:16px;background:var(--panel);border:1px solid var(--line);border-radius:12px;
+  padding:18px;display:none;flex-direction:column;gap:14px;animation:dfIn .45s var(--ease) both}
 .filters.open{display:flex}
+/* на широком экране — фильтры в две колонки, чтобы панель не тянулась вниз */
+.filters .fcols{display:grid;grid-template-columns:1fr 1fr;gap:14px 36px;align-items:start}
+.filters .fcol{display:flex;flex-direction:column;gap:14px;min-width:0}
+.techchips.tall{max-height:220px}
+@media(max-width:900px){.filters .fcols{grid-template-columns:1fr}.techchips.tall{max-height:120px}}
 .frow{display:flex;flex-wrap:wrap;align-items:flex-start;gap:10px}
 .frow>label{font:500 10px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;color:#6E6753;
   min-width:126px;padding-top:10px}
@@ -186,13 +191,42 @@ body.glitching .logo{animation:glitch .4s steps(3,end) 1}
   padding:8px 14px;cursor:pointer;transition:color .18s var(--ease), background-color .18s var(--ease)}
 .seg button:hover{color:var(--txt)}
 .seg button.on{background:var(--amber-dim);color:var(--amber-hi)}
-select.fsel{appearance:none;-webkit-appearance:none;color:var(--txt);border:1px solid var(--line);
-  border-radius:8px;padding:8px 34px 8px 12px;font:400 12.5px var(--f-mono);min-width:210px;cursor:pointer;
-  transition:border-color .2s var(--ease);
-  background:var(--panel2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5l3.5 3.5 3.5-3.5' fill='none' stroke='%239A9077' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 12px center}
-select.fsel:hover{border-color:var(--line2)}
-select.fsel:focus{outline:none;border-color:rgba(242,169,59,.5)}
-select.fsel option,select.fsel optgroup{background:var(--panel);color:var(--txt);font-style:normal}
+/* ── кастомные дропдауны (весь список — в дизайне, не нативный) ── */
+.pd{position:relative;display:inline-block;max-width:100%}
+.pd-btn{display:inline-flex;align-items:center;gap:9px;cursor:pointer;text-align:left;font:inherit}
+.pd-ar{width:10px;height:10px;flex:none;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5l3.5 3.5 3.5-3.5' fill='none' stroke='%23F2A93B' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center;
+  transition:transform .22s var(--ease)}
+.pd.open .pd-ar{transform:rotate(180deg)}
+.pd-menu{position:absolute;top:calc(100% + 7px);left:0;z-index:80;min-width:100%;width:max-content;max-width:300px;
+  background:var(--panel);border:1px solid var(--line2);border-radius:10px;overflow:hidden;
+  box-shadow:0 20px 48px rgba(0,0,0,.6), 0 0 0 1px rgba(242,169,59,.05) inset;
+  opacity:0;transform:translateY(-6px) scale(.98);pointer-events:none;
+  transition:opacity .18s var(--ease), transform .22s var(--ease)}
+.pd.open .pd-menu{opacity:1;transform:none;pointer-events:auto}
+.pd-menu.up{top:auto;bottom:calc(100% + 7px);transform:translateY(6px) scale(.98)}
+.pd.open .pd-menu.up{transform:none}
+.pd-opts{max-height:264px;overflow:auto;padding:5px;scrollbar-width:thin;scrollbar-color:var(--line2) transparent}
+.pd-grp{font:600 9.5px var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--amber);
+  padding:9px 10px 4px;margin-top:4px;border-top:1px solid var(--line)}
+.pd-grp:first-child{border-top:none;margin-top:0}
+.pd-opt{display:block;width:100%;text-align:left;background:transparent;border:none;border-radius:6px;cursor:pointer;
+  font:400 12.5px var(--f-mono);color:var(--txt);padding:7px 10px;
+  transition:background-color .12s var(--ease), color .12s var(--ease)}
+.pd-opt:hover{background:var(--amber-dim);color:var(--amber-hi)}
+.pd-opt.on{color:var(--amber-hi)}
+.pd-opt.on::before{content:'▸ ';color:var(--amber)}
+.pd-search{padding:8px;border-bottom:1px solid var(--line);background:var(--panel2)}
+.pd-search input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:7px;color:var(--txt);
+  font:400 12px var(--f-mono);padding:6px 10px;transition:border-color .2s var(--ease)}
+.pd-search input:focus{outline:none;border-color:rgba(242,169,59,.5)}
+.pd-none{font:400 11.5px var(--f-mono);color:#6E6753;padding:10px;display:none}
+/* вариант для панели фильтров */
+.pd.f .pd-btn{color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:8px 12px;
+  font:400 12.5px var(--f-mono);min-width:210px;background:var(--panel2);justify-content:space-between;
+  transition:border-color .2s var(--ease)}
+.pd.f .pd-btn:hover{border-color:var(--line2)}
+.pd.f.open .pd-btn{border-color:rgba(242,169,59,.5)}
 .techchips{display:flex;flex-wrap:wrap;gap:7px;max-height:120px;overflow:auto;flex:1;min-width:240px;padding-right:6px;scrollbar-width:thin;scrollbar-color:var(--line2) transparent}
 .tchip{cursor:pointer;font:400 11.5px var(--f-mono);color:var(--muted);background:var(--panel2);
   border:1px solid var(--line);border-radius:6px;padding:5px 10px;user-select:none;
@@ -298,14 +332,14 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
 /* ── контролы досье ── */
 .df .dv{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-height:24px}
 .df .dv>b{font:600 14px var(--f-mono);color:var(--txt)}
-.dsel{appearance:none;-webkit-appearance:none;background:transparent;border:none;border-bottom:1px dashed var(--line2);
-  color:var(--txt);font:600 14px var(--f-mono);padding:1px 16px 2px 0;cursor:pointer;max-width:240px;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5l3.5 3.5 3.5-3.5' fill='none' stroke='%23F2A93B' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  background-repeat:no-repeat;background-position:right 1px center;
+/* вариант дропдауна для досье: пунктирное подчёркивание */
+.pd.d .pd-btn{background:transparent;border:none;border-bottom:1px dashed var(--line2);color:var(--txt);
+  font:600 14px var(--f-mono);padding:1px 0 2px;max-width:240px;
   transition:border-color .2s var(--ease), color .2s var(--ease)}
-.dsel:hover{border-color:var(--amber)}
-.dsel:focus{outline:none;border-bottom-style:solid;border-color:var(--amber)}
-.df.hot .dsel{color:var(--amber-hi)}
+.pd.d .pd-btn .pd-lbl{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pd.d .pd-btn:hover{border-color:var(--amber)}
+.pd.d.open .pd-btn{border-bottom-style:solid;border-color:var(--amber)}
+.df.hot .pd.d .pd-btn{color:var(--amber-hi)}
 .dchip{display:inline-flex;align-items:center;gap:5px;font:500 12.5px var(--f-mono);font-style:normal;color:var(--txt);
   background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:3px 8px}
 .dchip u{text-decoration:none;cursor:pointer;color:var(--txt);transition:color .15s var(--ease)}
@@ -313,8 +347,11 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
 .dchip.m-must u{color:var(--amber-hi)}
 .dchip.m-x{border-color:rgba(224,71,47,.45);background:rgba(224,71,47,.07)}
 .dchip.m-x u{color:#E2705A;text-decoration:line-through}
-.dchip .cc{cursor:pointer;color:#6E6753;font-style:normal;font-weight:600;padding:0 1px;transition:color .15s var(--ease)}
-.dchip .cc:hover,.dchip .cc.on{color:var(--amber)}
+.dchip .cc{cursor:pointer;color:var(--muted);font:600 10px var(--f-mono);font-style:normal;white-space:nowrap;
+  border:1px dashed var(--line2);border-radius:5px;padding:2px 6px;margin-left:2px;
+  transition:color .15s var(--ease), border-color .15s var(--ease), background-color .15s var(--ease)}
+.dchip .cc:hover{color:var(--amber);border-color:rgba(242,169,59,.5)}
+.dchip .cc.on{color:var(--amber-hi);border-style:solid;border-color:rgba(242,169,59,.55);background:var(--amber-dim)}
 .dchip b{cursor:pointer;color:#6E6753;font-weight:600;padding:0 1px;transition:color .15s var(--ease)}
 .dchip b:hover{color:#E2705A}
 .dchip.plus{cursor:pointer;color:#6E6753;transition:color .15s var(--ease), border-color .15s var(--ease)}
@@ -337,7 +374,6 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
 .tl-lab{font:500 10.5px/1 var(--f-mono);letter-spacing:.24em;text-transform:uppercase;color:#6E6753}
 .sort{display:inline-flex;align-items:center;gap:9px;font:500 10px/1 var(--f-mono);letter-spacing:.18em;
   text-transform:uppercase;color:#6E6753}
-.fsel.sm{min-width:0;padding:6px 30px 6px 10px;font-size:11.5px}
 .deck{display:grid;grid-template-columns:222px minmax(0,1fr);gap:22px;align-items:start;animation:deckIn .6s var(--ease) backwards}
 .toolbar{animation:deckIn .5s var(--ease) backwards}
 @keyframes deckIn{from{opacity:0;transform:translateY(12px)}}
@@ -460,7 +496,6 @@ body.working .radar{width:238px;height:238px}
       <label class="aichip"><input type="checkbox" id="aiOn" onchange="toggleAIon(this.checked)"> AI-анализ цели</label>
       <label class="aichip"><input type="checkbox" id="ctOn" onchange="toggleCt(this.checked)"> Контакты в профилях</label>
     </div>
-    <div class="filters" id="filters"></div>
     <div class="history" id="hist" style="display:none"></div>
   </div>
 
@@ -470,6 +505,8 @@ body.working .radar{width:238px;height:238px}
     <div class="r-core"><b id="rCore"></b><span id="rCoreLbl">сигналов</span></div>
     <div class="r-label">peleng</div>
   </div>
+
+  <div class="filters" id="filters"></div>
 </header>
 
 <div class="wrap">
@@ -935,10 +972,9 @@ async function run(){
   }
   const nGroups = new Set(cards.map(c=>c.grp)).size;
   /* досье редактируемое: контролы пишут в параметры операции (F) и перезапускают поиск */
-  const dsel=(opts,cur,fn)=>'<select class="dsel" onchange="'+fn+'(this.value)">'+
-    opts.map(o=>'<option value="'+esc(o[0]).replace(/"/g,'&quot;')+'"'+(o[0]===cur?' selected':'')+'>'+esc(o[1])+'</option>').join('')+'</select>';
-  const roleOpts=[['','авто']].concat(FILTER_IT.map(k=>[k,ROLE_LABELS[k]||k]), FILTER_NONIT.map(k=>[k,ROLE_LABELS[k]||k]));
-  if(!roleOpts.find(o=>o[0]===p.role.key)) roleOpts.splice(1,0,[p.role.key,p.role.key]);
+  const dsel=(opts,cur,fn)=>pdHTML('d', opts, cur, fn);
+  const roleOpts=[['','авто'],{g:'IT'}].concat(FILTER_IT.map(k=>[k,ROLE_LABELS[k]||k]), [{g:'non-IT'}], FILTER_NONIT.map(k=>[k,ROLE_LABELS[k]||k]));
+  if(!roleOpts.find(o=>Array.isArray(o)&&o[0]===p.role.key)) roleOpts.splice(1,0,[p.role.key,p.role.key]);
   const chipNames=[...new Set([...p.techs.map(t=>t.c), ...Object.keys(F.tmode)])];
   const techChips = chipNames.map(n=>{
     const mode=F.tmode[n]||'nice', conc=findConcept(n), exp=!!F.tconc[n];
@@ -947,7 +983,7 @@ async function run(){
     const nq=n.replace(/'/g,"\\'");
     return '<i class="dchip m-'+mode+'">'+
       '<u onclick="cycTerm(\''+nq+'\')" title="'+(mode==='must'?'Обязательно':mode==='x'?'Исключено':'Желательно')+' · клик: желательно → обязательно → исключить">'+lbl+'</u>'+
-      (conc? '<a class="cc'+(exp?' on':'')+'" onclick="concTerm(\''+nq+'\')" title="Любой из: '+esc(conc.l)+' ('+conc.items.join(', ')+')">⇄</a>':'')+
+      (conc? '<a class="cc'+(exp?' on':'')+'" onclick="concTerm(\''+nq+'\')" title="'+(exp?'Свернуть обратно до '+esc(n):'Искать любой из: '+conc.items.join(', '))+'">⇄ '+esc(conc.l)+'</a>':'')+
       '<b onclick="dTechOff(\''+nq+'\')" title="Убрать совсем">×</b></i>';
   }).join('')+'<i class="dchip plus" onclick="openFiltersTech()" title="Добавить технологии">+</i>';
   const df=[];
@@ -1334,42 +1370,100 @@ const ROLE_LABELS = {CTO:'CTO / Технический директор',CIO:'CI
 const FILTER_IT = ['CTO','CIO','CISO','CPO','TeamLead','Architect','Frontend','Backend','Fullstack','Mobile','DevOps','Cloud','Network','Data','ProductAnalyst','QA','Security','DBA','SysAdmin','GameDev','Embedded','OneC','Bitrix','ScrumMaster','PM','Analyst','Developer'];
 const FILTER_NONIT = ['CEO','CFO','COO','CMO','HRD','Commercial','Designer','Marketing','PR','Sales','HR','Finance','Lawyer','Procurement','Logistics','Support','Content'];
 
+/* ── кастомные дропдауны: kind 'f'|'d', opts: [значение,метка] или {g:'группа'} ── */
+function pdHTML(kind, opts, cur, fn){
+  const flat=opts.filter(o=>Array.isArray(o));
+  const curO=flat.find(o=>o[0]===cur)||flat[0]||['',''];
+  const av=v=>esc(v).replace(/"/g,'&quot;');
+  return '<span class="pd '+kind+'" data-fn="'+fn+'">'+
+    '<button type="button" class="pd-btn" onclick="pdToggle(this.parentNode)" aria-haspopup="listbox">'+
+      '<span class="pd-lbl">'+esc(curO[1])+'</span><i class="pd-ar"></i></button>'+
+    '<div class="pd-menu" role="listbox">'+
+      (flat.length>14?'<div class="pd-search"><input placeholder="// фильтр…" oninput="pdFilter(this)" onclick="event.stopPropagation()"></div>':'')+
+      '<div class="pd-opts">'+opts.map(o=>Array.isArray(o)
+        ?'<button type="button" class="pd-opt'+(o[0]===cur?' on':'')+'" role="option" data-v="'+av(o[0])+'" onclick="pdPick(this)">'+esc(o[1])+'</button>'
+        :'<div class="pd-grp">'+esc(o.g)+'</div>').join('')+
+      '<div class="pd-none">— нет совпадений —</div></div>'+
+    '</div></span>';
+}
+function pdCloseAll(){ document.querySelectorAll('.pd.open').forEach(p=>p.classList.remove('open')); }
+function pdToggle(pd){
+  const was=pd.classList.contains('open');
+  pdCloseAll();
+  if(was) return;
+  pd.classList.add('open');
+  const menu=pd.querySelector('.pd-menu'), box=pd.querySelector('.pd-opts');
+  const q=pd.querySelector('.pd-search input');
+  if(q){ q.value=''; pdFilter(q); }
+  /* если снизу не влезает — раскрываем вверх */
+  menu.classList.remove('up');
+  const r=pd.getBoundingClientRect(), mh=Math.min(menu.scrollHeight,330);
+  if(r.bottom+mh+16>innerHeight && r.top>mh+16) menu.classList.add('up');
+  const on=box.querySelector('.pd-opt.on');
+  if(on) box.scrollTop=Math.max(0,on.offsetTop-box.clientHeight/2+14);
+  if(q && matchMedia('(hover:hover)').matches) q.focus();
+}
+function pdPick(el){
+  const pd=el.closest('.pd');
+  pd.querySelectorAll('.pd-opt').forEach(o=>o.classList.toggle('on',o===el));
+  pd.querySelector('.pd-lbl').textContent=el.textContent;
+  pdCloseAll();
+  const fn=pd.dataset.fn;
+  if(fn && typeof window[fn]==='function') window[fn](el.dataset.v);
+}
+function pdFilter(inp){
+  const s=inp.value.trim().toLowerCase(), box=inp.closest('.pd-menu').querySelector('.pd-opts');
+  let any=false;
+  box.querySelectorAll('.pd-opt').forEach(o=>{
+    const ok=!s||o.textContent.toLowerCase().includes(s);
+    o.style.display=ok?'':'none'; if(ok) any=true;
+  });
+  box.querySelectorAll('.pd-grp').forEach(g=>{
+    let el=g.nextElementSibling, vis=false;
+    while(el && !el.classList.contains('pd-grp')){
+      if(el.classList.contains('pd-opt') && el.style.display!=='none'){ vis=true; break; }
+      el=el.nextElementSibling;
+    }
+    g.style.display=vis?'':'none';
+  });
+  const none=box.querySelector('.pd-none'); if(none) none.style.display=any?'none':'block';
+}
+document.addEventListener('click', e=>{ if(!e.target.closest('.pd')) pdCloseAll(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') pdCloseAll(); });
+
 function initFilters(){
-  const opt = k => '<option value="'+k+'">'+(ROLE_LABELS[k]||k)+'</option>';
-  const cityOpts = '<option value="">Любой город</option>'+CITIES.map(c=>'<option value="'+c.ru+'">'+c.ru+'</option>').join('');
+  const roleOpts=[['','Авто (из запроса)'],{g:'IT'},['__dev','Любой IT / разработчик']]
+    .concat(FILTER_IT.map(k=>[k,ROLE_LABELS[k]||k]), [{g:'non-IT'},['__spec','Любой специалист']], FILTER_NONIT.map(k=>[k,ROLE_LABELS[k]||k]));
+  const cityOpts=[['','Любой город']].concat(CITIES.map(c=>[c.ru,c.ru]));
   const langs = TECH.filter(t=>t.lang), tools = TECH.filter(t=>!t.lang);
   const chip = t => '<span class="tchip" data-t="'+t.c+'" onclick="onTech(this)">'+t.c+'</span>';
 
   document.getElementById('filters').innerHTML =
+    '<div class="fcols"><div class="fcol">'+
     '<div class="frow"><label>Категория</label>'+
       '<div class="seg" data-f="cat">'+
         '<button data-v="auto" class="on" onclick="onSeg(this,\'cat\')">Авто</button>'+
         '<button data-v="it" onclick="onSeg(this,\'cat\')">IT</button>'+
         '<button data-v="nonit" onclick="onSeg(this,\'cat\')">non-IT</button>'+
       '</div></div>'+
-    '<div class="frow"><label>Специализация</label>'+
-      '<select class="fsel" id="fRole" onchange="onRole()">'+
-        '<option value="">Авто (из запроса)</option>'+
-        '<optgroup label="IT"><option value="__dev">Любой IT / разработчик</option>'+FILTER_IT.map(opt).join('')+'</optgroup>'+
-        '<optgroup label="non-IT"><option value="__spec">Любой специалист</option>'+FILTER_NONIT.map(opt).join('')+'</optgroup>'+
-      '</select></div>'+
+    '<div class="frow"><label>Специализация</label>'+pdHTML('f', roleOpts, F.role, 'onRole')+'</div>'+
     '<div class="frow"><label>Грейд</label>'+
       '<div class="seg" data-f="grade">'+
         '<button data-v="" class="on" onclick="onSeg(this,\'grade\')">Любой</button>'+
         ['Junior','Middle','Senior','Lead'].map(g=>'<button data-v="'+g+'" onclick="onSeg(this,\'grade\')">'+g+'</button>').join('')+
       '</div></div>'+
-    '<div class="frow"><label>Город</label><select class="fsel" id="fCity" onchange="onCity()">'+cityOpts+'</select></div>'+
-    '<div class="frow"><label>Языки</label><div class="techchips">'+langs.map(chip).join('')+'</div></div>'+
-    '<div class="frow"><label>Стек / инструменты</label><div class="techchips">'+tools.map(chip).join('')+'</div></div>'+
+    '<div class="frow"><label>Город</label>'+pdHTML('f', cityOpts, F.city, 'onCity')+'</div>'+
     '<div class="frow"><label>Компании — искать в</label><input class="aiin" id="fInc" placeholder="Сбер, Тинькофф — через запятую" onchange="onComp()"></div>'+
     '<div class="frow"><label>Компании — исключить</label><input class="aiin" id="fExc" placeholder="Яндекс, VK — через запятую" onchange="onComp()"></div>'+
-    '<div class="aihint">Фильтр компаний применяется к X-Ray запросам (Google / Yandex).<br>Чипы стека в досье: клик — желательно → <b>обязательно</b> → исключить; ⇄ — расширить до концепта («любой брокер»).</div>'+
+    '</div><div class="fcol">'+
+    '<div class="frow"><label>Языки</label><div class="techchips">'+langs.map(chip).join('')+'</div></div>'+
+    '<div class="frow"><label>Стек / инструменты</label><div class="techchips tall">'+tools.map(chip).join('')+'</div></div>'+
+    '</div></div>'+
+    '<div class="aihint">Фильтр компаний применяется к X-Ray запросам (Google / Yandex). Чипы стека в досье: клик — желательно → <b>обязательно</b> → исключить; кнопка «⇄ любой брокер» расширяет технологию до всей группы аналогов.</div>'+
     '<button class="freset" onclick="resetFilters()">Сбросить фильтры</button>';
   const fi=document.getElementById('fInc'), fe=document.getElementById('fExc');
   if(fi) fi.value=F.inc.join(', ');
   if(fe) fe.value=F.exc.join(', ');
-  const fr=document.getElementById('fRole'); if(fr) fr.value=F.role;
-  const fc=document.getElementById('fCity'); if(fc) fc.value=F.city;
   document.querySelectorAll('.seg[data-f]').forEach(sg=>{ const f=sg.dataset.f;
     sg.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.v===F[f])); });
   document.querySelectorAll('.tchip').forEach(ch=>ch.classList.toggle('on',F.tech.has(ch.dataset.t)));
@@ -1379,8 +1473,8 @@ function onSeg(el, key){
   el.parentNode.querySelectorAll('button').forEach(b=>b.classList.remove('on'));
   el.classList.add('on'); F[key]=el.dataset.v; updateFiltCnt(); run();
 }
-function onRole(){ F.role=document.getElementById('fRole').value; updateFiltCnt(); run(); }
-function onCity(){ F.city=document.getElementById('fCity').value; updateFiltCnt(); run(); }
+function onRole(v){ F.role=v; updateFiltCnt(); run(); }
+function onCity(v){ F.city=v; updateFiltCnt(); run(); }
 function onTech(el){ const t=el.dataset.t; if(F.tech.has(t)){F.tech.delete(t);el.classList.remove('on');}else{F.tech.add(t);F.techOff.delete(t);el.classList.add('on');} updateFiltCnt(); run(); }
 function toggleFilters(){ document.getElementById('filters').classList.toggle('open'); }
 function resetFilters(){
