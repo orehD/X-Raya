@@ -479,18 +479,18 @@ body.working .radar{width:238px;height:238px}
 <header class="hero">
   <div class="hero-l">
     <h1 class="logo" onclick="resetAll()" title="На главный экран"><span class="lx">P</span>ELENG<span class="cur" aria-hidden="true"></span></h1>
-    <div class="fold"><div class="fold-in"><p class="tag">Опиши цель — роль, стек, город. Peleng соберёт готовые поисковые запросы по LinkedIn, hh.ru, GitHub, Telegram, VK, TenChat, конференциям и профильным площадкам. Для IT и non-IT ролей.</p></div></div>
+    <div class="fold"><div class="fold-in"><p class="tag">Опиши, кого ищешь — роль, стек, город. Peleng соберёт готовые поисковые запросы по LinkedIn, hh.ru, GitHub, Telegram, VK, TenChat, конференциям и профильным площадкам. Для IT и non-IT ролей.</p></div></div>
 
     <div class="console">
-      <div class="console-cap"><span id="capLbl">Постановка задачи</span><span class="qmode"><button class="on" data-m="goal" onclick="setQmode('goal')">цель</button><button data-m="vac" onclick="setQmode('vac')">вакансия</button></span></div>
+      <div class="console-cap"><span id="capLbl">Поисковый запрос</span><span class="qmode"><button class="on" data-m="goal" onclick="setQmode('goal')">запрос</button><button data-m="vac" onclick="setQmode('vac')">вакансия</button></span></div>
       <div class="console-in">
-        <textarea id="q" placeholder="Опиши цель: «сеньор python разработчик в Москве с Django», «маркетолог спб», «логист ВЭД» — или @никнейм для поиска профилей…"></textarea>
+        <textarea id="q" placeholder="Кого ищем: «сеньор python разработчик в Москве с Django», «маркетолог спб», «логист ВЭД» — или @никнейм для поиска профилей…"></textarea>
         <button class="go" onclick="run()">Выследить<span class="go-ic">→</span></button>
       </div>
     </div>
 
     <div class="fold"><div class="fold-in"><div class="examples">
-      <span class="lbl">Быстрые цели</span>
+      <span class="lbl">Примеры запросов</span>
       <a onclick="ex('сеньор python разработчик Москва Django Kafka')">python senior</a>
       <a onclick="ex('go разработчик')">go developer</a>
       <a onclick="ex('маркетолог таргетолог seo')">маркетолог</a>
@@ -499,8 +499,8 @@ body.working .radar{width:238px;height:238px}
     </div></div></div>
 
     <div class="ftoggles">
-      <div class="filt-toggle" onclick="toggleFilters()">Параметры операции<span class="cnt" id="filtCnt"></span></div>
-      <label class="aichip"><input type="checkbox" id="aiOn" onchange="toggleAIon(this.checked)"> AI-анализ цели</label>
+      <div class="filt-toggle" onclick="toggleFilters()">Параметры поиска<span class="cnt" id="filtCnt"></span></div>
+      <label class="aichip"><input type="checkbox" id="aiOn" onchange="toggleAIon(this.checked)"> AI-анализ запроса</label>
       <label class="aichip"><input type="checkbox" id="ctOn" onchange="toggleCt(this.checked)"> Контакты в профилях</label>
     </div>
     <div class="history" id="hist" style="display:none"></div>
@@ -519,7 +519,7 @@ body.working .radar{width:238px;height:238px}
 <div class="wrap">
   <div id="parsed" class="parsed" style="display:none"></div>
   <div id="results">
-    <div class="empty">Задай цель и нажми «Выследить». Соберу готовые запросы по hh.ru, Habr, LinkedIn, GitHub, Telegram, VK, TenChat, конференциям и профильным каналам — под IT и non-IT.</div>
+    <div class="empty">Опиши, кого ищешь, и нажми «Выследить». Соберу готовые запросы по hh.ru, Habr, LinkedIn, GitHub, Telegram, VK, TenChat, конференциям и профильным каналам — под IT и non-IT.</div>
   </div>
 </div>
 
@@ -947,16 +947,16 @@ async function run(){
   if(UI.qmode==='vac' && raw) vacPrepare(raw);
   let p;
   if(AI_ON && raw){
-    res.innerHTML='<div class="empty">AI анализирует цель…</div>'; pr.style.display='none';
+    res.innerHTML='<div class="empty">AI анализирует запрос…</div>'; pr.style.display='none';
     try{ p = await aiState(raw); }
     catch(e){ p = currentState(); toast('AI недоступен: '+e.message+' — показываю обычный результат'); }
   } else { p = currentState(); }
   _state = p;
   if(!p.active){ document.body.classList.remove('working');
     const rd0=document.querySelector('.radar'); if(rd0) rd0.classList.remove('live');
-    _cards=[]; renderBlips(); renderTicker(); res.innerHTML='<div class="empty">Задай цель или выбери параметры операции.</div>'; pr.style.display='none'; return; }
+    _cards=[]; renderBlips(); renderTicker(); res.innerHTML='<div class="empty">Опиши, кого ищешь, или выбери параметры поиска.</div>'; pr.style.display='none'; return; }
   if(!p.resolved && raw && AIFB_ON && !AI_ON){
-    res.innerHTML='<div class="empty">Анализирую цель…</div>'; pr.style.display='none';
+    res.innerHTML='<div class="empty">Анализирую запрос…</div>'; pr.style.display='none';
     try{
       const r = await aiResolve(raw);
       if(!r.valid){ res.innerHTML='<div class="empty">Не похоже на профессию'+(r.reason?': '+esc(r.reason):'')+'.<br>Попробуй иначе — например «тракторист», «сварщик» или «финансовый аналитик».</div>'; pr.style.display='none'; return; }
@@ -994,14 +994,14 @@ async function run(){
       '<b onclick="dTechOff(\''+nq+'\')" title="Убрать совсем">×</b></i>';
   }).join('')+'<i class="dchip plus" onclick="openFiltersTech()" title="Добавить технологии">+</i>';
   const df=[];
-  df.push(['Цель', dsel(roleOpts, F.role||p.role.key, 'dRole'), 1]);
+  df.push(['Должность', dsel(roleOpts, F.role||p.role.key, 'dRole'), 1]);
   df.push(['Категория', '<b>'+(p.role.cat==='it'?'IT':'non-IT')+'</b>', 0]);
   df.push(['Грейд', dsel([['','любой'],['Junior','Junior'],['Middle','Middle'],['Senior','Senior'],['Lead','Lead']], F.grade||(p.grade?p.grade.key:''), 'dGrade'), 0]);
   df.push(['Стек', techChips, 0]);
   df.push(['Локация', dsel([['','любая']].concat(CITIES.map(c=>[c.ru,c.ru])), F.city||(p.city?p.city.ru:''), 'dCity'), 0]);
   pr.innerHTML =
     '<i class="ck tl"></i><i class="ck tr"></i><i class="ck bl"></i><i class="ck br"></i>'+
-    '<div class="dhead"><span>Профиль цели</span><span class="dmeta">каналов: <b class="cnt" data-v="'+nGroups+'">0</b> · запросов: <b class="cnt" data-v="'+cards.length+'">0</b></span></div>'+
+    '<div class="dhead"><span>Профиль поиска</span><span class="dmeta">каналов: <b class="cnt" data-v="'+nGroups+'">0</b> · запросов: <b class="cnt" data-v="'+cards.length+'">0</b></span></div>'+
     '<div class="dfields">'+df.map((f,i)=>'<span class="df'+(f[2]?' hot':'')+'" style="--d:'+(i*95)+'ms"><label>'+f[0]+'</label><span class="dv">'+f[1]+'</span></span>').join('')+'</div>';
   pr.style.display='flex';
 
@@ -1090,7 +1090,7 @@ function renderHist(){
   let a=[]; try{ a=JSON.parse(lsGet('peleng_hist')||'[]'); }catch(_){}
   if(!a.length){ el.style.display='none'; return; }
   el.style.display='flex';
-  el.innerHTML='<span class="lbl">Недавние цели</span>'+
+  el.innerHTML='<span class="lbl">Недавние запросы</span>'+
     a.map(q=>'<a onclick="ex(this.textContent)">'+esc(q)+'</a>').join('')+
     '<span class="hclear" onclick="histClear()" title="Очистить историю">×</span>';
 }
@@ -1175,10 +1175,10 @@ function mainHTML(){
 }
 function renderDeck(){
   document.getElementById('results').innerHTML=
-    '<div class="toolbar"><span class="tl-lab">Перехват // результаты</span>'+
+    '<div class="toolbar"><span class="tl-lab">Результаты</span>'+
       '<div class="tl-r"><div class="sort"><span>сортировка</span><div class="seg sortseg">'+
         [["prio","приоритет"],["narrow","точные"],["az","А–Я"]].map(o=>'<button data-v="'+o[0]+'"'+(UI.sort===o[0]?' class="on"':'')+' onclick="setSort(\''+o[0]+'\')">'+o[1]+'</button>').join('')+'</div></div>'+
-      '<button class="tl-x" onclick="resetAll()" title="Очистить всё и вернуться на главный экран">✕ завершить операцию</button></div></div>'+
+      '<button class="tl-x" onclick="resetAll()" title="Очистить всё и вернуться на главный экран">✕ Очистить всё</button></div></div>'+
     '<div class="deck"><nav class="rail" id="rail">'+railHTML()+'</nav>'+
     '<div class="deck-main" id="deckMain">'+mainHTML()+'</div></div>';
 }
@@ -1335,8 +1335,8 @@ function setQmode(m){
     q.placeholder='Вставь текст вакансии целиком — роль, грейд, город, требования и «будет плюсом» разложатся по фильтрам сами…';
     q.style.minHeight='170px'; if(cap) cap.textContent='Текст вакансии';
   } else {
-    q.placeholder='Опиши цель: «сеньор python разработчик в Москве с Django», «маркетолог таргетолог спб», «коммерческий директор», «логист ВЭД»…';
-    q.style.minHeight='76px'; if(cap) cap.textContent='Постановка задачи';
+    q.placeholder='Кого ищем: «сеньор python разработчик в Москве с Django», «маркетолог таргетолог спб», «коммерческий директор», «логист ВЭД»…';
+    q.style.minHeight='76px'; if(cap) cap.textContent='Поисковый запрос';
   }
 }
 const VAC_MUST=/(требовани|обязательн|ожидаем от тебя|что нужно|необходимо|ты умеешь|мы ждём|мы ждем|важно)/i;
@@ -1494,7 +1494,7 @@ function resetFilters(){
   initFilters(); document.getElementById('filters').classList.add('open'); updateFiltCnt(); run();
 }
 /* полный сброс: чистое состояние + возврат на главный экран */
-const EMPTY_HOME='Задай цель и нажми «Выследить». Соберу готовые запросы по hh.ru, Habr, LinkedIn, GitHub, Telegram, VK, TenChat, конференциям и профильным каналам — под IT и non-IT.';
+const EMPTY_HOME='Опиши, кого ищешь, и нажми «Выследить». Соберу готовые запросы по hh.ru, Habr, LinkedIn, GitHub, Telegram, VK, TenChat, конференциям и профильным каналам — под IT и non-IT.';
 function resetAll(){
   const q=document.getElementById('q'); if(q) q.value='';
   clearF();
@@ -1634,7 +1634,7 @@ async function aiVariant(el, mode){
   const el=document.getElementById('boot'); if(!el) return;
   let seen=null; try{ seen=sessionStorage.getItem('peleng_boot'); }catch(_){}
   if(seen==='1' || !MOTION_OK){ el.remove(); return; }
-  const lines=['> PELENG // сорсинг-разведка','> инициализация каналов… 30+ OK','> словарь ролей… 130 OK','> протоколы: boolean · x-ray · native OK','> система готова. задай цель'];
+  const lines=['> PELENG // сорсинг-разведка','> инициализация каналов… 30+ OK','> словарь ролей… 130 OK','> протоколы: boolean · x-ray · native OK','> система готова. кого ищем?'];
   const pre=el.querySelector('pre'); let li=0, ci=0, done=false;
   function fin(){ if(done) return; done=true; try{ sessionStorage.setItem('peleng_boot','1'); }catch(_){}
     el.classList.add('out'); setTimeout(()=>el.remove(),500); }
