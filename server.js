@@ -8,8 +8,9 @@
 //   LEADS_FILE         — куда писать email-заявки (по умолчанию ./data/leads.jsonl;
 //                        в Coolify смонтируй volume на эту папку, иначе файл сотрётся при редеплое)
 //   TG_BOT_TOKEN, TG_CHAT_ID — необязательно: уведомление в Telegram о каждой заявке
-//   YAXML_FOLDER_ID, YAXML_API_KEY — необязательно: проверка размера выдачи через Яндекс Search API
-//                        (Yandex Cloud → сервисный аккаунт с ролью search-api.webSearch.user → API-ключ)
+//   GOOGLE_CSE_KEY, GOOGLE_CSE_CX — необязательно: проверка размера выдачи через Google Custom Search
+//                        (programmablesearchengine.google.com → поисковик «весь интернет» → cx;
+//                         ключ — в Google Cloud Console, Custom Search API; 100 запросов/день бесплатно)
 
 const http = require('http');
 const fs = require('fs');
@@ -166,13 +167,13 @@ function handleNick(req, res) {
   });
 }
 
-// ── проверка размера выдачи через Яндекс Search API (XML) ──
+// ── проверка размера выдачи через Google Custom Search API ──
 const countCache = new Map(); // qhash → {at, found}
 const countHits = new Map();
 
 function handleCount(req, res) {
-  const folder = process.env.YAXML_FOLDER_ID, key = process.env.YAXML_API_KEY;
-  if (!folder || !key) return send(res, 501, 'application/json', JSON.stringify({ error: 'not_configured' }));
+  const key = process.env.GOOGLE_CSE_KEY, cx = process.env.GOOGLE_CSE_CX;
+  if (!key || !cx) return send(res, 501, 'application/json', JSON.stringify({ error: 'not_configured' }));
   const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
   const now = Date.now();
   const hits = (countHits.get(ip) || []).filter(t => now - t < 3600e3);
@@ -190,17 +191,21 @@ function handleCount(req, res) {
     if (cached && now - cached.at < 24 * 3600e3)
       return send(res, 200, 'application/json', JSON.stringify({ found: cached.found, cached: true }));
     try {
-      const u = 'https://yandex.ru/search/xml?folderid=' + encodeURIComponent(folder) +
-        '&apikey=' + encodeURIComponent(key) + '&query=' + encodeURIComponent(q);
+      const u = 'https://www.googleapis.com/customsearch/v1?key=' + encodeURIComponent(key) +
+        '&cx=' + encodeURIComponent(cx) + '&num=1&fields=searchInformation(totalResults)' +
+        '&q=' + encodeURIComponent(q);
       const ctl = new AbortController();
       const tm = setTimeout(() => ctl.abort(), 10000);
       const r = await fetch(u, { signal: ctl.signal });
       clearTimeout(tm);
-      const xml = await r.text();
-      const err = xml.match(/<error[^>]*>([\s\S]*?)<\/error>/);
-      if (err) return send(res, 502, 'application/json', JSON.stringify({ error: err[1].trim().slice(0, 200) }));
-      const m = xml.match(/<found priority="all">(\d+)<\/found>/) || xml.match(/<found[^>]*>(\d+)<\/found>/);
-      const found = m ? parseInt(m[1], 10) : 0;
+      const d = await r.json();
+      if (!r.ok) {
+        const msg = (d.error && d.error.message) || 'upstream error';
+        // дневная квота CSE исчерпана — фронту отдаём как «не настроено сейчас»
+        const code = /quota|limit/i.test(msg) ? 429 : 502;
+        return send(res, code, 'application/json', JSON.stringify({ error: msg.slice(0, 200) }));
+      }
+      const found = parseInt((d.searchInformation && d.searchInformation.totalResults) || '0', 10) || 0;
       countCache.set(ck, { at: now, found });
       if (countCache.size > 3000) countCache.delete(countCache.keys().next().value);
       send(res, 200, 'application/json', JSON.stringify({ found }));

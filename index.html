@@ -872,7 +872,6 @@ const enc = encodeURIComponent;
 const Q = s => '"'+s+'"';
 const orQ = arr => '('+arr.map(Q).join(' OR ')+')';
 const G = s => 'https://www.google.com/search?q='+enc(s);
-const Y = s => 'https://yandex.ru/search/?text='+enc(s);
 
 /* ===================== ГЕНЕРАЦИЯ ===================== */
 function build(p){
@@ -892,7 +891,7 @@ function build(p){
 
   /* ---- pro ---- */
   let li = ['site:linkedin.com/in', isIT?langG:techG, orQ(roleSyn), cityG, gradeG, NOISE].filter(Boolean).join(' ');
-  cards.push({grp:'pro', ttl:'LinkedIn (X-Ray)', desc:'Google + Yandex. В РФ доступен только через поисковик.', str:li, url:G(li), url2:Y(li), alt:'Открыть в Yandex'});
+  cards.push({grp:'pro', ttl:'LinkedIn (X-Ray)', desc:'В РФ доступен только через Google.', str:li, url:G(li)});
 
   const rc = roleSyn.map(Q).join(' OR ');
   let pos = (isIT && langs.length) ? 'POSITION:(('+langs.join(' OR ')+') AND ('+rc+'))' : 'POSITION:('+rc+')';
@@ -926,11 +925,11 @@ function build(p){
     cards.push({grp:'community', ttl:'Habr — авторы', desc:'Авторы статей по теме.', str:hu, url:G(hu)});
   }
   let tg = ['inurl:t.me', isIT?(langG||techG):techG, orQ(roleSyn.slice(0,3)), p.city?Q(p.city.ru):''].filter(Boolean).join(' ');
-  cards.push({grp:'community', ttl:'Telegram (X-Ray)', desc:'Профили, каналы и чаты. Ключевой канал для РФ.', str:tg, url:G(tg), url2:Y(tg), alt:'Открыть в Yandex'});
+  cards.push({grp:'community', ttl:'Telegram (X-Ray)', desc:'Профили, каналы и чаты. Ключевой канал для РФ.', str:tg, url:G(tg)});
   let tg2 = ['inurl:t.me/s/', techG, '("ищу работу" OR "ищу команду" OR резюме)'].filter(Boolean).join(' ');
   cards.push({grp:'community', ttl:'Telegram — посты в чатах', desc:'Сообщения «ищу работу» в профильных чатах.', str:tg2, url:G(tg2)});
   let vk = ['site:vk.com', orQ([p.role.ru, ...roleSyn.slice(0,2)]), techG, p.city?Q(p.city.ru):''].filter(Boolean).join(' ');
-  cards.push({grp:'community', ttl:'VK (X-Ray)', desc:'Профили во ВКонтакте.', str:vk, url:G(vk), url2:Y(vk), alt:'Открыть в Yandex'});
+  cards.push({grp:'community', ttl:'VK (X-Ray)', desc:'Профили во ВКонтакте.', str:vk, url:G(vk)});
 
   /* ---- competitive (IT) ---- */
   if(isIT){
@@ -1034,8 +1033,8 @@ async function run(){
   const xt = companyTerms();
   const extra = tp.mq + xt + tp.xq + contactTerms();
   for(const c of cards){
-    const isG=/google\.com\/search/.test(c.url), isY=/yandex\.ru\/search/.test(c.url);
-    if((isG||isY) && extra){ c.str+=extra; c.url=isG?G(c.str):Y(c.str); if(c.url2) c.url2=Y(c.str); c.hasCt=F.ct; }
+    const isG=/google\.com\/search/.test(c.url);
+    if(isG && extra){ c.str+=extra; c.url=G(c.str); c.hasCt=F.ct; }
     else if(c.ttl==='hh.ru' && (tp.hhm||tp.hhx)){
       c.str+=tp.hhm+tp.hhx;
       const amp=c.url.indexOf('&'), tail=amp>0?c.url.slice(amp):'';
@@ -1216,7 +1215,7 @@ function hiQ(s){
   return h;
 }
 function cardHTML(c, i){
-  const eng = /google\.com\/search/.test(c.url)?'google':(/yandex\.ru\/search/.test(c.url)?'yandex':'');
+  const eng = /google\.com\/search/.test(c.url)?'google':'';
   const vrow = eng ? '<div class="row vrow">'+
       '<span class="vbtn" onclick="aiVariant(this,\'broad\')">шире</span>'+
       '<span class="vbtn" onclick="aiVariant(this,\'narrow\')">уже</span>'+
@@ -1274,28 +1273,25 @@ function renderDeck(){
       (_ctHidden? ' <i class="ctnote">только запросы с контактами · '+_ctHidden+' '+plural(_ctHidden,'канал скрыт','канала скрыто','каналов скрыто')+' <a onclick="ctOffQuick()">показать все</a></i>':'')+'</span>'+
       '<div class="tl-r"><div class="sort"><span>сортировка</span><div class="seg sortseg">'+
         [["prio","приоритет"],["narrow","точные"],["az","А–Я"]].map(o=>'<button data-v="'+o[0]+'"'+(UI.sort===o[0]?' class="on"':'')+' onclick="setSort(\''+o[0]+'\')">'+o[1]+'</button>').join('')+'</div></div>'+
-      '<button class="tl-chk" id="serpBtn" onclick="checkSerps(this)" title="Сколько результатов даёт каждый X-Ray запрос в Яндексе — пустые сразу видно">Проверить выдачу</button>'+
+      '<button class="tl-chk" id="serpBtn" onclick="checkSerps(this)" title="Сколько результатов даёт каждый X-Ray запрос в Google — пустые сразу видно">Проверить выдачу</button>'+
       '<button class="tl-x" onclick="resetAll()" title="Очистить всё и вернуться на главный экран">✕ Очистить всё</button></div></div>'+
     '<div class="deck"><nav class="rail" id="rail">'+railHTML()+'</nav>'+
     '<div class="deck-main" id="deckMain">'+mainHTML()+'</div></div>';
 }
-/* ── проверка выдачи: сколько результатов даёт X-Ray запрос в Яндексе ── */
+/* ── проверка выдачи: сколько результатов даёт X-Ray запрос в Google ── */
 const _serp = new Map(); // str запроса → found
 let _serpOff = false;    // сервер без ключа — не дёргаем повторно
 function fmtN(n){ return n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(n<1e4?1:0)+'K':''+n; }
 function serpBadge(str){
   if(!_serp.has(str)) return '';
   const n=_serp.get(str);
-  return n===0 ? '<span class="serp s0">· пусто в Яндексе</span>'
-               : '<span class="serp s1">· ~'+fmtN(n)+' в Яндексе</span>';
-}
-function yaQuery(s){ /* google-операторы → яндексовые */
-  return s.replace(/\bintitle:/g,'title:').replace(/\bfiletype:/g,'mime:');
+  return n===0 ? '<span class="serp s0">· пусто в Google</span>'
+               : '<span class="serp s1">· ~'+fmtN(n)+' в Google</span>';
 }
 async function serpOne(str){
   if(_serp.has(str)) return _serp.get(str);
   const r=await fetch('/api/count',{method:'POST',headers:{'content-type':'application/json'},
-    body:JSON.stringify({q:yaQuery(str)})});
+    body:JSON.stringify({q:str})});
   if(r.status===501){ _serpOff=true; throw new Error('notconf'); }
   const d=await r.json();
   if(!r.ok) throw new Error(d.error||'ошибка');
@@ -1303,7 +1299,7 @@ async function serpOne(str){
   return d.found;
 }
 async function checkSerps(btn){
-  if(_serpOff){ toast('Проверка выдачи не настроена — нужен ключ Яндекс Search API на сервере'); return; }
+  if(_serpOff){ toast('Проверка выдачи не настроена — нужен ключ Google CSE на сервере'); return; }
   const cards=[...document.querySelectorAll('.card')].filter(c=>c.dataset.eng);
   const jobs=cards.map(c=>({c, q:(c.querySelector('.btn.copy')||{}).getAttribute? c.querySelector('.btn.copy').getAttribute('data-s'):''})).filter(j=>j.q);
   if(!jobs.length) return;
@@ -1331,7 +1327,7 @@ async function checkSerps(btn){
     setTimeout(()=>{ btn.textContent='Проверить выдачу'; btn.disabled=false; }, 4000);
   }catch(_){
     btn.textContent='Проверить выдачу'; btn.disabled=false;
-    toast(_serpOff? 'Проверка выдачи не настроена — нужен ключ Яндекс Search API на сервере' : 'Часть проверок не прошла — попробуй ещё раз');
+    toast(_serpOff? 'Проверка выдачи не настроена — нужен ключ Google CSE на сервере' : 'Часть проверок не прошла — попробуй ещё раз');
   }
 }
 
@@ -1461,7 +1457,7 @@ function copyGroup(k){
 
 /* ===================== ФИЛЬТРЫ ===================== */
 const F = {cat:'auto', grade:'', role:'', city:'', tech:new Set(), inc:[], exc:[]};
-/* компании: inc — искать только в этих, exc — исключить. Применяется к X-Ray (Google/Yandex) запросам. */
+/* компании: inc — искать только в этих, exc — исключить. Применяется к X-Ray (Google) запросам. */
 function companyTerms(){
   let s='';
   if(F.inc.length) s+=' ('+F.inc.map(x=>'"'+x+'"').join(' OR ')+')';
@@ -1710,7 +1706,7 @@ function initFilters(){
     '<div class="frow"><label>Языки</label><div class="techchips">'+langs.map(chip).join('')+'</div></div>'+
     '<div class="frow"><label>Стек / инструменты</label><div class="techchips tall">'+tools.map(chip).join('')+'</div></div>'+
     '</div></div>'+
-    '<div class="aihint">Фильтр компаний применяется к X-Ray запросам (Google / Yandex). Чипы стека в досье: клик — желательно → <b>обязательно</b> → исключить; кнопка «⇄ любой брокер» расширяет технологию до всей группы аналогов.</div>'+
+    '<div class="aihint">Фильтр компаний применяется к X-Ray запросам (Google). Чипы стека в досье: клик — желательно → <b>обязательно</b> → исключить; кнопка «⇄ любой брокер» расширяет технологию до всей группы аналогов.</div>'+
     '<div class="fbtns"><button class="freset" onclick="resetFilters()">Сбросить фильтры</button>'+
     '<button class="freset hard" onclick="resetAll()">✕ Сбросить всё и вернуться</button></div>';
   const fi=document.getElementById('fInc'), fe=document.getElementById('fExc');
@@ -1849,7 +1845,7 @@ async function aiVariant(el, mode){
   btns.forEach(b=>b.classList.add('busy')); el.textContent='…';
   try{
     const j=parseJson(await aiCall(SYS_VARIANT,'Источник: '+src+'\nРежим: '+VMODES[mode]+'\nТекущая строка:\n'+expr+'\nКонтекст поиска: '+ctx));
-    codeEl.innerHTML=hiQ(j.expr); openEl.href=(eng==='yandex')?Y(j.expr):G(j.expr); copyEl.setAttribute('data-s', j.expr);
+    codeEl.innerHTML=hiQ(j.expr); openEl.href=G(j.expr); copyEl.setAttribute('data-s', j.expr);
     if(j.note){ codeEl.title=j.note; toast(card.dataset.src+': '+j.note); }
   }catch(e){ toast('AI: '+e.message); }
   finally{ btns.forEach(b=>b.classList.remove('busy')); el.textContent=old; }
