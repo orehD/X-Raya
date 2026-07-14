@@ -428,6 +428,9 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
   transition:color .18s var(--ease), border-color .18s var(--ease)}
 .tl-chk:hover{color:var(--amber-hi);border-color:var(--amber)}
 .tl-chk:disabled{opacity:.6;cursor:default}
+.tl-pro{cursor:pointer;font:500 10.5px/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;
+  color:#8B8066;padding:9px 4px;transition:color .18s var(--ease)}
+.tl-pro:hover{color:var(--amber)}
 .serp{margin-left:8px;font:500 10px var(--f-mono);letter-spacing:.05em;vertical-align:2px;white-space:nowrap}
 .serp.s0{color:#E2705A}
 .serp.s1{color:var(--amber-hi)}
@@ -1425,6 +1428,7 @@ function renderDeck(){
       '<div class="tl-r"><div class="sort"><span>сортировка</span><div class="seg sortseg">'+
         [["prio","приоритет"],["narrow","точные"],["az","А–Я"]].map(o=>'<button data-v="'+o[0]+'"'+(UI.sort===o[0]?' class="on"':'')+' onclick="setSort(\''+o[0]+'\')">'+o[1]+'</button>').join('')+'</div></div>'+
       '<button class="tl-chk" id="serpBtn" onclick="checkSerps(this)" title="Сколько результатов даёт каждый X-Ray запрос в Google — пустые сразу видно">Проверить выдачу</button>'+
+      (typeof IS_PRO!=='undefined'&&IS_PRO?'':'<a class="tl-pro" onclick="document.getElementById(\'pro\').scrollIntoView({behavior:\'smooth\'})" title="В Pro пустые каналы подсвечиваются сами, без клика">⚡ автопроверка — в Pro</a>')+
       '<button class="tl-chk" onclick="shareSearch(this)" title="Скопировать ссылку на этот поиск — откроется с теми же фильтрами">Поделиться</button>'+
       '<button class="tl-x" onclick="resetAll()" title="Очистить всё и вернуться на главный экран">✕ Очистить всё</button></div></div>'+
     '<div class="deck"><nav class="rail" id="rail">'+railHTML()+'</nav>'+
@@ -1462,10 +1466,20 @@ function markEmpty(c, empty){
     if(vr) vr.insertAdjacentHTML('beforebegin','<div class="vhint">Выдача пустая — жми «шире», уберу лишние условия</div>');
   }
 }
-/* автопроверка: тихо чекаем топ-6 X-Ray карточек после генерации (кэш 24ч бережёт квоту) */
+/* Pro-флаг: до запуска биллинга включается вручную — ?pro=1 в URL (выключить: ?pro=0).
+   Партнёрам/бете можно давать ссылку с ?pro=1; при реальной оплате заменится на проверку подписки. */
+const IS_PRO = (function(){
+  try{
+    const v=new URLSearchParams(location.search).get('pro');
+    if(v==='1') lsSet('peleng_pro','1');
+    if(v==='0') lsSet('peleng_pro','');
+    return lsGet('peleng_pro')==='1';
+  }catch(_){ return false; }
+})();
+/* автопроверка (Pro): тихо чекаем топ-6 X-Ray карточек после генерации (кэш 24ч бережёт квоту) */
 let _autoSerpT=null;
 function scheduleAutoSerp(){
-  if(_serpOff) return;
+  if(_serpOff || !IS_PRO) return;
   clearTimeout(_autoSerpT);
   _autoSerpT=setTimeout(autoSerp, 1400);
 }
