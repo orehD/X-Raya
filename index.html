@@ -433,12 +433,18 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
   border:1px solid var(--line2);color:var(--txt);padding:10px 16px;border-radius:8px;z-index:50;
   font:400 12.5px var(--f-mono);box-shadow:0 12px 36px -12px rgba(0,0,0,.8);max-width:90%}
 /* ── Pro: ранний доступ ── */
-.pro{position:relative;z-index:1;max-width:1160px;margin:44px auto 0;padding:22px 26px;
-  background:var(--panel);border:1px solid var(--line);display:flex;align-items:center;gap:26px;flex-wrap:wrap}
-.pro-l{flex:1;min-width:260px}
+.pro{position:relative;z-index:1;max-width:1160px;margin:44px auto 0;padding:26px 28px;
+  background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column;gap:20px}
+.pro-head{max-width:640px}
 .pro-cap{font:600 10.5px/1 var(--f-mono);letter-spacing:.24em;text-transform:uppercase;color:var(--amber)}
-.pro-txt{margin:9px 0 0;font:400 13.5px/1.55 var(--f-body);color:var(--muted);max-width:560px}
-.pro-f{display:flex;gap:9px;flex-wrap:wrap}
+.pro-txt{margin:9px 0 0;font:400 13.5px/1.55 var(--f-body);color:var(--muted)}
+.pro-feats{list-style:none;margin:0;padding:0;display:grid;gap:14px 26px;grid-template-columns:repeat(2,minmax(0,1fr))}
+.pro-feats li{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:start}
+.pro-feats .pf-ic{grid-row:1/3;font-size:20px;line-height:1.1;filter:grayscale(.15)}
+.pro-feats b{font:600 13.5px var(--f-body);color:var(--txt)}
+.pro-feats i{font:400 12.5px/1.5 var(--f-body);font-style:normal;color:var(--muted)}
+@media(max-width:640px){.pro-feats{grid-template-columns:1fr}}
+.pro-f{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
 .pro-f input{background:var(--bg);color:var(--txt);border:1px solid var(--line);border-radius:8px;
   padding:11px 14px;font:400 13px var(--f-mono);min-width:230px;transition:border-color .2s var(--ease)}
 .pro-f input:focus{outline:none;border-color:rgba(242,169,59,.5)}
@@ -568,13 +574,19 @@ body.working .radar{width:238px;height:238px}
 
 <section class="pro" id="pro">
   <i class="ck tl"></i><i class="ck tr"></i><i class="ck bl"></i><i class="ck br"></i>
-  <div class="pro-l">
+  <div class="pro-head">
     <div class="pro-cap">Peleng Pro // ранний доступ</div>
-    <p class="pro-txt">AI-разбор вакансий, контакты кандидатов и умные подборки — скоро. Оставь почту: позовём первым, первой сотне — вечная скидка.</p>
+    <p class="pro-txt">Базовый поиск по 30+ каналам — навсегда бесплатно. Pro добавит тяжёлые инструменты для сорсинга. Оставь почту — позовём первым, первой сотне вечная скидка.</p>
   </div>
+  <ul class="pro-feats">
+    <li><span class="pf-ic">🔓</span><b>Открытие контактов</b><i>Email и телефон кандидата прямо в выдаче — без ручного пробива по сервисам.</i></li>
+    <li><span class="pf-ic">🧠</span><b>AI-разбор вакансии</b><i>Вставляешь текст вакансии — Peleng сам раскладывает требования по фильтрам и распознаёт любую роль.</i></li>
+    <li><span class="pf-ic">🎯</span><b>Умные варианты запросов</b><i>Одним кликом — «шире», «уже» или «по-другому», если выдача пустая или слишком широкая.</i></li>
+    <li><span class="pf-ic">📁</span><b>Подборки кандидатов</b><i>Сохраняй найденных, помечай статусы и возвращайся к поиску позже.</i></li>
+  </ul>
   <form class="pro-f" id="proF" onsubmit="return leadSubmit(event)">
     <input type="email" id="proEmail" placeholder="you@company.ru" required autocomplete="email">
-    <button type="submit" id="proBtn">В список</button>
+    <button type="submit" id="proBtn">Хочу ранний доступ</button>
   </form>
 </section>
 

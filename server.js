@@ -11,6 +11,7 @@
 //   LEADS_FILE         — куда писать email-заявки (по умолчанию ./data/leads.jsonl;
 //                        в Coolify смонтируй volume на эту папку, иначе файл сотрётся при редеплое)
 //   TG_BOT_TOKEN, TG_CHAT_ID — необязательно: уведомление в Telegram о каждой заявке
+//   STATS_TOKEN        — необязательно: пароль к странице статистики /stats (заявки по партнёрам)
 //   SERPER_KEY         — необязательно: проверка размера выдачи через Serper.dev (проще всего;
 //                        serper.dev → Sign up → API key; 2500 бесплатных проверок). Приоритетнее CSE.
 //   GOOGLE_CSE_KEY, GOOGLE_CSE_CX — необязательно, альтернатива Serper: Google Custom Search
@@ -123,6 +124,30 @@ function handleLead(req, res) {
     }
     send(res, 200, 'application/json', JSON.stringify({ ok: true }));
   });
+}
+
+// ── статистика по заявкам (заявки по партнёрам /?ref=) ──
+function handleStats(req, res) {
+  const token = process.env.STATS_TOKEN;
+  if (!token) return send(res, 501, 'application/json', JSON.stringify({ error: 'STATS_TOKEN не задан на сервере' }));
+  const url = new URL(req.url, 'http://x');
+  const given = req.headers['x-stats-token'] || url.searchParams.get('token') || '';
+  if (given !== token) return send(res, 401, 'application/json', JSON.stringify({ error: 'неверный пароль' }));
+
+  let rows = [];
+  try {
+    rows = fs.readFileSync(LEADS_FILE, 'utf8').split('\n').filter(Boolean).map(l => {
+      try { return JSON.parse(l); } catch { return null; }
+    }).filter(Boolean);
+  } catch {}
+  const byRef = {};
+  for (const r of rows) {
+    const k = (r.ref && String(r.ref).trim()) || '(прямые)';
+    byRef[k] = (byRef[k] || 0) + 1;
+  }
+  const partners = Object.entries(byRef).map(([ref, count]) => ({ ref, count })).sort((a, b) => b.count - a.count);
+  const recent = rows.slice(-100).reverse();
+  send(res, 200, 'application/json', JSON.stringify({ total: rows.length, partners, recent }));
 }
 
 // ── проверка ника: существует ли профиль на площадках ──
@@ -254,11 +279,20 @@ function handleCount(req, res) {
   });
 }
 
+const STATS_PAGE = path.join(__dirname, 'stats.html');
+
 const server = http.createServer((req, res) => {
   if (req.method === 'POST' && req.url === '/api/ai') return handleAI(req, res);
   if (req.method === 'POST' && req.url === '/api/lead') return handleLead(req, res);
   if (req.method === 'POST' && req.url === '/api/nick') return handleNick(req, res);
   if (req.method === 'POST' && req.url === '/api/count') return handleCount(req, res);
+  if (req.method === 'GET' && req.url.split('?')[0] === '/api/stats') return handleStats(req, res);
+  if (req.method === 'GET' && req.url.split('?')[0] === '/stats') {
+    return fs.readFile(STATS_PAGE, (err, data) => {
+      if (err) return send(res, 500, 'text/plain', 'stats.html not found');
+      send(res, 200, 'text/html; charset=utf-8', data);
+    });
+  }
   // локальные шрифты
   if (req.method === 'GET' && req.url.startsWith('/fonts/') && req.url.indexOf('.woff2') !== -1) {
     const name = path.basename(req.url.split('?')[0]); // защита от path traversal
