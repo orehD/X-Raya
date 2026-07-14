@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Peleng — оперативная разведка талантов</title>
 <meta name="description" content="Peleng — сорсинг-агент: готовые boolean и X-Ray запросы по 30+ каналам за секунды." />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Peleng — сорсинг-разведка талантов" />
+<meta property="og:description" content="Запрос на человеческом → готовые boolean и X-Ray запросы по 30+ каналам за секунды. IT и non-IT. Плюс пробив контактов." />
+<meta property="og:image" content="https://x-raya.space/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:image" content="https://x-raya.space/og.png" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%230B0A07%27/%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%279%27 fill=%27none%27 stroke=%27%23F2A93B%27 stroke-width=%272%27/%3E%3Cpath d=%27M16 3v7M16 22v7M3 16h7M22 16h7%27 stroke=%27%23F2A93B%27 stroke-width=%272%27/%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%272.6%27 fill=%27%23E0472F%27/%3E%3C/svg%3E" />
 <style>
 /* Шрифты self-hosted (/fonts) — без внешних CDN, работает в РФ без VPN */
@@ -331,6 +339,8 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
   transition:color .18s var(--ease), border-color .18s var(--ease)}
 .vbtn:hover{color:var(--amber);border-color:rgba(242,169,59,.5)}
 .vbtn.busy{opacity:.45;pointer-events:none}
+.vhint{font:400 11.5px/1.5 var(--f-body);color:#E2705A;margin-top:9px}
+.card.nk-dim .vbtn:first-child{color:var(--amber);border-color:rgba(242,169,59,.55);border-style:solid}
 
 /* ── контролы досье ── */
 .df .dv{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-height:24px}
@@ -385,10 +395,19 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
 /* ── история целей ── */
 .history{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .history .lbl{color:#8B8066;font:500 10.5px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;margin-right:4px}
-.history a{cursor:pointer;font:400 12px var(--f-mono);color:var(--muted);background:var(--panel);
-  border:1px solid var(--line);padding:6px 11px;border-radius:7px;max-width:320px;overflow:hidden;
-  text-overflow:ellipsis;white-space:nowrap;transition:color .2s var(--ease), border-color .2s var(--ease)}
-.history a:hover{color:var(--amber);border-color:rgba(242,169,59,.5)}
+.hchip{display:inline-flex;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:7px;
+  overflow:hidden;transition:border-color .2s var(--ease)}
+.hchip:hover{border-color:var(--line2)}
+.hchip a{cursor:pointer;font:400 12px var(--f-mono);color:var(--muted);padding:6px 4px 6px 11px;max-width:300px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:color .2s var(--ease)}
+.hchip a:hover{color:var(--amber)}
+.hchip .hpin{cursor:pointer;font-size:12px;font-style:normal;color:#4A4230;padding:6px 9px 6px 4px;
+  transition:color .18s var(--ease), transform .15s var(--ease)}
+.hchip .hpin:hover{color:var(--muted)}
+.hchip .hpin:active{transform:scale(.8)}
+.hchip.pinned{border-color:rgba(242,169,59,.4);background:var(--amber-ghost)}
+.hchip.pinned a{color:var(--txt)}
+.hchip.pinned .hpin{color:var(--amber)}
 .hclear{cursor:pointer;color:var(--muted);font:400 13px var(--f-mono);border:1px solid var(--line);
   border-radius:7px;padding:5px 10px;transition:color .2s var(--ease), border-color .2s var(--ease)}
 .hclear:hover{color:#E2705A;border-color:#E2705A}
@@ -466,6 +485,11 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
 .pro-f button:active{transform:scale(.97)}
 .pro-f button:disabled{opacity:.55;pointer-events:none}
 .pro-ok{font:500 13px var(--f-mono);color:var(--amber-hi)}
+.pro-legal{flex-basis:100%;font:400 11.5px/1.5 var(--f-body);color:#8B8066}
+.pro-legal a{color:var(--muted)}
+.pro-legal a:hover{color:var(--amber)}
+footer .flink{color:var(--muted);text-decoration:underline dotted}
+footer .flink:hover{color:var(--amber)}
 @media(max-width:700px){.pro{margin:34px 16px 0;padding:18px}}
 footer{position:relative;z-index:1;border-top:1px solid var(--line);margin-top:26px;padding:26px 20px 34px;
   text-align:center;font:400 10.5px var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:#8B8066}
@@ -503,6 +527,18 @@ body.working .radar{width:238px;height:238px}
   button.go{width:100%;justify-content:center;min-height:48px}
   .frow>label{flex-basis:100%;padding-top:0}
   .ghead{flex-direction:column;align-items:flex-start}
+  /* переключатель режимов не влезает рядом с заголовком — на свою строку, кнопки во всю ширину */
+  .console-cap{flex-wrap:wrap}
+  .console-cap .qmode{flex-basis:100%;display:flex}
+  .qmode button{flex:1;text-align:center;padding:9px 6px}
+  /* счётчик группы держится рядом с названием */
+  .group h2{flex-wrap:wrap;row-gap:2px}
+  .group h2 span{white-space:nowrap}
+  /* сегменты (грейд) переносятся, а не обрезаются */
+  .seg{flex-wrap:wrap}
+  /* досье: поля во всю ширину, длинные значения не давят */
+  .dfields{gap:12px 18px}
+  .pd.d .pd-btn{max-width:100%}
 }
 
 /* ── reduced motion ── */
@@ -542,7 +578,7 @@ body.working .radar{width:238px;height:238px}
     <div class="fold"><div class="fold-in"><p class="tag">Опиши, кого ищешь — роль, стек, город. Peleng соберёт готовые поисковые запросы по LinkedIn, hh.ru, GitHub, Telegram, VK, TenChat, конференциям и профильным площадкам. Для IT и non-IT ролей.</p></div></div>
 
     <div class="console">
-      <div class="console-cap"><span id="capLbl">Поисковый запрос</span><span class="qmode"><button class="on" data-m="goal" onclick="setQmode('goal')">запрос</button><button data-m="vac" onclick="setQmode('vac')">вакансия</button></span></div>
+      <div class="console-cap"><span id="capLbl">Поисковый запрос</span><span class="qmode"><button class="on" data-m="goal" onclick="setQmode('goal')">запрос</button><button data-m="vac" onclick="setQmode('vac')">вакансия</button><button data-m="ct" onclick="setQmode('ct')">контакты</button></span></div>
       <div class="console-in">
         <textarea id="q" placeholder="Кого ищем: «сеньор python разработчик в Москве с Django», «логист ВЭД» — или @никнейм, или ссылка на LinkedIn для пробива контактов…"></textarea>
         <button class="go" onclick="run()">Выследить<span class="go-ic">→</span></button>
@@ -598,10 +634,11 @@ body.working .radar{width:238px;height:238px}
   <form class="pro-f" id="proF" onsubmit="return leadSubmit(event)">
     <input type="email" id="proEmail" placeholder="you@company.ru" required autocomplete="email">
     <button type="submit" id="proBtn">Хочу ранний доступ</button>
+    <span class="pro-legal">Нажимая кнопку, соглашаешься с <a href="/privacy">политикой обработки данных</a> — только письмо о запуске, без спама.</span>
   </form>
 </section>
 
-<footer><b>Peleng</b> · сорсинг-разведка · запросы выполняются в твоём браузере — данные не сохраняются</footer>
+<footer><b>Peleng</b> · сорсинг-разведка · поисковые запросы выполняются в твоём браузере и не сохраняются · <a class="flink" href="/privacy">политика данных</a></footer>
 
 <script>
 /* ===================== ДАННЫЕ ===================== */
@@ -1029,10 +1066,20 @@ async function run(){
   const res = document.getElementById('results');
   const pr = document.getElementById('parsed');
   const raw = document.getElementById('q').value.trim();
-  if(raw && isContactId(raw)){ renderContact(raw); return; }
+  const isCt = raw && isContactId(raw), isNk = raw && /^@[\w.\-]{2,32}$/.test(raw);
+  if(UI.qmode==='ct'){
+    if(isCt){ renderContact(raw); return; }
+    if(isNk){ renderNick(raw.slice(1)); return; }
+    res.innerHTML='<div class="empty">Режим «контакты»: вставь ссылку на LinkedIn-профиль, email или телефон — раскрою контакты. Или @никнейм — найду профили на площадках.</div>';
+    pr.style.display='none'; return;
+  }
+  if(isCt || isNk){ /* идентификатор в режиме поиска — переключаем сами */
+    setQmode('ct'); toast('Похоже на пробив — переключил в режим «контакты»');
+    if(isCt) renderContact(raw); else renderNick(raw.slice(1));
+    return;
+  }
   const v = validateQuery(raw);
   if(!v.ok){ res.innerHTML='<div class="empty">'+v.msg+'</div>'; pr.style.display='none'; return; }
-  if(raw && /^@[\w.\-]{2,32}$/.test(raw)){ renderNick(raw.slice(1)); return; }
   if(UI.qmode==='vac' && raw) vacPrepare(raw);
   let p;
   if(AI_ON && raw){
@@ -1107,6 +1154,7 @@ async function run(){
   countUp(pr);
   renderBlips();
   renderTicker();
+  scheduleAutoSerp();
   const rc=document.getElementById('rCore'); if(rc) rc.textContent=cards.length;
   const rl=document.getElementById('rCoreLbl'); if(rl){ const n=cards.length%100, n1=n%10;
     rl.textContent=(n>10&&n<20)?'сигналов':(n1===1?'сигнал':(n1>1&&n1<5?'сигнала':'сигналов')); }
@@ -1258,6 +1306,7 @@ async function nickCheck(n){
 }
 
 /* ── история целей ── */
+function getPins(){ try{ return JSON.parse(lsGet('peleng_pins')||'[]'); }catch(_){ return []; } }
 function saveHist(q){
   try{
     let a=JSON.parse(lsGet('peleng_hist')||'[]');
@@ -1266,14 +1315,28 @@ function saveHist(q){
     lsSet('peleng_hist', JSON.stringify(a)); renderHist();
   }catch(_){}
 }
+function pinToggle(q){
+  let p=getPins();
+  const i=p.findIndex(x=>x.toLowerCase()===q.toLowerCase());
+  if(i>=0) p.splice(i,1); else { p.unshift(q); p=p.slice(0,8); }
+  lsSet('peleng_pins', JSON.stringify(p)); renderHist();
+}
 function renderHist(){
   const el=document.getElementById('hist'); if(!el) return;
   let a=[]; try{ a=JSON.parse(lsGet('peleng_hist')||'[]'); }catch(_){}
-  if(!a.length){ el.style.display='none'; return; }
+  const pins=getPins();
+  const pinSet=new Set(pins.map(x=>x.toLowerCase()));
+  a=a.filter(q=>!pinSet.has(q.toLowerCase()));
+  if(!a.length && !pins.length){ el.style.display='none'; return; }
   el.style.display='flex';
-  el.innerHTML='<span class="lbl">Недавние запросы</span>'+
-    a.map(q=>'<a onclick="ex(this.textContent)">'+esc(q)+'</a>').join('')+
-    '<span class="hclear" onclick="histClear()" title="Очистить историю">×</span>';
+  const chip=(q,pinned)=>'<span class="hchip'+(pinned?' pinned':'')+'">'+
+    '<a onclick="ex(this.parentNode.dataset.q)">'+esc(q)+'</a>'+
+    '<i class="hpin" onclick="pinToggle(this.parentNode.dataset.q)" title="'+(pinned?'Открепить':'Закрепить — останется наверху')+'">★</i></span>';
+  el.innerHTML='<span class="lbl">'+(pins.length?'Закреплённые и недавние':'Недавние запросы')+'</span>'+
+    pins.map(q=>chip(q,true)).join('')+
+    a.map(q=>chip(q,false)).join('')+
+    (a.length?'<span class="hclear" onclick="histClear()" title="Очистить недавние (закреплённые останутся)">×</span>':'');
+  el.querySelectorAll('.hchip').forEach((c,i)=>{ c.dataset.q=(i<pins.length?pins[i]:a[i-pins.length]); });
 }
 function histClear(){ lsSet('peleng_hist','[]'); renderHist(); }
 
@@ -1362,6 +1425,7 @@ function renderDeck(){
       '<div class="tl-r"><div class="sort"><span>сортировка</span><div class="seg sortseg">'+
         [["prio","приоритет"],["narrow","точные"],["az","А–Я"]].map(o=>'<button data-v="'+o[0]+'"'+(UI.sort===o[0]?' class="on"':'')+' onclick="setSort(\''+o[0]+'\')">'+o[1]+'</button>').join('')+'</div></div>'+
       '<button class="tl-chk" id="serpBtn" onclick="checkSerps(this)" title="Сколько результатов даёт каждый X-Ray запрос в Google — пустые сразу видно">Проверить выдачу</button>'+
+      '<button class="tl-chk" onclick="shareSearch(this)" title="Скопировать ссылку на этот поиск — откроется с теми же фильтрами">Поделиться</button>'+
       '<button class="tl-x" onclick="resetAll()" title="Очистить всё и вернуться на главный экран">✕ Очистить всё</button></div></div>'+
     '<div class="deck"><nav class="rail" id="rail">'+railHTML()+'</nav>'+
     '<div class="deck-main" id="deckMain">'+mainHTML()+'</div></div>';
@@ -1389,6 +1453,36 @@ async function serpOne(str){
   _serp.set(str,{found:d.found,approx:!!d.approx});
   return d.found;
 }
+/* пустая выдача: приглушить карточку и подсказать «шире» */
+function markEmpty(c, empty){
+  c.classList.toggle('nk-dim', empty);
+  const old=c.querySelector('.vhint'); if(old) old.remove();
+  if(empty){
+    const vr=c.querySelector('.vrow');
+    if(vr) vr.insertAdjacentHTML('beforebegin','<div class="vhint">Выдача пустая — жми «шире», уберу лишние условия</div>');
+  }
+}
+/* автопроверка: тихо чекаем топ-6 X-Ray карточек после генерации (кэш 24ч бережёт квоту) */
+let _autoSerpT=null;
+function scheduleAutoSerp(){
+  if(_serpOff) return;
+  clearTimeout(_autoSerpT);
+  _autoSerpT=setTimeout(autoSerp, 1400);
+}
+async function autoSerp(){
+  if(_serpOff) return;
+  const cards=[...document.querySelectorAll('.card')].filter(c=>c.dataset.eng).slice(0,6);
+  for(const c of cards){
+    const btn=c.querySelector('.btn.copy'); if(!btn) continue;
+    const q=btn.getAttribute('data-s'); if(!q) continue;
+    try{
+      const n=await serpOne(q);
+      const ttl=c.querySelector('.ttl');
+      if(ttl){ const old=ttl.querySelector('.serp'); if(old) old.remove(); ttl.insertAdjacentHTML('beforeend', serpBadge(q)); }
+      markEmpty(c, n===0);
+    }catch(e){ if(_serpOff) return; }
+  }
+}
 async function checkSerps(btn){
   if(_serpOff){ toast('Проверка выдачи не настроена — нужен ключ Serper.dev (или Google CSE) на сервере'); return; }
   const cards=[...document.querySelectorAll('.card')].filter(c=>c.dataset.eng);
@@ -1404,7 +1498,7 @@ async function checkSerps(btn){
       const ttl=job.c.querySelector('.ttl');
       const old=ttl.querySelector('.serp'); if(old) old.remove();
       ttl.insertAdjacentHTML('beforeend', serpBadge(job.q));
-      if(n===0) job.c.classList.add('nk-dim'); else job.c.classList.remove('nk-dim');
+      markEmpty(job.c, n===0);
     }catch(e){
       fail++;
       if(String(e.message)==='notconf'){ done=jobs.length; throw e; }
@@ -1450,6 +1544,12 @@ async function leadSubmit(e){
 
 function plural(n,one,few,many){ const m=n%100, m1=n%10; return (m>10&&m<20)?many:(m1===1?one:(m1>1&&m1<5?few:many)); }
 function ctOffQuick(){ F.ct=false; const c=document.getElementById('ctOn'); if(c) c.checked=false; updateFiltCnt(); run(); }
+async function shareSearch(btn){
+  try{ await navigator.clipboard.writeText(location.href); }
+  catch(_){ const t=document.createElement('textarea'); t.value=location.href; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove(); }
+  const old=btn.textContent; btn.textContent='Скопировано ✓';
+  setTimeout(()=>{ btn.textContent=old; }, 2200);
+}
 function refreshRail(){ const r=document.getElementById('rail'); if(r) r.innerHTML=railHTML(); }
 function repaintMain(){
   const m=document.getElementById('deckMain'); if(!m) return;
@@ -1683,6 +1783,9 @@ function setQmode(m){
   if(m==='vac'){
     q.placeholder='Вставь текст вакансии целиком — роль, грейд, город, требования и «будет плюсом» разложатся по фильтрам сами…';
     q.style.minHeight='170px'; if(cap) cap.textContent='Текст вакансии';
+  } else if(m==='ct'){
+    q.placeholder='Ссылка на LinkedIn-профиль, email или телефон — раскрою контакты кандидата. Или @никнейм — найду его профили на 16 площадках…';
+    q.style.minHeight='76px'; if(cap) cap.textContent='Пробив контакта';
   } else {
     q.placeholder='Кого ищем: «сеньор python разработчик в Москве с Django», «маркетолог таргетолог спб», «коммерческий директор», «логист ВЭД»…';
     q.style.minHeight='76px'; if(cap) cap.textContent='Поисковый запрос';

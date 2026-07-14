@@ -379,6 +379,20 @@ const server = http.createServer((req, res) => {
       send(res, 200, 'text/html; charset=utf-8', data);
     });
   }
+  if (req.method === 'GET' && req.url.split('?')[0] === '/privacy') {
+    return fs.readFile(path.join(__dirname, 'privacy.html'), (err, data) => {
+      if (err) return send(res, 500, 'text/plain', 'privacy.html not found');
+      send(res, 200, 'text/html; charset=utf-8', data);
+    });
+  }
+  // OG-превью для шаринга в мессенджерах
+  if (req.method === 'GET' && req.url.split('?')[0] === '/og.png') {
+    return fs.readFile(path.join(__dirname, 'og.png'), (err, data) => {
+      if (err) return send(res, 404, 'text/plain', 'not found');
+      res.writeHead(200, { 'content-type': 'image/png', 'cache-control': 'public, max-age=86400' });
+      res.end(data);
+    });
+  }
   // локальные шрифты
   if (req.method === 'GET' && req.url.startsWith('/fonts/') && req.url.indexOf('.woff2') !== -1) {
     const name = path.basename(req.url.split('?')[0]); // защита от path traversal
