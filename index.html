@@ -252,11 +252,11 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
 .parsed{position:relative;flex-direction:column;gap:12px;margin:30px 0 0;
   border:1px solid var(--line2);border-radius:4px;padding:16px 18px;
   background:linear-gradient(180deg, var(--amber-ghost), transparent 70%)}
-.parsed .ck{position:absolute;width:13px;height:13px;border:0 solid var(--amber);opacity:.85}
-.parsed .tl{left:-1px;top:-1px;border-left-width:2px;border-top-width:2px}
-.parsed .tr{right:-1px;top:-1px;border-right-width:2px;border-top-width:2px}
-.parsed .bl{left:-1px;bottom:-1px;border-left-width:2px;border-bottom-width:2px}
-.parsed .br{right:-1px;bottom:-1px;border-right-width:2px;border-bottom-width:2px}
+:is(.parsed,.pro) .ck{position:absolute;width:13px;height:13px;border:0 solid var(--amber);opacity:.85}
+:is(.parsed,.pro) .tl{left:-1px;top:-1px;border-left-width:2px;border-top-width:2px}
+:is(.parsed,.pro) .tr{right:-1px;top:-1px;border-right-width:2px;border-top-width:2px}
+:is(.parsed,.pro) .bl{left:-1px;bottom:-1px;border-left-width:2px;border-bottom-width:2px}
+:is(.parsed,.pro) .br{right:-1px;bottom:-1px;border-right-width:2px;border-bottom-width:2px}
 .dhead{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
   font:500 10.5px/1 var(--f-mono);letter-spacing:.26em;text-transform:uppercase;color:var(--amber)}
 .dhead .dmeta{color:#6E6753;letter-spacing:.14em}
@@ -358,6 +358,10 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
 .dchip b:hover{color:#E2705A}
 .dchip.plus{cursor:pointer;color:#6E6753;transition:color .15s var(--ease), border-color .15s var(--ease)}
 .dchip.plus:hover{color:var(--amber);border-color:rgba(242,169,59,.5)}
+/* призрачные чипы: целевой набор роли, ещё не добавлен в поиск */
+.dchip.ghost{cursor:pointer;color:#6E6753;background:transparent;border-style:dashed;
+  transition:color .15s var(--ease), border-color .15s var(--ease), background-color .15s var(--ease)}
+.dchip.ghost:hover{color:var(--amber-hi);border-color:rgba(242,169,59,.5);background:var(--amber-ghost)}
 
 
 /* ── история целей ── */
@@ -410,6 +414,24 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--panel);
   border:1px solid var(--line2);color:var(--txt);padding:10px 16px;border-radius:8px;z-index:50;
   font:400 12.5px var(--f-mono);box-shadow:0 12px 36px -12px rgba(0,0,0,.8);max-width:90%}
+/* ── Pro: ранний доступ ── */
+.pro{position:relative;z-index:1;max-width:1160px;margin:44px auto 0;padding:22px 26px;
+  background:var(--panel);border:1px solid var(--line);display:flex;align-items:center;gap:26px;flex-wrap:wrap}
+.pro-l{flex:1;min-width:260px}
+.pro-cap{font:600 10.5px/1 var(--f-mono);letter-spacing:.24em;text-transform:uppercase;color:var(--amber)}
+.pro-txt{margin:9px 0 0;font:400 13.5px/1.55 var(--f-body);color:var(--muted);max-width:560px}
+.pro-f{display:flex;gap:9px;flex-wrap:wrap}
+.pro-f input{background:var(--bg);color:var(--txt);border:1px solid var(--line);border-radius:8px;
+  padding:11px 14px;font:400 13px var(--f-mono);min-width:230px;transition:border-color .2s var(--ease)}
+.pro-f input:focus{outline:none;border-color:rgba(242,169,59,.5)}
+.pro-f button{background:var(--amber);color:#1A1508;border:1px solid var(--amber);border-radius:8px;cursor:pointer;
+  font:600 12px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;padding:11px 20px;
+  transition:background-color .18s var(--ease), transform .15s var(--ease)}
+.pro-f button:hover{background:var(--amber-hi)}
+.pro-f button:active{transform:scale(.97)}
+.pro-f button:disabled{opacity:.55;pointer-events:none}
+.pro-ok{font:500 13px var(--f-mono);color:var(--amber-hi)}
+@media(max-width:700px){.pro{margin:34px 16px 0;padding:18px}}
 footer{position:relative;z-index:1;border-top:1px solid var(--line);margin-top:26px;padding:26px 20px 34px;
   text-align:center;font:400 10.5px var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:#6E6753}
 footer b{color:var(--muted);font-weight:400}
@@ -526,6 +548,18 @@ body.working .radar{width:238px;height:238px}
   </div>
 </div>
 
+<section class="pro" id="pro">
+  <i class="ck tl"></i><i class="ck tr"></i><i class="ck bl"></i><i class="ck br"></i>
+  <div class="pro-l">
+    <div class="pro-cap">Peleng Pro // ранний доступ</div>
+    <p class="pro-txt">AI-разбор вакансий, контакты кандидатов и умные подборки — скоро. Оставь почту: позовём первым, первой сотне — вечная скидка.</p>
+  </div>
+  <form class="pro-f" id="proF" onsubmit="return leadSubmit(event)">
+    <input type="email" id="proEmail" placeholder="you@company.ru" required autocomplete="email">
+    <button type="submit" id="proBtn">В список</button>
+  </form>
+</section>
+
 <footer><b>Peleng</b> · сорсинг-разведка · запросы выполняются в твоём браузере — данные не сохраняются</footer>
 
 <script>
@@ -601,6 +635,17 @@ const TECH = [
   {c:'Airflow', lang:0, gh:'', al:['airflow','эйрфлоу']},
   {c:'Terraform', lang:0, gh:'', al:['terraform','терраформ']},
   {c:'Flutter', lang:1, gh:'dart', al:['flutter','флаттер']},
+  {c:'Gin', lang:0, gh:'', al:['gin']},
+  {c:'gRPC', lang:0, gh:'', al:['grpc']},
+  {c:'Next.js', lang:0, gh:'', al:['next.js','nextjs','некст']},
+  {c:'NestJS', lang:0, gh:'', al:['nestjs','nest.js','нест']},
+  {c:'Laravel', lang:0, gh:'', al:['laravel','ларавел']},
+  {c:'Symfony', lang:0, gh:'', al:['symfony','симфони']},
+  {c:'Rails', lang:0, gh:'', al:['rails','ruby on rails','рельсы']},
+  {c:'Selenium', lang:0, gh:'', al:['selenium','селениум']},
+  {c:'Playwright', lang:0, gh:'', al:['playwright']},
+  {c:'Unity', lang:0, gh:'', al:['unity','юнити']},
+  {c:'SwiftUI', lang:0, gh:'', al:['swiftui','swift ui']},
   {c:'ML', lang:0, gh:'', al:[' ml ','machine learning','машинное обучение','машинн']},
   {c:'1С', lang:0, gh:'', al:['1с','1c']},
   {c:'Excel', lang:0, gh:'', al:['excel','эксель']},
@@ -998,7 +1043,10 @@ async function run(){
       '<u onclick="cycTerm(\''+nq+'\')" title="'+(mode==='must'?'Обязательно':mode==='x'?'Исключено':'Желательно')+' · клик: желательно → обязательно → исключить">'+lbl+'</u>'+
       (conc? '<a class="cc'+(exp?' on':'')+'" onclick="concTerm(\''+nq+'\')" title="'+(exp?'Свернуть обратно до '+esc(n):'Искать любой из: '+conc.items.join(', '))+'">⇄ '+esc(conc.l)+'</a>':'')+
       '<b onclick="dTechOff(\''+nq+'\')" title="Убрать совсем">×</b></i>';
-  }).join('')+'<i class="dchip plus" onclick="openFiltersTech()" title="Добавить технологии">+</i>';
+  }).join('')
+  +suggestFor(p, chipNames).map(n=>{ const nq=n.replace(/'/g,"\\'");
+    return '<i class="dchip ghost" onclick="dTechAdd(\''+nq+'\')" title="Типовой стек для этой роли — клик, чтобы добавить в поиск">+ '+esc(n)+'</i>'; }).join('')
+  +'<i class="dchip plus" onclick="openFiltersTech()" title="Добавить технологии">+</i>';
   const df=[];
   df.push(['Должность', dsel(roleOpts, F.role||p.role.key, 'dRole'), 1]);
   df.push(['Категория', '<b>'+(p.role.cat==='it'?'IT':'non-IT')+'</b>', 0]);
@@ -1190,6 +1238,32 @@ function renderDeck(){
     '<div class="deck"><nav class="rail" id="rail">'+railHTML()+'</nav>'+
     '<div class="deck-main" id="deckMain">'+mainHTML()+'</div></div>';
 }
+/* ── заявка на ранний доступ ── */
+function leadDone(email){
+  const f=document.getElementById('proF');
+  if(f) f.outerHTML='<div class="pro-ok">✓ Ты в списке — напишем на '+esc(email)+'</div>';
+}
+async function leadSubmit(e){
+  e.preventDefault();
+  const inp=document.getElementById('proEmail'), btn=document.getElementById('proBtn');
+  const email=(inp.value||'').trim();
+  if(!email) return false;
+  btn.disabled=true; btn.textContent='…';
+  try{
+    const r=await fetch('/api/lead',{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({email, ref:new URLSearchParams(location.search).get('ref')||''})});
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.error||'ошибка');
+    lsSet('peleng_lead', email);
+    leadDone(email);
+  }catch(err){
+    btn.disabled=false; btn.textContent='В список';
+    toast('Не получилось: '+err.message);
+  }
+  return false;
+}
+(function(){ const e=lsGet('peleng_lead'); if(e) leadDone(e); })();
+
 function plural(n,one,few,many){ const m=n%100, m1=n%10; return (m>10&&m<20)?many:(m1===1?one:(m1>1&&m1<5?few:many)); }
 function ctOffQuick(){ F.ct=false; const c=document.getElementById('ctOn'); if(c) c.checked=false; updateFiltCnt(); run(); }
 function refreshRail(){ const r=document.getElementById('rail'); if(r) r.innerHTML=railHTML(); }
@@ -1318,6 +1392,68 @@ const CONCEPTS=[
  {k:'ads', l:'рекламные кабинеты', items:['Яндекс.Директ','Google Ads','MyTarget']},
 ];
 function findConcept(n){ return CONCEPTS.find(c=>c.items.includes(n)); }
+
+/* ── целевые наборы: роль/язык → типовой стек-подсказки в досье ── */
+const LANG_SUGGEST={
+ 'Go':['Gin','gRPC','Kafka','PostgreSQL','Docker','Kubernetes'],
+ 'Python':['Django','FastAPI','Flask','PostgreSQL','Docker'],
+ 'Java':['Spring','Kafka','PostgreSQL','Docker','Kubernetes'],
+ 'JavaScript':['React','TypeScript','Node.js','Next.js'],
+ 'TypeScript':['React','Node.js','NestJS','Next.js'],
+ 'Node.js':['TypeScript','NestJS','MongoDB','Redis'],
+ 'PHP':['Laravel','Symfony','MySQL','Redis'],
+ 'Ruby':['Rails','PostgreSQL','Redis'],
+ 'C#':['.NET','Unity','Docker'],
+ 'C++':['Unity','Docker'],
+ 'Kotlin':['Spring','Java'],
+ 'Swift':['SwiftUI'],
+ 'Rust':['PostgreSQL','Docker','Kubernetes'],
+ 'Scala':['Spark','Kafka'],
+ 'Flutter':['Kotlin','Swift'],
+};
+const ROLE_SUGGEST={
+ Frontend:['React','Vue','TypeScript','Next.js'],
+ Backend:['PostgreSQL','Docker','Kafka','Redis'],
+ Fullstack:['React','Node.js','TypeScript','PostgreSQL'],
+ Mobile:['Kotlin','Swift','Flutter'],
+ DevOps:['Docker','Kubernetes','Terraform','Ansible','GitLab CI','Grafana'],
+ Cloud:['Kubernetes','Terraform','Docker'],
+ SysAdmin:['Ansible','Docker'],
+ Data:['Python','SQL','Spark','Airflow'],
+ DataScientist:['Python','PyTorch','SQL'],
+ DataEngineer:['Python','SQL','Spark','Airflow','ClickHouse'],
+ MLEngineer:['Python','PyTorch','TensorFlow','Docker'],
+ MLOps:['Docker','Kubernetes','Python'],
+ NLP:['Python','PyTorch'],
+ DataAnalyst:['SQL','Python','Power BI','Tableau'],
+ ProductAnalyst:['SQL','Python','Power BI'],
+ Analyst:['SQL','Excel','Power BI'],
+ QA:['Selenium','Playwright','Python'],
+ DBA:['PostgreSQL','MySQL','ClickHouse'],
+ GameDev:['Unity','C++','C#'],
+ OneC:['1С'],
+ Bitrix:['Bitrix24','PHP','MySQL'],
+ Designer:['Figma','Photoshop','Illustrator'],
+ ProductDesigner:['Figma'],
+ GraphicDesigner:['Figma','Photoshop','Illustrator'],
+ Marketing:['Яндекс.Директ','Google Ads','Excel'],
+ Sales:['Bitrix24','amoCRM','Excel'],
+ Finance:['Excel','SAP','1С'],
+};
+function suggestFor(p, present){
+  const names=[...(ROLE_SUGGEST[p.role.key]||[]), ...(p.role.stack||[])];
+  p.techs.filter(t=>t.lang).forEach(t=>names.push(...(LANG_SUGGEST[t.c]||[])));
+  const out=[];
+  for(const n of names){
+    if(out.includes(n) || present.includes(n)) continue;
+    if(F.techOff.has(n) || F.tmode[n]==='x') continue;
+    if(!TECH.find(x=>x.c===n)) continue;
+    out.push(n);
+    if(out.length>=6) break;
+  }
+  return out;
+}
+function dTechAdd(n){ F.tech.add(n); F.techOff.delete(n); initFilters(); updateFiltCnt(); run(); }
 /* режимы термов: nice (по умолч.) | must (жёсткое AND) | x (исключить) */
 F.tmode={}; F.tconc={};
 function conceptItemsOf(n){ const c=F.tconc[n]&&CONCEPTS.find(x=>x.k===F.tconc[n]); return c?[n,...c.items.filter(i=>i!==n)]:[n]; }

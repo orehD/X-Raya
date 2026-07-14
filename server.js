@@ -5,6 +5,9 @@
 // Переменные окружения:
 //   OPENROUTER_API_KEY — обязательно (ключ sk-or-... ; задаётся в Coolify, НЕ в коде)
 //   AI_MODEL           — необязательно (по умолчанию openai/gpt-4o-mini)
+//   LEADS_FILE         — куда писать email-заявки (по умолчанию ./data/leads.jsonl;
+//                        в Coolify смонтируй volume на эту папку, иначе файл сотрётся при редеплое)
+//   TG_BOT_TOKEN, TG_CHAT_ID — необязательно: уведомление в Telegram о каждой заявке
 
 const http = require('http');
 const fs = require('fs');
@@ -55,8 +58,54 @@ function handleAI(req, res) {
   });
 }
 
+// ── сбор email-заявок (ранний доступ к Pro) ──
+const LEADS_FILE = process.env.LEADS_FILE || path.join(__dirname, 'data', 'leads.jsonl');
+const seenLeads = new Set();
+try {
+  fs.readFileSync(LEADS_FILE, 'utf8').split('\n').forEach(l => {
+    try { const e = JSON.parse(l).email; if (e) seenLeads.add(e); } catch {}
+  });
+} catch {}
+const leadHits = new Map(); // ip → [timestamps], простейший rate limit
+
+function handleLead(req, res) {
+  const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+  const now = Date.now();
+  const hits = (leadHits.get(ip) || []).filter(t => now - t < 3600e3);
+  if (hits.length >= 10) return send(res, 429, 'application/json', JSON.stringify({ error: 'слишком часто, попробуй позже' }));
+  hits.push(now); leadHits.set(ip, hits);
+
+  let raw = '';
+  req.on('data', c => { raw += c; if (raw.length > 1e4) req.destroy(); });
+  req.on('end', () => {
+    let body = {}; try { body = JSON.parse(raw || '{}'); } catch {}
+    const email = String(body.email || '').trim().toLowerCase().slice(0, 120);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email))
+      return send(res, 400, 'application/json', JSON.stringify({ error: 'некорректный email' }));
+    if (!seenLeads.has(email)) {
+      seenLeads.add(email);
+      const rec = JSON.stringify({ email, at: new Date().toISOString(), ref: String(body.ref || '').slice(0, 60) });
+      try {
+        fs.mkdirSync(path.dirname(LEADS_FILE), { recursive: true });
+        fs.appendFileSync(LEADS_FILE, rec + '\n');
+      } catch (e) { console.error('lead write failed:', e.message); }
+      const tk = process.env.TG_BOT_TOKEN, chat = process.env.TG_CHAT_ID;
+      if (tk && chat) {
+        fetch('https://api.telegram.org/bot' + tk + '/sendMessage', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ chat_id: chat, text: '🎯 Peleng: новая заявка на Pro\n' + email }),
+        }).catch(() => {});
+      }
+      console.log('lead:', email);
+    }
+    send(res, 200, 'application/json', JSON.stringify({ ok: true }));
+  });
+}
+
 const server = http.createServer((req, res) => {
   if (req.method === 'POST' && req.url === '/api/ai') return handleAI(req, res);
+  if (req.method === 'POST' && req.url === '/api/lead') return handleLead(req, res);
   // локальные шрифты
   if (req.method === 'GET' && req.url.startsWith('/fonts/') && req.url.indexOf('.woff2') !== -1) {
     const name = path.basename(req.url.split('?')[0]); // защита от path traversal
