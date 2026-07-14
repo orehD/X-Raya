@@ -28,7 +28,10 @@ const INDEX = path.join(__dirname, 'index.html');
 const MODEL = process.env.AI_MODEL || 'openai/gpt-4o-mini';
 
 function send(res, code, type, body) {
-  res.writeHead(code, { 'content-type': type });
+  const h = { 'content-type': type };
+  // HTML не кэшируем: после Redeploy пользователи сразу получают свежую версию без Cmd+Shift+R
+  if (type.startsWith('text/html')) h['cache-control'] = 'no-cache';
+  res.writeHead(code, h);
   res.end(body);
 }
 
