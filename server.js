@@ -8,6 +8,8 @@
 //   LEADS_FILE         — куда писать email-заявки (по умолчанию ./data/leads.jsonl;
 //                        в Coolify смонтируй volume на эту папку, иначе файл сотрётся при редеплое)
 //   TG_BOT_TOKEN, TG_CHAT_ID — необязательно: уведомление в Telegram о каждой заявке
+//   YAXML_FOLDER_ID, YAXML_API_KEY — необязательно: проверка размера выдачи через Яндекс Search API
+//                        (Yandex Cloud → сервисный аккаунт с ролью search-api.webSearch.user → API-ключ)
 
 const http = require('http');
 const fs = require('fs');
@@ -164,10 +166,55 @@ function handleNick(req, res) {
   });
 }
 
+// ── проверка размера выдачи через Яндекс Search API (XML) ──
+const countCache = new Map(); // qhash → {at, found}
+const countHits = new Map();
+
+function handleCount(req, res) {
+  const folder = process.env.YAXML_FOLDER_ID, key = process.env.YAXML_API_KEY;
+  if (!folder || !key) return send(res, 501, 'application/json', JSON.stringify({ error: 'not_configured' }));
+  const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+  const now = Date.now();
+  const hits = (countHits.get(ip) || []).filter(t => now - t < 3600e3);
+  if (hits.length >= 200) return send(res, 429, 'application/json', JSON.stringify({ error: 'слишком часто' }));
+  hits.push(now); countHits.set(ip, hits);
+
+  let raw = '';
+  req.on('data', c => { raw += c; if (raw.length > 1e4) req.destroy(); });
+  req.on('end', async () => {
+    let body = {}; try { body = JSON.parse(raw || '{}'); } catch {}
+    const q = String(body.q || '').trim().slice(0, 800);
+    if (q.length < 3) return send(res, 400, 'application/json', JSON.stringify({ error: 'пустой запрос' }));
+    const ck = q.toLowerCase();
+    const cached = countCache.get(ck);
+    if (cached && now - cached.at < 24 * 3600e3)
+      return send(res, 200, 'application/json', JSON.stringify({ found: cached.found, cached: true }));
+    try {
+      const u = 'https://yandex.ru/search/xml?folderid=' + encodeURIComponent(folder) +
+        '&apikey=' + encodeURIComponent(key) + '&query=' + encodeURIComponent(q);
+      const ctl = new AbortController();
+      const tm = setTimeout(() => ctl.abort(), 10000);
+      const r = await fetch(u, { signal: ctl.signal });
+      clearTimeout(tm);
+      const xml = await r.text();
+      const err = xml.match(/<error[^>]*>([\s\S]*?)<\/error>/);
+      if (err) return send(res, 502, 'application/json', JSON.stringify({ error: err[1].trim().slice(0, 200) }));
+      const m = xml.match(/<found priority="all">(\d+)<\/found>/) || xml.match(/<found[^>]*>(\d+)<\/found>/);
+      const found = m ? parseInt(m[1], 10) : 0;
+      countCache.set(ck, { at: now, found });
+      if (countCache.size > 3000) countCache.delete(countCache.keys().next().value);
+      send(res, 200, 'application/json', JSON.stringify({ found }));
+    } catch (e) {
+      send(res, 500, 'application/json', JSON.stringify({ error: String((e && e.message) || e) }));
+    }
+  });
+}
+
 const server = http.createServer((req, res) => {
   if (req.method === 'POST' && req.url === '/api/ai') return handleAI(req, res);
   if (req.method === 'POST' && req.url === '/api/lead') return handleLead(req, res);
   if (req.method === 'POST' && req.url === '/api/nick') return handleNick(req, res);
+  if (req.method === 'POST' && req.url === '/api/count') return handleCount(req, res);
   // локальные шрифты
   if (req.method === 'GET' && req.url.startsWith('/fonts/') && req.url.indexOf('.woff2') !== -1) {
     const name = path.basename(req.url.split('?')[0]); // защита от path traversal

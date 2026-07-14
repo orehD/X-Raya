@@ -395,6 +395,14 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
   font:500 10.5px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:9px 13px;
   transition:color .18s var(--ease), border-color .18s var(--ease)}
 .tl-x:hover{color:#E2705A;border-color:rgba(224,71,47,.55)}
+.tl-chk{background:transparent;border:1px dashed rgba(242,169,59,.4);border-radius:8px;cursor:pointer;
+  font:500 10.5px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--amber);padding:9px 13px;
+  transition:color .18s var(--ease), border-color .18s var(--ease)}
+.tl-chk:hover{color:var(--amber-hi);border-color:var(--amber)}
+.tl-chk:disabled{opacity:.6;cursor:default}
+.serp{margin-left:8px;font:500 10px var(--f-mono);letter-spacing:.05em;vertical-align:2px;white-space:nowrap}
+.serp.s0{color:#E2705A}
+.serp.s1{color:var(--amber-hi)}
 .sort{display:inline-flex;align-items:center;gap:9px;font:500 10px/1 var(--f-mono);letter-spacing:.18em;
   text-transform:uppercase;color:#6E6753}
 .deck{display:grid;grid-template-columns:222px minmax(0,1fr);gap:22px;align-items:start;animation:deckIn .6s var(--ease) backwards}
@@ -1217,7 +1225,7 @@ function cardHTML(c, i){
   const t = esc(c.ttl).replace(/"/g,'&quot;');
   return '<div class="card g-'+c.grp+'" data-eng="'+eng+'" data-src="'+t+'" style="--d:'+Math.min(i*70,560)+'ms">'+
     '<span class="fav'+(FAVS.has(c.ttl)?' on':'')+'" onclick="toggleFav(this)" data-t="'+t+'" title="В избранное">★</span>'+
-    '<div class="ttl">'+c.ttl+'</div>'+
+    '<div class="ttl">'+c.ttl+(eng?serpBadge(c.str):'')+'</div>'+
     '<div class="desc">'+c.desc+'</div>'+
     '<code>'+hiQ(c.str)+'</code>'+
     '<div class="row">'+
@@ -1266,10 +1274,67 @@ function renderDeck(){
       (_ctHidden? ' <i class="ctnote">только запросы с контактами · '+_ctHidden+' '+plural(_ctHidden,'канал скрыт','канала скрыто','каналов скрыто')+' <a onclick="ctOffQuick()">показать все</a></i>':'')+'</span>'+
       '<div class="tl-r"><div class="sort"><span>сортировка</span><div class="seg sortseg">'+
         [["prio","приоритет"],["narrow","точные"],["az","А–Я"]].map(o=>'<button data-v="'+o[0]+'"'+(UI.sort===o[0]?' class="on"':'')+' onclick="setSort(\''+o[0]+'\')">'+o[1]+'</button>').join('')+'</div></div>'+
+      '<button class="tl-chk" id="serpBtn" onclick="checkSerps(this)" title="Сколько результатов даёт каждый X-Ray запрос в Яндексе — пустые сразу видно">Проверить выдачу</button>'+
       '<button class="tl-x" onclick="resetAll()" title="Очистить всё и вернуться на главный экран">✕ Очистить всё</button></div></div>'+
     '<div class="deck"><nav class="rail" id="rail">'+railHTML()+'</nav>'+
     '<div class="deck-main" id="deckMain">'+mainHTML()+'</div></div>';
 }
+/* ── проверка выдачи: сколько результатов даёт X-Ray запрос в Яндексе ── */
+const _serp = new Map(); // str запроса → found
+let _serpOff = false;    // сервер без ключа — не дёргаем повторно
+function fmtN(n){ return n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(n<1e4?1:0)+'K':''+n; }
+function serpBadge(str){
+  if(!_serp.has(str)) return '';
+  const n=_serp.get(str);
+  return n===0 ? '<span class="serp s0">· пусто в Яндексе</span>'
+               : '<span class="serp s1">· ~'+fmtN(n)+' в Яндексе</span>';
+}
+function yaQuery(s){ /* google-операторы → яндексовые */
+  return s.replace(/\bintitle:/g,'title:').replace(/\bfiletype:/g,'mime:');
+}
+async function serpOne(str){
+  if(_serp.has(str)) return _serp.get(str);
+  const r=await fetch('/api/count',{method:'POST',headers:{'content-type':'application/json'},
+    body:JSON.stringify({q:yaQuery(str)})});
+  if(r.status===501){ _serpOff=true; throw new Error('notconf'); }
+  const d=await r.json();
+  if(!r.ok) throw new Error(d.error||'ошибка');
+  _serp.set(str,d.found);
+  return d.found;
+}
+async function checkSerps(btn){
+  if(_serpOff){ toast('Проверка выдачи не настроена — нужен ключ Яндекс Search API на сервере'); return; }
+  const cards=[...document.querySelectorAll('.card')].filter(c=>c.dataset.eng);
+  const jobs=cards.map(c=>({c, q:(c.querySelector('.btn.copy')||{}).getAttribute? c.querySelector('.btn.copy').getAttribute('data-s'):''})).filter(j=>j.q);
+  if(!jobs.length) return;
+  btn.disabled=true;
+  let done=0, fail=0;
+  const upd=()=>{ btn.textContent='Проверяю '+done+'/'+jobs.length+'…'; };
+  upd();
+  const pool=async job=>{
+    try{
+      const n=await serpOne(job.q);
+      const ttl=job.c.querySelector('.ttl');
+      const old=ttl.querySelector('.serp'); if(old) old.remove();
+      ttl.insertAdjacentHTML('beforeend', serpBadge(job.q));
+      if(n===0) job.c.classList.add('nk-dim'); else job.c.classList.remove('nk-dim');
+    }catch(e){
+      fail++;
+      if(String(e.message)==='notconf'){ done=jobs.length; throw e; }
+    }
+    done++; upd();
+  };
+  try{
+    for(let i=0;i<jobs.length;i+=3) await Promise.all(jobs.slice(i,i+3).map(pool));
+    const zero=jobs.filter(j=>_serp.get(j.q)===0).length;
+    btn.textContent = zero? 'Пустых: '+zero+' из '+jobs.length : 'Все запросы с выдачей ✓';
+    setTimeout(()=>{ btn.textContent='Проверить выдачу'; btn.disabled=false; }, 4000);
+  }catch(_){
+    btn.textContent='Проверить выдачу'; btn.disabled=false;
+    toast(_serpOff? 'Проверка выдачи не настроена — нужен ключ Яндекс Search API на сервере' : 'Часть проверок не прошла — попробуй ещё раз');
+  }
+}
+
 /* ── заявка на ранний доступ ── */
 function leadDone(email){
   const f=document.getElementById('proF');
