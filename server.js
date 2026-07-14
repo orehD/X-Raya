@@ -12,7 +12,8 @@
 //                        в Coolify смонтируй volume на эту папку, иначе файл сотрётся при редеплое)
 //   TG_BOT_TOKEN, TG_CHAT_ID — необязательно: уведомление в Telegram о каждой заявке
 //   STATS_TOKEN        — необязательно: пароль к странице статистики /stats (заявки по партнёрам)
-//   SIGNALHIRE_KEY     — необязательно: ключ SignalHire Person API (пробив контактов по LinkedIn/email/телефону)
+//   SIGNALHIRE_KEY     — необязательно: ключ SignalHire Person API (пробив контактов по LinkedIn/email/телефону);
+//                        SIGNALHIRE_API — принимается как синоним
 //   SERPER_KEY         — необязательно: проверка размера выдачи через Serper.dev (проще всего;
 //                        serper.dev → Sign up → API key; 2500 бесплатных проверок). Приоритетнее CSE.
 //   GOOGLE_CSE_KEY, GOOGLE_CSE_CX — необязательно, альтернатива Serper: Google Custom Search
@@ -297,7 +298,7 @@ function validContactItem(s) {
 }
 
 function handleContact(req, res) {
-  const key = process.env.SIGNALHIRE_KEY;
+  const key = process.env.SIGNALHIRE_KEY || process.env.SIGNALHIRE_API;
   if (!key) return send(res, 501, 'application/json', JSON.stringify({ error: 'not_configured' }));
   const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
   const now = Date.now();
