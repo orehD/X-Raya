@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Peleng — кабинет</title>
+<script>(function(){try{var t=localStorage.getItem('peleng_theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<style>
+  :root{color-scheme:dark; --bg:#12100A; --panel:#1E190F; --panel2:#171309; --line:#332B18; --line2:#463A20;
+    --amber:#F2A93B; --amber-hi:#FFC96B; --amber-dim:rgba(242,169,59,.14);
+    --red:#E0472F; --txt:#EDE6D4; --muted:#9A9077;
+    --mono:'JetBrains Mono',Menlo,Consolas,monospace; --body:'IBM Plex Sans',-apple-system,sans-serif}
+  :root[data-theme="light"]{color-scheme:light; --bg:#EFE9DA; --panel:#F8F3E8; --panel2:#E9E1CE;
+    --line:#DBD1B9; --line2:#C6B994; --amber:#AF6D08; --amber-hi:#875000; --amber-dim:rgba(175,109,8,.15);
+    --red:#CE3E28; --txt:#231E13; --muted:#6C5F42}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:400 14px/1.6 var(--mono);padding:34px 18px 80px;
+    display:flex;justify-content:center}
+  .wrap{width:100%;max-width:520px}
+  .logo{font-weight:700;font-size:15px;letter-spacing:.2em;color:var(--txt);text-decoration:none}
+  .logo b{color:var(--amber)}
+  h1{font-size:15px;letter-spacing:.2em;text-transform:uppercase;color:var(--amber);margin:26px 0 18px}
+  .panel{position:relative;background:var(--panel);border:1px solid rgba(242,169,59,.3);border-radius:12px;padding:24px}
+  label{display:block;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+  input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--txt);
+    font:400 14px var(--mono);padding:12px 14px}
+  input:focus{outline:none;border-color:rgba(242,169,59,.5)}
+  button{background:var(--amber);color:#1A1508;border:none;border-radius:8px;cursor:pointer;
+    font:600 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:12px 20px;margin-top:12px}
+  button:hover{filter:brightness(1.1)}
+  button:disabled{opacity:.55;pointer-events:none}
+  .hint{color:var(--muted);font:400 12.5px/1.6 var(--body);margin-top:14px}
+  .ok{color:var(--amber-hi);margin-top:14px;font-size:13px;line-height:1.6}
+  .err{color:#E2705A;margin-top:12px;font-size:12.5px;min-height:16px}
+  .row{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--line)}
+  .row:last-of-type{border-bottom:none}
+  .row .k{color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+  .row .v{font-weight:600}
+  .plan{display:inline-block;padding:3px 10px;border-radius:6px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600}
+  .plan.free{background:var(--panel2);border:1px solid var(--line2);color:var(--muted)}
+  .plan.pro{background:var(--amber-dim);border:1px solid rgba(242,169,59,.5);color:var(--amber-hi)}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+  .ghostbtn{background:transparent;border:1px dashed var(--line2);color:var(--muted)}
+  .ghostbtn:hover{color:var(--red);border-color:var(--red);filter:none}
+  .back{display:inline-block;margin-top:26px;color:var(--muted);text-decoration:none;font-size:12.5px}
+  .back:hover{color:var(--amber)}
+  .devlink{word-break:break-all;font-size:11.5px;margin-top:10px}
+  .devlink a{color:var(--amber)}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="logo" href="/"><b>P</b>ELENG</a>
+
+  <!-- вход -->
+  <div id="login" class="hidden">
+    <h1>Вход</h1>
+    <div class="panel">
+      <label for="em">Email</label>
+      <input type="email" id="em" placeholder="you@company.ru" autocomplete="email">
+      <button id="go" onclick="requestLink()">Получить ссылку для входа</button>
+      <div class="err" id="err"></div>
+      <div class="ok hidden" id="sent">✓ Письмо отправлено — открой ссылку из него. Ссылка действует 20 минут.<div class="devlink" id="devlink"></div></div>
+      <div class="hint">Без паролей: пришлём на почту ссылку, по которой ты войдёшь. Вход нужен для раскрытия контактов и AI-функций — базовый поиск работает и без него.</div>
+    </div>
+  </div>
+
+  <!-- кабинет -->
+  <div id="cab" class="hidden">
+    <h1>Кабинет</h1>
+    <div class="panel">
+      <div class="row"><span class="k">Аккаунт</span><span class="v" id="cEmail"></span></div>
+      <div class="row"><span class="k">План</span><span id="cPlan"></span></div>
+      <div class="row"><span class="k">Поисков</span><span class="v" id="cSearches"></span></div>
+      <div class="row"><span class="k">Контактов раскрыто</span><span class="v" id="cContacts"></span></div>
+      <div class="hint" id="proHint"></div>
+      <div class="actions">
+        <button onclick="location.href='/'">К поиску</button>
+        <button class="ghostbtn" onclick="logout()">Выйти</button>
+      </div>
+    </div>
+  </div>
+
+  <a class="back" href="/">← Вернуться к Peleng</a>
+</div>
+
+<script>
+  const $=id=>document.getElementById(id);
+  async function boot(){
+    try{
+      const r=await fetch('/api/me');
+      if(!r.ok) throw 0;
+      const me=await r.json();
+      $('cab').classList.remove('hidden');
+      $('cEmail').textContent=me.email;
+      $('cPlan').innerHTML='<span class="plan '+me.plan+'">'+(me.plan==='pro'?'Pro · бета':'Free')+'</span>';
+      $('cSearches').textContent=me.searches;
+      $('cContacts').textContent=me.contacts;
+      $('proHint').textContent = me.plan==='pro'
+        ? 'Pro активен: раскрытие контактов, AI-разбор и автопроверка выдачи включены.'
+        : 'На бете Pro выдаётся вручную — напиши нам, включим. Раскрытие контактов и AI уже доступны после входа.';
+    }catch(_){
+      $('login').classList.remove('hidden');
+    }
+  }
+  async function requestLink(){
+    const email=$('em').value.trim(), btn=$('go');
+    $('err').textContent='';
+    if(!email){ $('err').textContent='Введи email'; return; }
+    btn.disabled=true; btn.textContent='Отправляю…';
+    try{
+      const r=await fetch('/api/auth/request',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email})});
+      const d=await r.json();
+      if(!r.ok) throw new Error(d.error||'ошибка');
+      $('sent').classList.remove('hidden');
+      if(d.link) $('devlink').innerHTML='<a href="'+d.link+'">→ ссылка для входа (dev-режим)</a>';
+      btn.textContent='Отправлено ✓';
+    }catch(e){
+      $('err').textContent=e.message;
+      btn.disabled=false; btn.textContent='Получить ссылку для входа';
+    }
+  }
+  async function logout(){ await fetch('/api/logout',{method:'POST'}); location.href='/'; }
+  $('em')&&$('em').addEventListener('keydown',e=>{ if(e.key==='Enter') requestLink(); });
+  boot();
+</script>
+</body>
+</html>

@@ -101,6 +101,10 @@ a{color:inherit}
 @keyframes rec{0%,100%{opacity:1}50%{opacity:.25}}
 .tb-mid{color:#6E6753}
 .tb-right{color:var(--amber);font-variant-numeric:tabular-nums;display:inline-flex;align-items:center;gap:12px}
+.tb-acct{color:var(--muted);text-decoration:none;font:500 10px var(--f-mono);letter-spacing:.14em;text-transform:uppercase;
+  border:1px solid var(--line);border-radius:6px;padding:4px 10px;transition:color .18s var(--ease), border-color .18s var(--ease)}
+.tb-acct:hover{color:var(--amber);border-color:rgba(242,169,59,.5)}
+.tb-acct.in{color:var(--amber-hi);border-color:rgba(242,169,59,.4)}
 .theme-btn{width:15px;height:15px;padding:0;border:none;background:transparent;cursor:pointer;color:var(--muted);
   display:inline-flex;align-items:center;justify-content:center;transition:color .18s var(--ease), transform .3s var(--ease)}
 .theme-btn:hover{color:var(--amber)}
@@ -662,7 +666,7 @@ body.working .radar{width:238px;height:238px}
 <div class="topbar">
   <span class="tb-left"><i class="rec"></i>Сеанс активен</span>
   <span class="tb-mid">Peleng // сорсинг по 30+ каналам</span>
-  <span class="tb-right"><button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Светлая / тёмная тема" aria-label="Переключить тему"><svg class="t-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg><svg class="t-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></svg></button><span id="clock">--:--:--</span></span>
+  <span class="tb-right"><a class="tb-acct" id="acctLink" href="/cabinet">Войти</a><button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Светлая / тёмная тема" aria-label="Переключить тему"><svg class="t-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg><svg class="t-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></svg></button><span id="clock">--:--:--</span></span>
 </div>
 
 <div class="ticker" aria-hidden="true"><div class="tk" id="tk"></div></div>
@@ -1364,6 +1368,11 @@ async function contactReveal(item){
   try{
     const r=await fetch('/api/contact',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({item})});
     const d=await r.json();
+    if(r.status===401){
+      card.innerHTML='<div class="ttl">Нужен вход</div><div class="desc">Раскрытие контактов доступно после входа — это бесплатно на бете, нужен только email.</div>'+
+        '<div class="row"><a class="btn open" href="/cabinet">Войти</a><span class="btn copy" onclick="resetAll()">К поиску</span></div>';
+      return;
+    }
     if(r.status===501) throw new Error('Пробив не настроен — нужен ключ SignalHire на сервере (SIGNALHIRE_KEY)');
     if(!r.ok) throw new Error(d.error||'ошибка');
     if(d.status!=='success'){
@@ -1577,9 +1586,8 @@ function markEmpty(c, empty){
     if(vr) vr.insertAdjacentHTML('beforebegin','<div class="vhint">Выдача пустая — жми «шире», уберу лишние условия</div>');
   }
 }
-/* Pro-флаг: до запуска биллинга включается вручную — ?pro=1 в URL (выключить: ?pro=0).
-   Партнёрам/бете можно давать ссылку с ?pro=1; при реальной оплате заменится на проверку подписки. */
-const IS_PRO = (function(){
+/* Pro-флаг: план аккаунта (из /api/me) или ручной ?pro=1 для демо без входа. */
+let IS_PRO = (function(){
   try{
     const v=new URLSearchParams(location.search).get('pro');
     if(v==='1') lsSet('peleng_pro','1');
@@ -1587,6 +1595,23 @@ const IS_PRO = (function(){
     return lsGet('peleng_pro')==='1';
   }catch(_){ return false; }
 })();
+/* аккаунт: подтягиваем сессию, обновляем шапку и Pro-флаг */
+let ME=null;
+(async function(){
+  try{
+    const r=await fetch('/api/me');
+    if(!r.ok) return;
+    ME=await r.json();
+    if(ME.plan==='pro') IS_PRO=true;
+    const a=document.getElementById('acctLink');
+    if(a){ a.textContent='Кабинет'+(ME.plan==='pro'?' · PRO':''); a.classList.add('in'); }
+  }catch(_){}
+})();
+/* 401 от Pro-фич: зовём войти */
+function authGate(msg){
+  toast(msg||'Нужен вход — открываю кабинет…');
+  setTimeout(()=>{ location.href='/cabinet'; }, 1100);
+}
 /* автопроверка (Pro): тихо чекаем топ-6 X-Ray карточек после генерации (кэш 24ч бережёт квоту) */
 let _autoSerpT=null;
 function scheduleAutoSerp(){
@@ -2180,6 +2205,7 @@ function toast(m){ const t=document.createElement('div'); t.className='toast'; t
 
 async function aiCall(system, user){
   const r=await fetch(AI_ENDPOINT,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({system,user})});
+  if(r.status===401){ authGate('AI доступен после входа — открываю кабинет…'); throw new Error('нужен вход'); }
   if(!r.ok){ let msg='HTTP '+r.status; try{ const e=await r.json(); if(e&&e.error) msg=e.error; }catch(_){} throw new Error(msg); }
   const d=await r.json(); return d.text||'';
 }

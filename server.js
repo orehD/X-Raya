@@ -23,6 +23,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const PORT  = process.env.PORT || 3000;
 const INDEX = path.join(__dirname, 'index.html');
@@ -37,6 +38,8 @@ function send(res, code, type, body) {
 }
 
 function handleAI(req, res) {
+  // AI — фича за аккаунтом: без входа не расходуем токены
+  if (!getUser(req)) return send(res, 401, 'application/json', JSON.stringify({ error: 'auth' }));
   let relay = (process.env.AI_RELAY_URL || '').trim(); // Cloudflare Worker (обходит блок IP сервера)
   if (relay && !/^https?:\/\//i.test(relay)) relay = 'https://' + relay;
   const key = process.env.OPENROUTER_API_KEY;
@@ -84,6 +87,153 @@ function handleAI(req, res) {
     } catch (e) {
       send(res, 500, 'application/json', JSON.stringify({ error: String((e && e.message) || e) }));
     }
+  });
+}
+
+// ═══════════ Аккаунты: пользователи, сессии, magic-link ═══════════
+// Вход без паролей: email → письмо со ссылкой (Resend) → подписанная cookie-сессия.
+// Env: RESEND_API_KEY (отправка писем), RESEND_FROM (адрес отправителя, по умолчанию
+//      onboarding@resend.dev — до верификации домена в Resend письма идут только владельцу аккаунта!),
+//      SESSION_SECRET (не обязателен — сгенерится и сохранится в data/session.key),
+//      AUTH_DEV=1 (только локально: вместо письма вернуть ссылку в ответе).
+const USERS_FILE = process.env.USERS_FILE || path.join(__dirname, 'data', 'users.json');
+let users = {};
+try { users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8')) || {}; } catch {}
+let usersDirty = false;
+function saveUsers() { usersDirty = true; }
+setInterval(() => {
+  if (!usersDirty) return;
+  usersDirty = false;
+  try { fs.mkdirSync(path.dirname(USERS_FILE), { recursive: true }); fs.writeFileSync(USERS_FILE, JSON.stringify(users)); }
+  catch (e) { console.error('users write failed:', e.message); }
+}, 5000).unref();
+
+const SECRET_FILE = path.join(__dirname, 'data', 'session.key');
+let SESSION_SECRET = process.env.SESSION_SECRET || '';
+if (!SESSION_SECRET) {
+  try { SESSION_SECRET = fs.readFileSync(SECRET_FILE, 'utf8').trim(); } catch {}
+  if (!SESSION_SECRET) {
+    SESSION_SECRET = crypto.randomBytes(32).toString('hex');
+    try { fs.mkdirSync(path.dirname(SECRET_FILE), { recursive: true }); fs.writeFileSync(SECRET_FILE, SESSION_SECRET); } catch {}
+  }
+}
+const b64u = b => Buffer.from(b).toString('base64url');
+const unb64u = s => Buffer.from(s, 'base64url').toString();
+function signPayload(payload) { return crypto.createHmac('sha256', SESSION_SECRET).update(payload).digest('base64url'); }
+function makeToken(purpose, email, ttlMs) {
+  const payload = purpose + '|' + email + '|' + (Date.now() + ttlMs);
+  return b64u(payload) + '.' + signPayload(payload);
+}
+function checkToken(tok, purpose) {
+  try {
+    const [p, sig] = String(tok).split('.');
+    const payload = unb64u(p);
+    if (!crypto.timingSafeEqual(Buffer.from(signPayload(payload)), Buffer.from(sig))) return null;
+    const [pur, email, exp] = payload.split('|');
+    if (pur !== purpose || Date.now() > +exp) return null;
+    return email;
+  } catch { return null; }
+}
+function getCookie(req, name) {
+  const m = (req.headers.cookie || '').match(new RegExp('(?:^|;\\s*)' + name + '=([^;]+)'));
+  return m ? m[1] : null;
+}
+function getUser(req) {
+  const email = checkToken(getCookie(req, 'plg_sess'), 'sess');
+  return email && users[email] ? { email, u: users[email] } : null;
+}
+function setSession(req, res, email) {
+  const secure = (req.headers['x-forwarded-proto'] === 'https') ? '; Secure' : '';
+  res.setHeader('Set-Cookie', 'plg_sess=' + makeToken('sess', email, 30 * 86400e3) +
+    '; Path=/; HttpOnly; SameSite=Lax; Max-Age=' + 30 * 86400 + secure);
+}
+function baseUrl(req) {
+  const proto = req.headers['x-forwarded-proto'] || 'http';
+  const host = req.headers['x-forwarded-host'] || req.headers.host || 'localhost';
+  return proto + '://' + host;
+}
+const authHits = new Map();
+function handleAuthRequest(req, res) {
+  const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+  const now = Date.now();
+  const hits = (authHits.get(ip) || []).filter(t => now - t < 3600e3);
+  if (hits.length >= 8) return send(res, 429, 'application/json', JSON.stringify({ error: 'слишком часто — попробуй через час' }));
+  hits.push(now); authHits.set(ip, hits);
+
+  let raw = '';
+  req.on('data', c => { raw += c; if (raw.length > 1e4) req.destroy(); });
+  req.on('end', async () => {
+    let body = {}; try { body = JSON.parse(raw || '{}'); } catch {}
+    const email = String(body.email || '').trim().toLowerCase().slice(0, 120);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email))
+      return send(res, 400, 'application/json', JSON.stringify({ error: 'некорректный email' }));
+    if (!users[email]) { users[email] = { plan: 'free', createdAt: new Date().toISOString(), searches: 0, contacts: 0 }; saveUsers(); }
+    const link = baseUrl(req) + '/auth?token=' + encodeURIComponent(makeToken('login', email, 20 * 60e3));
+    const key = process.env.RESEND_API_KEY;
+    if (!key) {
+      if (process.env.AUTH_DEV === '1') return send(res, 200, 'application/json', JSON.stringify({ ok: true, link }));
+      return send(res, 501, 'application/json', JSON.stringify({ error: 'Отправка писем не настроена (RESEND_API_KEY)' }));
+    }
+    try {
+      const r = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: { authorization: 'Bearer ' + key, 'content-type': 'application/json' },
+        body: JSON.stringify({
+          from: process.env.RESEND_FROM || 'Peleng <onboarding@resend.dev>',
+          to: [email],
+          subject: 'Вход в Peleng',
+          html: '<div style="font-family:monospace;background:#12100A;color:#EDE6D4;padding:32px;border-radius:12px">' +
+            '<div style="color:#F2A93B;font-size:18px;font-weight:bold;margin-bottom:14px">PELENG</div>' +
+            '<p>Ссылка для входа (действует 20 минут):</p>' +
+            '<p><a href="' + link + '" style="display:inline-block;background:#F2A93B;color:#1A1508;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold">Войти в Peleng</a></p>' +
+            '<p style="color:#9A9077;font-size:12px">Если ты не запрашивал вход — просто игнорируй это письмо.</p></div>',
+        }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok) return send(res, 502, 'application/json', JSON.stringify({ error: (d && (d.message || d.error)) || 'не удалось отправить письмо' }));
+      send(res, 200, 'application/json', JSON.stringify({ ok: true }));
+    } catch (e) {
+      send(res, 500, 'application/json', JSON.stringify({ error: String((e && e.message) || e) }));
+    }
+  });
+}
+function handleAuthGo(req, res) {
+  const url = new URL(req.url, 'http://x');
+  const email = checkToken(url.searchParams.get('token') || '', 'login');
+  if (!email) return send(res, 400, 'text/html; charset=utf-8',
+    '<!doctype html><meta charset="utf-8"><body style="background:#12100A;color:#EDE6D4;font-family:monospace;display:flex;align-items:center;justify-content:center;height:100vh">' +
+    '<div style="text-align:center"><div style="color:#E0472F;font-size:18px;margin-bottom:10px">Ссылка устарела или неверна</div>' +
+    '<a href="/cabinet" style="color:#F2A93B">Запросить новую →</a></div>');
+  users[email] = users[email] || { plan: 'free', createdAt: new Date().toISOString(), searches: 0, contacts: 0 };
+  users[email].lastLoginAt = new Date().toISOString(); saveUsers();
+  setSession(req, res, email);
+  res.writeHead(302, { location: '/cabinet' }); res.end();
+}
+function handleMe(req, res) {
+  const s = getUser(req);
+  if (!s) return send(res, 401, 'application/json', JSON.stringify({ error: 'auth' }));
+  send(res, 200, 'application/json', JSON.stringify({ email: s.email, plan: s.u.plan || 'free',
+    searches: s.u.searches || 0, contacts: s.u.contacts || 0, createdAt: s.u.createdAt }));
+}
+function handleLogout(req, res) {
+  res.setHeader('Set-Cookie', 'plg_sess=; Path=/; HttpOnly; Max-Age=0');
+  send(res, 200, 'application/json', JSON.stringify({ ok: true }));
+}
+// ручная выдача Pro на бете (пароль — тот же STATS_TOKEN)
+function handleAdminPlan(req, res) {
+  const token = process.env.STATS_TOKEN;
+  const url = new URL(req.url, 'http://x');
+  if (!token || (url.searchParams.get('token') || '') !== token)
+    return send(res, 401, 'application/json', JSON.stringify({ error: 'неверный пароль' }));
+  let raw = '';
+  req.on('data', c => { raw += c; if (raw.length > 1e4) req.destroy(); });
+  req.on('end', () => {
+    let body = {}; try { body = JSON.parse(raw || '{}'); } catch {}
+    const email = String(body.email || '').trim().toLowerCase();
+    const plan = body.plan === 'pro' ? 'pro' : 'free';
+    if (!users[email]) return send(res, 404, 'application/json', JSON.stringify({ error: 'нет такого пользователя' }));
+    users[email].plan = plan; saveUsers();
+    send(res, 200, 'application/json', JSON.stringify({ ok: true, email, plan }));
   });
 }
 
@@ -149,6 +299,8 @@ function handleHit(req, res) {
   const d = new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10);
   dailyHits[d] = (dailyHits[d] || 0) + 1;
   hitsDirty = true;
+  const s = getUser(req);
+  if (s) { s.u.searches = (s.u.searches || 0) + 1; saveUsers(); }
   res.writeHead(204); res.end();
 }
 
@@ -180,7 +332,10 @@ function handleStats(req, res) {
     days.push({ date: d, count: dailyHits[d] || 0 });
   }
   const searchesTotal = Object.values(dailyHits).reduce((a, b) => a + b, 0);
-  send(res, 200, 'application/json', JSON.stringify({ total: rows.length, partners, recent, days, searchesTotal }));
+  const userList = Object.entries(users)
+    .map(([email, u]) => ({ email, plan: u.plan || 'free', searches: u.searches || 0, contacts: u.contacts || 0, createdAt: u.createdAt || '' }))
+    .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '')).slice(0, 200);
+  send(res, 200, 'application/json', JSON.stringify({ total: rows.length, partners, recent, days, searchesTotal, users: userList }));
 }
 
 // ── проверка ника: существует ли профиль на площадках ──
@@ -326,6 +481,9 @@ function validContactItem(s) {
 }
 
 function handleContact(req, res) {
+  // пробив — фича за аккаунтом: жжёт кредиты SignalHire
+  const sess = getUser(req);
+  if (!sess) return send(res, 401, 'application/json', JSON.stringify({ error: 'auth' }));
   const key = process.env.SIGNALHIRE_KEY || process.env.SIGNALHIRE_API;
   if (!key) return send(res, 501, 'application/json', JSON.stringify({ error: 'not_configured' }));
   const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
@@ -384,6 +542,7 @@ function handleContact(req, res) {
       };
       shCache.set(ck, { at: now, data });
       if (shCache.size > 1000) shCache.delete(shCache.keys().next().value);
+      sess.u.contacts = (sess.u.contacts || 0) + 1; saveUsers();
       send(res, 200, 'application/json', JSON.stringify(data));
     } catch (e) {
       send(res, 500, 'application/json', JSON.stringify({ error: String((e && e.message) || e) }));
@@ -400,6 +559,17 @@ const server = http.createServer((req, res) => {
   if (req.method === 'POST' && req.url === '/api/count') return handleCount(req, res);
   if (req.method === 'POST' && req.url === '/api/contact') return handleContact(req, res);
   if (req.method === 'POST' && req.url === '/api/hit') return handleHit(req, res);
+  if (req.method === 'POST' && req.url === '/api/auth/request') return handleAuthRequest(req, res);
+  if (req.method === 'GET' && req.url.split('?')[0] === '/auth') return handleAuthGo(req, res);
+  if (req.method === 'GET' && req.url === '/api/me') return handleMe(req, res);
+  if (req.method === 'POST' && req.url === '/api/logout') return handleLogout(req, res);
+  if (req.method === 'POST' && req.url.split('?')[0] === '/api/admin/plan') return handleAdminPlan(req, res);
+  if (req.method === 'GET' && req.url.split('?')[0] === '/cabinet') {
+    return fs.readFile(path.join(__dirname, 'cabinet.html'), (err, data) => {
+      if (err) return send(res, 500, 'text/plain', 'cabinet.html not found');
+      send(res, 200, 'text/html; charset=utf-8', data);
+    });
+  }
   if (req.method === 'GET' && req.url.split('?')[0] === '/api/stats') return handleStats(req, res);
   if (req.method === 'GET' && req.url.split('?')[0] === '/stats') {
     return fs.readFile(STATS_PAGE, (err, data) => {
