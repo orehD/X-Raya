@@ -375,6 +375,9 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
 .toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:28px 0 14px}
 .tl-lab{font:500 10.5px/1 var(--f-mono);letter-spacing:.24em;text-transform:uppercase;color:#6E6753}
 .tl-r{display:inline-flex;align-items:center;gap:14px;flex-wrap:wrap}
+.ctnote{font:400 10.5px/1.6 var(--f-mono);letter-spacing:.04em;text-transform:none;color:var(--amber);font-style:normal;margin-left:10px}
+.ctnote a{color:var(--muted);text-decoration:underline dotted;cursor:pointer;transition:color .15s var(--ease)}
+.ctnote a:hover{color:var(--txt)}
 .tl-x{background:transparent;border:1px dashed var(--line2);border-radius:8px;cursor:pointer;
   font:500 10.5px/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--muted);padding:9px 13px;
   transition:color .18s var(--ease), border-color .18s var(--ease)}
@@ -964,19 +967,22 @@ async function run(){
     }catch(_){ /* фолбэк недоступен — ниже покажем обычную ошибку */ }
   }
   if(!p.resolved){ res.innerHTML='<div class="empty">Не удалось распознать роль или специализацию.<br>Переформулируй запрос (например «backend-разработчик на Go» или «финансовый аналитик») либо выбери специализацию в фильтрах.</div>'; pr.style.display='none'; return; }
-  const cards = build(p);
+  let cards = build(p);
   const tp = termParts();
   const xt = companyTerms();
   const extra = tp.mq + xt + tp.xq + contactTerms();
   for(const c of cards){
     const isG=/google\.com\/search/.test(c.url), isY=/yandex\.ru\/search/.test(c.url);
-    if((isG||isY) && extra){ c.str+=extra; c.url=isG?G(c.str):Y(c.str); if(c.url2) c.url2=Y(c.str); }
+    if((isG||isY) && extra){ c.str+=extra; c.url=isG?G(c.str):Y(c.str); if(c.url2) c.url2=Y(c.str); c.hasCt=F.ct; }
     else if(c.ttl==='hh.ru' && (tp.hhm||tp.hhx)){
       c.str+=tp.hhm+tp.hhx;
       const amp=c.url.indexOf('&'), tail=amp>0?c.url.slice(amp):'';
       c.url='https://hh.ru/search/resume?text='+enc(c.str)+tail;
     }
   }
+  /* контакты ищутся только X-Ray запросами — нативные каналы без них скрываем */
+  _ctHidden=0;
+  if(F.ct){ const n0=cards.length; cards=cards.filter(c=>c.hasCt); _ctHidden=n0-cards.length; }
   const nGroups = new Set(cards.map(c=>c.grp)).size;
   /* досье редактируемое: контролы пишут в параметры операции (F) и перезапускают поиск */
   const dsel=(opts,cur,fn)=>pdHTML('d', opts, cur, fn);
@@ -1098,6 +1104,7 @@ function histClear(){ lsSet('peleng_hist','[]'); renderHist(); }
 
 /* ── колода результатов: рейл каналов + вкладки + сортировка + избранное ── */
 let _cards=[];
+let _ctHidden=0;
 const MOTION_OK = !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 const UI = { tab:'all', sort: lsGet('peleng_sort')||'prio', qmode:'goal' };
 const FAVS = new Set(JSON.parse(lsGet('peleng_favs')||'[]'));
@@ -1175,13 +1182,16 @@ function mainHTML(){
 }
 function renderDeck(){
   document.getElementById('results').innerHTML=
-    '<div class="toolbar"><span class="tl-lab">Результаты</span>'+
+    '<div class="toolbar"><span class="tl-lab">Результаты'+
+      (_ctHidden? ' <i class="ctnote">только запросы с контактами · '+_ctHidden+' '+plural(_ctHidden,'канал скрыт','канала скрыто','каналов скрыто')+' <a onclick="ctOffQuick()">показать все</a></i>':'')+'</span>'+
       '<div class="tl-r"><div class="sort"><span>сортировка</span><div class="seg sortseg">'+
         [["prio","приоритет"],["narrow","точные"],["az","А–Я"]].map(o=>'<button data-v="'+o[0]+'"'+(UI.sort===o[0]?' class="on"':'')+' onclick="setSort(\''+o[0]+'\')">'+o[1]+'</button>').join('')+'</div></div>'+
       '<button class="tl-x" onclick="resetAll()" title="Очистить всё и вернуться на главный экран">✕ Очистить всё</button></div></div>'+
     '<div class="deck"><nav class="rail" id="rail">'+railHTML()+'</nav>'+
     '<div class="deck-main" id="deckMain">'+mainHTML()+'</div></div>';
 }
+function plural(n,one,few,many){ const m=n%100, m1=n%10; return (m>10&&m<20)?many:(m1===1?one:(m1>1&&m1<5?few:many)); }
+function ctOffQuick(){ F.ct=false; const c=document.getElementById('ctOn'); if(c) c.checked=false; updateFiltCnt(); run(); }
 function refreshRail(){ const r=document.getElementById('rail'); if(r) r.innerHTML=railHTML(); }
 function repaintMain(){
   const m=document.getElementById('deckMain'); if(!m) return;
