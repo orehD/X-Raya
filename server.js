@@ -103,9 +103,71 @@ function handleLead(req, res) {
   });
 }
 
+// ── проверка ника: существует ли профиль на площадках ──
+// kind 'status': 200 → найден, 404 → нет; kind 'string': 200 и есть маркер → найден.
+// Площадки за Cloudflare (LeetCode, Kaggle, Behance…) не проверяем — фронт покажет «вручную».
+const NICK_SITES = [
+  { id: 'github',   u: n => 'https://github.com/' + n },
+  { id: 'gitlab',   u: n => 'https://gitlab.com/' + n },
+  { id: 'habr',     u: n => 'https://habr.com/ru/users/' + n + '/' },
+  { id: 'dribbble', u: n => 'https://dribbble.com/' + n },
+  { id: 'vk',       u: n => 'https://vk.com/' + n },
+  { id: 'telegram', u: n => 'https://t.me/' + n, kind: 'string', str: 'tgme_page_title' },
+];
+const UA_CHROME = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36';
+const nickHits = new Map();
+const nickCache = new Map(); // nick → {at, data}
+
+async function checkSite(site, nick) {
+  const ctl = new AbortController();
+  const tm = setTimeout(() => ctl.abort(), 6000);
+  try {
+    const r = await fetch(site.u(nick), {
+      signal: ctl.signal,
+      redirect: 'follow',
+      headers: { 'user-agent': UA_CHROME, 'accept-language': 'ru,en;q=0.8' },
+    });
+    if (site.kind === 'string') {
+      if (r.status !== 200) return 'unknown';
+      const html = await r.text();
+      return html.includes(site.str) ? 'found' : 'none';
+    }
+    if (r.status === 200) return 'found';
+    if (r.status === 404) return 'none';
+    return 'unknown';
+  } catch { return 'unknown'; }
+  finally { clearTimeout(tm); }
+}
+
+function handleNick(req, res) {
+  const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+  const now = Date.now();
+  const hits = (nickHits.get(ip) || []).filter(t => now - t < 3600e3);
+  if (hits.length >= 60) return send(res, 429, 'application/json', JSON.stringify({ error: 'слишком часто' }));
+  hits.push(now); nickHits.set(ip, hits);
+
+  let raw = '';
+  req.on('data', c => { raw += c; if (raw.length > 1e4) req.destroy(); });
+  req.on('end', async () => {
+    let body = {}; try { body = JSON.parse(raw || '{}'); } catch {}
+    const nick = String(body.nick || '').trim();
+    if (!/^[\w.\-]{2,32}$/.test(nick))
+      return send(res, 400, 'application/json', JSON.stringify({ error: 'некорректный ник' }));
+    const cached = nickCache.get(nick.toLowerCase());
+    if (cached && now - cached.at < 3600e3)
+      return send(res, 200, 'application/json', JSON.stringify(cached.data));
+    const out = {};
+    await Promise.all(NICK_SITES.map(async s => { out[s.id] = await checkSite(s, nick); }));
+    nickCache.set(nick.toLowerCase(), { at: now, data: out });
+    if (nickCache.size > 500) nickCache.delete(nickCache.keys().next().value);
+    send(res, 200, 'application/json', JSON.stringify(out));
+  });
+}
+
 const server = http.createServer((req, res) => {
   if (req.method === 'POST' && req.url === '/api/ai') return handleAI(req, res);
   if (req.method === 'POST' && req.url === '/api/lead') return handleLead(req, res);
+  if (req.method === 'POST' && req.url === '/api/nick') return handleNick(req, res);
   // локальные шрифты
   if (req.method === 'GET' && req.url.startsWith('/fonts/') && req.url.indexOf('.woff2') !== -1) {
     const name = path.basename(req.url.split('?')[0]); // защита от path traversal

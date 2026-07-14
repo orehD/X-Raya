@@ -362,6 +362,15 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
 .dchip.ghost{cursor:pointer;color:#6E6753;background:transparent;border-style:dashed;
   transition:color .15s var(--ease), border-color .15s var(--ease), background-color .15s var(--ease)}
 .dchip.ghost:hover{color:var(--amber-hi);border-color:rgba(242,169,59,.5);background:var(--amber-ghost)}
+/* бейджи проверки ника */
+.nk{margin-left:8px;font:500 10px var(--f-mono);letter-spacing:.06em;vertical-align:2px;white-space:nowrap}
+.nk-wait{color:#6E6753;animation:nkPulse 1.1s ease-in-out infinite}
+@keyframes nkPulse{50%{opacity:.35}}
+.nk-yes{color:var(--amber-hi)}
+.nk-none{color:#E2705A}
+.nk-man{color:#6E6753}
+.card.nk-dim{opacity:.55}
+.card.nk-dim:hover{opacity:.85}
 
 
 /* ── история целей ── */
@@ -1092,13 +1101,13 @@ async function run(){
 function renderNick(n){
   const res=document.getElementById('results'), pr=document.getElementById('parsed');
   const ne=encodeURIComponent(n);
-  const direct=[
-    ['GitHub','https://github.com/'+ne],['GitLab','https://gitlab.com/'+ne],
-    ['Telegram','https://t.me/'+ne],['VK','https://vk.com/'+ne],
-    ['Habr','https://habr.com/ru/users/'+ne+'/'],['Habr Career','https://career.habr.com/'+ne],
+  const direct=[ /* третий элемент — id серверной проверки (/api/nick) */
+    ['GitHub','https://github.com/'+ne,'github'],['GitLab','https://gitlab.com/'+ne,'gitlab'],
+    ['Telegram','https://t.me/'+ne,'telegram'],['VK','https://vk.com/'+ne,'vk'],
+    ['Habr','https://habr.com/ru/users/'+ne+'/','habr'],['Habr Career','https://career.habr.com/'+ne],
     ['LeetCode','https://leetcode.com/u/'+ne+'/'],['Codeforces','https://codeforces.com/profile/'+ne],
     ['Kaggle','https://www.kaggle.com/'+ne],['Stack Overflow','https://stackoverflow.com/users?tab=Reputation&filter=all&search='+ne],
-    ['Behance','https://www.behance.net/'+ne],['Dribbble','https://dribbble.com/'+ne],
+    ['Behance','https://www.behance.net/'+ne],['Dribbble','https://dribbble.com/'+ne,'dribbble'],
     ['X / Twitter','https://x.com/'+ne],['Instagram','https://www.instagram.com/'+ne+'/'],
     ['Pinterest','https://www.pinterest.com/'+ne+'/'],['Reddit','https://www.reddit.com/user/'+ne+'/'],
   ];
@@ -1113,14 +1122,14 @@ function renderNick(n){
     '<div class="dfields"><span class="df hot" style="--d:0ms"><label>Ник</label><span class="dv"><b>@'+esc(n)+'</b></span></span>'+
     '<span class="df" style="--d:80ms"><label>Режим</label><span class="dv"><b>поиск профилей по нику</b></span></span></div>';
   pr.style.display='flex';
-  const card=(t,u,s)=>'<div class="card g-nick" data-src="'+esc(t)+'" style="--d:0ms">'+
-    '<div class="ttl">'+esc(t)+'</div><code>'+esc(s||u)+'</code>'+
+  const card=(t,u,s,ck)=>'<div class="card g-nick" data-src="'+esc(t)+'"'+(ck?' data-ck="'+ck+'"':'')+' style="--d:0ms">'+
+    '<div class="ttl">'+esc(t)+(ck?'<span class="nk nk-wait">· проверяю</span>':'')+'</div><code>'+esc(s||u)+'</code>'+
     '<div class="row"><a class="btn open" href="'+u.replace(/"/g,'&quot;')+'" target="_blank" rel="noopener">Открыть</a>'+
     '<span class="btn copy" onclick="cp(this)" data-s="'+esc(s||u).replace(/"/g,'&quot;')+'">Копировать</span></div></div>';
   res.innerHTML=
     '<div class="group g-nick"><div class="ghead"><h2><i>CH-ID</i>Прямые профили<span>'+direct.length+'</span></h2>'+
     '<div class="gbtns"><button class="openall" onclick="openGroup(\'nick\')">Открыть все</button></div></div>'+
-    '<div class="cards">'+direct.map(d=>card(d[0],d[1])).join('')+'</div></div>'+
+    '<div class="cards">'+direct.map(d=>card(d[0],d[1],null,d[2])).join('')+'</div></div>'+
     '<div class="group g-nickx"><div class="ghead"><h2><i>CH-XR</i>Поиск упоминаний<span>'+xr.length+'</span></h2>'+
     '<div class="gbtns"><button class="openall" onclick="openGroup(\'nickx\')">Открыть все</button></div></div>'+
     '<div class="cards">'+xr.map(d=>card(d[0],G(d[1]),d[1])).join('')+'</div></div>';
@@ -1128,6 +1137,29 @@ function renderNick(n){
   try{ const sp=new URLSearchParams(); sp.set('q','@'+n); history.replaceState(null,'','?'+sp.toString()); }catch(_){}
   acquirePulse();
   if(MOTION_OK){ decryptAll(); pr.scrollIntoView({behavior:'smooth',block:'start'}); }
+  nickCheck(n);
+}
+
+/* серверная проверка существования профилей: бейджи на карточках */
+async function nickCheck(n){
+  const mark=(id,cls,txt)=>{
+    const c=document.querySelector('.card[data-ck="'+id+'"]'); if(!c) return;
+    const b=c.querySelector('.nk'); if(!b) return;
+    b.className='nk '+cls; b.textContent=txt;
+    if(cls==='nk-none') c.classList.add('nk-dim');
+  };
+  try{
+    const r=await fetch('/api/nick',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({nick:n})});
+    if(!r.ok) throw 0;
+    const d=await r.json();
+    for(const [id,st] of Object.entries(d)){
+      if(st==='found') mark(id,'nk-yes','✓ найден');
+      else if(st==='none') mark(id,'nk-none','— нет профиля');
+      else mark(id,'nk-man','проверь вручную');
+    }
+  }catch(_){
+    document.querySelectorAll('.card[data-ck] .nk').forEach(b=>{b.className='nk nk-man';b.textContent='проверь вручную';});
+  }
 }
 
 /* ── история целей ── */
