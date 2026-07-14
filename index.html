@@ -42,6 +42,20 @@
   --ease:cubic-bezier(.22,1,.36,1);
   --c:var(--amber); --cs:var(--amber-dim);
 }
+/* Светлая тема — «дневной» вариант: тёплая бумага, тёмный янтарь, код остаётся терминальным */
+:root[data-theme="light"]{
+  color-scheme:light;
+  --bg:#EFE9DA; --panel:#F8F3E8; --panel2:#E9E1CE; --ink:#E4DBC5;
+  --line:#DBD1B9; --line2:#C6B994;
+  --amber:#AF6D08; --amber-hi:#875000; --amber-dim:rgba(175,109,8,.15); --amber-ghost:rgba(175,109,8,.06);
+  --red:#CE3E28; --red-hi:#AE3019;
+  --txt:#231E13; --muted:#6C5F42; --data:#3A3320;
+}
+:root[data-theme="light"] .card code .neg{color:#BC442C}
+:root[data-theme="light"] .grain{opacity:.4}
+:root[data-theme="light"] .radar{background:radial-gradient(circle at 50% 50%, rgba(175,109,8,.06), transparent 62%)}
+:root[data-theme="light"] .btn.open{color:#FFF6E8}
+:root[data-theme="light"] button.go{color:#FFF3E6}
 *{box-sizing:border-box}
 html{scrollbar-color:var(--line2) var(--bg)}
 ::-webkit-scrollbar{width:10px;height:10px}
@@ -69,7 +83,16 @@ a{color:inherit}
   margin-right:8px;vertical-align:-1px;animation:rec 2s ease-in-out infinite}
 @keyframes rec{0%,100%{opacity:1}50%{opacity:.25}}
 .tb-mid{color:#6E6753}
-.tb-right{color:var(--amber);font-variant-numeric:tabular-nums}
+.tb-right{color:var(--amber);font-variant-numeric:tabular-nums;display:inline-flex;align-items:center;gap:12px}
+.theme-btn{width:15px;height:15px;padding:0;border:none;background:transparent;cursor:pointer;color:var(--muted);
+  display:inline-flex;align-items:center;justify-content:center;transition:color .18s var(--ease), transform .3s var(--ease)}
+.theme-btn:hover{color:var(--amber)}
+.theme-btn:active{transform:rotate(40deg)}
+.theme-btn svg{width:15px;height:15px}
+/* иконка: луна в тёмной теме, солнце — в светлой */
+.theme-btn .t-sun{display:none}
+:root[data-theme="light"] .theme-btn .t-moon{display:none}
+:root[data-theme="light"] .theme-btn .t-sun{display:inline}
 
 /* ── тикер перехвата ── */
 .ticker{position:relative;z-index:1;overflow:hidden;border-bottom:1px solid var(--line);
@@ -573,12 +596,13 @@ body.working .radar{width:238px;height:238px}
 </style>
 </head>
 <body>
+<script>/* тема применяется до отрисовки — без вспышки */(function(){try{var t=localStorage.getItem('peleng_theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 <div id="boot"><pre></pre></div>
 <div class="grain" aria-hidden="true"></div>
 <div class="topbar">
   <span class="tb-left"><i class="rec"></i>Сеанс активен</span>
   <span class="tb-mid">Peleng // сорсинг по 30+ каналам</span>
-  <span class="tb-right" id="clock">--:--:--</span>
+  <span class="tb-right"><button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Светлая / тёмная тема" aria-label="Переключить тему"><svg class="t-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg><svg class="t-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2v2.4M12 19.6V22M2 12h2.4M19.6 12H22M4.9 4.9l1.7 1.7M17.4 17.4l1.7 1.7M19.1 4.9l-1.7 1.7M6.6 17.4l-1.7 1.7"/></svg></button><span id="clock">--:--:--</span></span>
 </div>
 
 <div class="ticker" aria-hidden="true"><div class="tk" id="tk"></div></div>
@@ -2042,6 +2066,12 @@ const AI_ENDPOINT = (typeof window!=='undefined' && window.XRAYA_AI_ENDPOINT) ||
 // безопасный доступ к localStorage (в инкогнито/при блокировке cookie он может бросать ошибку)
 function lsGet(k){ try{ return localStorage.getItem(k); }catch(_){ return null; } }
 function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(_){} }
+function toggleTheme(){
+  const cur=document.documentElement.getAttribute('data-theme')==='light'?'light':'dark';
+  const next=cur==='light'?'dark':'light';
+  document.documentElement.setAttribute('data-theme', next);
+  lsSet('peleng_theme', next);
+}
 let AI_ON = lsGet('xraya_ai_on')==='1';
 function toggleAIon(v){ AI_ON=v; lsSet('xraya_ai_on', v?'1':'0'); run(); }
 function toast(m){ const t=document.createElement('div'); t.className='toast'; t.textContent=m; document.body.appendChild(t); setTimeout(()=>t.remove(),4500); }
