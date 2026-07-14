@@ -33,8 +33,8 @@
 
 :root{
   color-scheme:dark;
-  --bg:#0B0A07; --panel:#14110B; --panel2:#0E0C07; --ink:#080705;
-  --line:#282213; --line2:#3B3219;
+  --bg:#12100A; --panel:#1E190F; --panel2:#171309; --ink:#0C0A06;
+  --line:#332B18; --line2:#463A20;
   --amber:#F2A93B; --amber-hi:#FFC96B; --amber-dim:rgba(242,169,59,.14); --amber-ghost:rgba(242,169,59,.05);
   --red:#E0472F; --red-hi:#FF6A4D;
   --txt:#EDE6D4; --muted:#9A9077; --data:#CFC3A0;
@@ -322,9 +322,9 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
 /* ── досье цели ── */
 .wrap{position:relative;z-index:1;max-width:1160px;margin:0 auto;padding:10px 20px 56px}
 .parsed{position:relative;flex-direction:column;gap:12px;margin:30px 0 0;
-  border:1px solid rgba(242,169,59,.28);border-radius:4px;padding:17px 20px;
-  background:linear-gradient(180deg, rgba(242,169,59,.09), var(--panel) 60%);
-  box-shadow:0 0 0 1px rgba(242,169,59,.04), 0 14px 40px -20px rgba(0,0,0,.7)}
+  border:1px solid rgba(242,169,59,.4);border-radius:4px;padding:17px 20px;
+  background:linear-gradient(180deg, rgba(242,169,59,.14), var(--panel) 62%);
+  box-shadow:0 0 0 1px rgba(242,169,59,.06), 0 14px 40px -18px rgba(0,0,0,.7)}
 :is(.parsed,.pro) .ck{position:absolute;width:13px;height:13px;border:0 solid var(--amber);opacity:.85}
 :is(.parsed,.pro) .tl{left:-1px;top:-1px;border-left-width:2px;border-top-width:2px}
 :is(.parsed,.pro) .tr{right:-1px;top:-1px;border-right-width:2px;border-top-width:2px}
@@ -419,11 +419,32 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
 .df.hot .pd.d .pd-btn{color:var(--amber-hi)}
 .dchip{display:inline-flex;align-items:center;gap:5px;font:500 12.5px var(--f-mono);font-style:normal;color:var(--txt);
   background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:3px 8px}
-.dchip u{text-decoration:none;cursor:pointer;color:var(--txt);transition:color .15s var(--ease)}
+.dchip .dc-name{color:var(--txt)}
 .dchip.m-must{border-color:rgba(242,169,59,.6);background:var(--amber-dim)}
-.dchip.m-must u{color:var(--amber-hi)}
+.dchip.m-must .dc-name{color:var(--amber-hi)}
 .dchip.m-x{border-color:rgba(224,71,47,.45);background:rgba(224,71,47,.07)}
-.dchip.m-x u{color:#E2705A;text-decoration:line-through}
+.dchip.m-x .dc-name{color:#E2705A;text-decoration:line-through}
+/* селектор режима терма: явная кнопка со стрелкой вместо непонятного клика */
+.dchip .dc-mode{display:inline-flex;align-items:center;gap:4px;cursor:pointer;background:transparent;border:none;
+  font:500 10px var(--f-mono);color:var(--muted);padding:2px 3px 2px 5px;border-left:1px solid var(--line2);
+  margin-left:1px;transition:color .15s var(--ease)}
+.dchip .dc-mode:hover{color:var(--amber)}
+.dchip.m-must .dc-mode{color:var(--amber-hi)}
+.dchip.m-x .dc-mode{color:#E2705A}
+.dc-car{width:8px;height:8px;flex:none;
+  background:no-repeat center/contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5l3.5 3.5 3.5-3.5' fill='none' stroke='%239A9077' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
+.chip-menu{position:fixed;z-index:90;min-width:230px;background:var(--panel);border:1px solid var(--line2);
+  border-radius:10px;overflow:hidden;box-shadow:0 20px 48px rgba(0,0,0,.6);padding:5px;
+  animation:onbIn .16s var(--ease) both}
+.chip-menu button{display:block;width:100%;text-align:left;background:transparent;border:none;border-radius:7px;
+  cursor:pointer;padding:8px 10px;transition:background-color .12s var(--ease)}
+.chip-menu button:hover{background:var(--panel2)}
+.chip-menu button b{display:block;font:600 12.5px var(--f-mono);color:var(--txt);margin-bottom:2px}
+.chip-menu button span{display:block;font:400 11px/1.4 var(--f-body);color:var(--muted)}
+.chip-menu button.on b{color:var(--amber-hi)}
+.chip-menu button.on b::after{content:" ✓";color:var(--amber)}
+.chip-menu .cm-must.on b{color:var(--amber-hi)}
+.chip-menu .cm-x.on b{color:#E2705A}
 .dchip .cc{cursor:pointer;color:var(--muted);font:600 10px var(--f-mono);font-style:normal;white-space:nowrap;
   border:1px dashed var(--line2);border-radius:5px;padding:2px 6px;margin-left:2px;
   transition:color .15s var(--ease), border-color .15s var(--ease), background-color .15s var(--ease)}
@@ -532,8 +553,10 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
   border:1px solid var(--line2);color:var(--txt);padding:10px 16px;border-radius:8px;z-index:50;
   font:400 12.5px var(--f-mono);box-shadow:0 12px 36px -12px rgba(0,0,0,.8);max-width:90%}
 /* ── Pro: ранний доступ ── */
-.pro{position:relative;z-index:1;max-width:1160px;margin:44px auto 0;padding:26px 28px;
-  background:var(--panel);border:1px solid var(--line);display:flex;flex-direction:column;gap:20px}
+.pro{position:relative;z-index:1;max-width:1160px;margin:44px auto 0;padding:26px 28px;border-radius:12px;
+  background:linear-gradient(180deg, rgba(242,169,59,.08), var(--panel) 55%);
+  border:1px solid rgba(242,169,59,.32);box-shadow:0 0 0 1px rgba(242,169,59,.04);
+  display:flex;flex-direction:column;gap:20px}
 .pro-head{max-width:640px}
 .pro-cap{font:600 10.5px/1 var(--f-mono);letter-spacing:.24em;text-transform:uppercase;color:var(--amber)}
 .pro-txt{margin:9px 0 0;font:400 13.5px/1.55 var(--f-body);color:var(--muted)}
@@ -1211,7 +1234,8 @@ async function run(){
     const lbl=exp? esc(n)+' +'+(items.length-1) : esc(n);
     const nq=n.replace(/'/g,"\\'");
     return '<i class="dchip m-'+mode+'">'+
-      '<u onclick="cycTerm(\''+nq+'\')" title="'+(mode==='must'?'Обязательно':mode==='x'?'Исключено':'Желательно')+' · клик: желательно → обязательно → исключить">'+lbl+'</u>'+
+      '<span class="dc-name">'+lbl+'</span>'+
+      '<button class="dc-mode" onclick="chipMenu(event,\''+nq+'\')" title="Как учитывать в поиске">'+modeLabel(mode)+'<i class="dc-car"></i></button>'+
       (conc? '<a class="cc'+(exp?' on':'')+'" onclick="concTerm(\''+nq+'\')" title="'+(exp?'Свернуть обратно до '+esc(n):'Искать любой из: '+conc.items.join(', '))+'">⇄ '+esc(conc.l)+'</a>':'')+
       '<b onclick="dTechOff(\''+nq+'\')" title="Убрать совсем">×</b></i>';
   }).join('')
@@ -1921,6 +1945,33 @@ function cycTerm(n){
   if(next==='nice') delete F.tmode[n]; else F.tmode[n]=next;
   updateFiltCnt(); run();
 }
+function modeLabel(m){ return m==='must'?'обязательно':m==='x'?'исключить':'желательно'; }
+let _chipMenu=null;
+function closeChipMenu(){ if(_chipMenu){ _chipMenu.remove(); _chipMenu=null; } }
+function setTermMode(n, mode){
+  closeChipMenu();
+  if(mode==='nice') delete F.tmode[n]; else F.tmode[n]=mode;
+  updateFiltCnt(); run();
+}
+function chipMenu(e, n){
+  e.stopPropagation();
+  const was=_chipMenu; closeChipMenu(); if(was) return;
+  const btn=e.currentTarget, cur=F.tmode[n]||'nice';
+  const opts=[['nice','Желательно','ищется как OR — плюс, но необязательно'],
+    ['must','Обязательно','жёсткое AND — только с этим навыком'],
+    ['x','Исключить','минус-условие — убрать таких из выдачи']];
+  const nq=n.replace(/'/g,"\\'");
+  const m=document.createElement('div'); m.className='chip-menu';
+  m.innerHTML=opts.map(o=>'<button class="cm-'+o[0]+(o[0]===cur?' on':'')+'" onclick="setTermMode(\''+nq+'\',\''+o[0]+'\')"><b>'+o[1]+'</b><span>'+o[2]+'</span></button>').join('');
+  document.body.appendChild(m); _chipMenu=m;
+  const r=btn.getBoundingClientRect(), w=250;
+  m.style.left=Math.max(8, Math.min(r.left, innerWidth-w-8))+'px';
+  m.style.top=(r.bottom+6)+'px';
+  if(r.bottom+m.offsetHeight+10>innerHeight) m.style.top=(r.top-m.offsetHeight-6)+'px';
+  setTimeout(()=>document.addEventListener('click', closeChipMenu, {once:true}), 0);
+}
+addEventListener('keydown', e=>{ if(e.key==='Escape') closeChipMenu(); });
+addEventListener('resize', closeChipMenu);
 function concTerm(n){
   if(F.tconc[n]){ delete F.tconc[n]; }
   else { const c=findConcept(n); if(!c) return; F.tconc[n]=c.k; if((F.tmode[n]||'nice')==='nice') F.tmode[n]='must'; }
