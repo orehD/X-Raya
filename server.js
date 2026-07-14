@@ -132,6 +132,26 @@ function handleLead(req, res) {
   });
 }
 
+// ── анонимный счётчик поисков по дням (без текста запросов) ──
+const HITS_FILE = process.env.HITS_FILE || path.join(__dirname, 'data', 'hits.json');
+let dailyHits = {};
+try { dailyHits = JSON.parse(fs.readFileSync(HITS_FILE, 'utf8')) || {}; } catch {}
+let hitsDirty = false;
+function flushHits() {
+  if (!hitsDirty) return;
+  hitsDirty = false;
+  try { fs.mkdirSync(path.dirname(HITS_FILE), { recursive: true }); fs.writeFileSync(HITS_FILE, JSON.stringify(dailyHits)); }
+  catch (e) { console.error('hits write failed:', e.message); }
+}
+setInterval(flushHits, 30000).unref && setInterval(flushHits, 30000).unref();
+function handleHit(req, res) {
+  // дата по МСК (UTC+3), без внешних данных
+  const d = new Date(Date.now() + 3 * 3600e3).toISOString().slice(0, 10);
+  dailyHits[d] = (dailyHits[d] || 0) + 1;
+  hitsDirty = true;
+  res.writeHead(204); res.end();
+}
+
 // ── статистика по заявкам (заявки по партнёрам /?ref=) ──
 function handleStats(req, res) {
   const token = process.env.STATS_TOKEN;
@@ -153,7 +173,14 @@ function handleStats(req, res) {
   }
   const partners = Object.entries(byRef).map(([ref, count]) => ({ ref, count })).sort((a, b) => b.count - a.count);
   const recent = rows.slice(-100).reverse();
-  send(res, 200, 'application/json', JSON.stringify({ total: rows.length, partners, recent }));
+  // поиски за последние 14 дней
+  const days = [];
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(Date.now() + 3 * 3600e3 - i * 86400e3).toISOString().slice(0, 10);
+    days.push({ date: d, count: dailyHits[d] || 0 });
+  }
+  const searchesTotal = Object.values(dailyHits).reduce((a, b) => a + b, 0);
+  send(res, 200, 'application/json', JSON.stringify({ total: rows.length, partners, recent, days, searchesTotal }));
 }
 
 // ── проверка ника: существует ли профиль на площадках ──
@@ -372,6 +399,7 @@ const server = http.createServer((req, res) => {
   if (req.method === 'POST' && req.url === '/api/nick') return handleNick(req, res);
   if (req.method === 'POST' && req.url === '/api/count') return handleCount(req, res);
   if (req.method === 'POST' && req.url === '/api/contact') return handleContact(req, res);
+  if (req.method === 'POST' && req.url === '/api/hit') return handleHit(req, res);
   if (req.method === 'GET' && req.url.split('?')[0] === '/api/stats') return handleStats(req, res);
   if (req.method === 'GET' && req.url.split('?')[0] === '/stats') {
     return fs.readFile(STATS_PAGE, (err, data) => {

@@ -22,8 +22,16 @@
     font:600 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:10px 18px}
   button:hover{background:var(--amber-hi)}
   .err{color:#E2705A;font-size:12.5px;margin-top:10px;min-height:16px}
-  .total{font-size:34px;color:var(--amber-hi);font-weight:600;margin:6px 0 20px}
+  .totals{display:flex;gap:40px;flex-wrap:wrap;margin:6px 0 20px}
+  .total{font-size:34px;color:var(--amber-hi);font-weight:600}
   .total small{font-size:13px;color:var(--muted);font-weight:400;letter-spacing:.1em;text-transform:uppercase;margin-left:8px}
+  .chart{display:flex;align-items:flex-end;gap:6px;height:120px;margin-bottom:6px}
+  .chart .bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+  .chart .bar .b{width:100%;max-width:34px;background:var(--amber-dim);border:1px solid rgba(242,169,59,.4);
+    border-radius:4px 4px 0 0;transition:background .15s}
+  .chart .bar.today .b{background:var(--amber);border-color:var(--amber)}
+  .chart .bar .n{font-size:11px;color:var(--amber-hi)}
+  .chart .bar .d{font-size:9px;color:#6E6753;white-space:nowrap}
   h2{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#6E6753;margin:26px 0 10px}
   table{width:100%;border-collapse:collapse;font-size:12.5px}
   th{text-align:left;color:#6E6753;font-weight:500;letter-spacing:.06em;text-transform:uppercase;font-size:10px;
@@ -53,7 +61,13 @@
   </div>
 
   <div id="data" class="hidden">
-    <div class="total" id="total"></div>
+    <div class="totals">
+      <div class="total" id="total"></div>
+      <div class="total" id="searches"></div>
+    </div>
+
+    <h2>Поиски за 14 дней</h2>
+    <div class="chart" id="chart"></div>
 
     <h2>По партнёрам</h2>
     <table>
@@ -90,7 +104,15 @@
   function render(d){
     document.getElementById('gate').classList.add('hidden');
     document.getElementById('data').classList.remove('hidden');
-    document.getElementById('total').innerHTML = d.total + '<small>всего заявок</small>';
+    document.getElementById('total').innerHTML = d.total + '<small>заявок на Pro</small>';
+    document.getElementById('searches').innerHTML = (d.searchesTotal||0) + '<small>поисков всего</small>';
+    const days=d.days||[], mx=days.reduce((m,x)=>Math.max(m,x.count),1);
+    document.getElementById('chart').innerHTML = days.map((x,i)=>{
+      const h=Math.round(x.count/mx*96)+4;
+      const dd=x.date.slice(8)+'.'+x.date.slice(5,7);
+      return '<div class="bar'+(i===days.length-1?' today':'')+'"><span class="n">'+(x.count||'')+'</span>'+
+        '<div class="b" style="height:'+h+'px"></div><span class="d">'+dd+'</span></div>';
+    }).join('');
     const max = d.partners.reduce((m,p)=>Math.max(m,p.count),1);
     document.getElementById('partners').innerHTML = d.partners.map(p=>{
       const chip = p.ref==='(прямые)' ? '<span class="ref-none">— прямые —</span>' : '<span class="ref-chip">'+esc(p.ref)+'</span>';
