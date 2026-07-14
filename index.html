@@ -53,7 +53,24 @@
 }
 :root[data-theme="light"] .card code .neg{color:#BC442C}
 :root[data-theme="light"] .grain{opacity:.4}
-:root[data-theme="light"] .radar{background:radial-gradient(circle at 50% 50%, rgba(175,109,8,.06), transparent 62%)}
+/* радар в светлой теме — красный (цвет кнопки), без тёмной тени-пятна */
+:root[data-theme="light"] .radar{
+  border-color:rgba(206,62,40,.32);
+  background:
+    repeating-radial-gradient(circle at 50% 50%, transparent 0 54px, rgba(206,62,40,.14) 54px 55px),
+    linear-gradient(0deg, transparent 49.7%, rgba(206,62,40,.14) 49.7% 50.3%, transparent 50.3%),
+    linear-gradient(90deg, transparent 49.7%, rgba(206,62,40,.14) 49.7% 50.3%, transparent 50.3%),
+    radial-gradient(circle at 50% 50%, rgba(206,62,40,.06), transparent 68%);
+  box-shadow:inset 0 0 46px rgba(206,62,40,.07)}
+:root[data-theme="light"] .radar::before{
+  background:conic-gradient(from 0deg, rgba(206,62,40,0) 0deg, rgba(206,62,40,.05) 288deg, rgba(206,62,40,.35) 352deg, rgba(224,71,47,.55) 359deg, transparent 360deg)}
+:root[data-theme="light"] .radar::after{background:var(--red)}
+:root[data-theme="light"] .r-ticks{background:repeating-conic-gradient(rgba(206,62,40,.5) 0 .55deg, transparent .55deg 30deg)}
+:root[data-theme="light"] .radar .blip{background:var(--red)}
+:root[data-theme="light"] .radar .blip.hi{background:var(--red);box-shadow:0 0 14px 3px rgba(206,62,40,.5)}
+:root[data-theme="light"] .radar.acquire{box-shadow:inset 0 0 46px rgba(206,62,40,.12), 0 0 0 3px rgba(206,62,40,.1), 0 0 42px -8px rgba(206,62,40,.4)}
+:root[data-theme="light"] .r-core b{color:var(--red);text-shadow:none}
+:root[data-theme="light"] .r-label{color:var(--muted)}
 :root[data-theme="light"] .btn.open{color:#FFF6E8}
 :root[data-theme="light"] button.go{color:#FFF3E6}
 *{box-sizing:border-box}
