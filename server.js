@@ -37,7 +37,8 @@ function send(res, code, type, body) {
 }
 
 function handleAI(req, res) {
-  const relay = process.env.AI_RELAY_URL; // Cloudflare Worker (обходит блок IP сервера)
+  let relay = (process.env.AI_RELAY_URL || '').trim(); // Cloudflare Worker (обходит блок IP сервера)
+  if (relay && !/^https?:\/\//i.test(relay)) relay = 'https://' + relay;
   const key = process.env.OPENROUTER_API_KEY;
   if (!relay && !key) return send(res, 500, 'application/json', JSON.stringify({ error: 'OPENROUTER_API_KEY или AI_RELAY_URL не задан на сервере' }));
   let raw = '';
