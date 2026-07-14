@@ -12,6 +12,7 @@
 //                        в Coolify смонтируй volume на эту папку, иначе файл сотрётся при редеплое)
 //   TG_BOT_TOKEN, TG_CHAT_ID — необязательно: уведомление в Telegram о каждой заявке
 //   STATS_TOKEN        — необязательно: пароль к странице статистики /stats (заявки по партнёрам)
+//   SIGNALHIRE_KEY     — необязательно: ключ SignalHire Person API (пробив контактов по LinkedIn/email/телефону)
 //   SERPER_KEY         — необязательно: проверка размера выдачи через Serper.dev (проще всего;
 //                        serper.dev → Sign up → API key; 2500 бесплатных проверок). Приоритетнее CSE.
 //   GOOGLE_CSE_KEY, GOOGLE_CSE_CX — необязательно, альтернатива Serper: Google Custom Search
@@ -279,6 +280,85 @@ function handleCount(req, res) {
   });
 }
 
+// ── пробив контактов через SignalHire Person API (sync, withoutWaterfall) ──
+// Идентификатор: LinkedIn URL / email / телефон. 1 успешный мэтч = 1 кредит SignalHire.
+const SH_URL = process.env.SH_API_URL || 'https://www.signalhire.com/api/v1/candidate/search';
+const shCache = new Map(); // item(lower) → {at, data} — повторный лукап не жжёт кредит
+const shHits = new Map();
+
+function validContactItem(s) {
+  if (/^https?:\/\/([\w-]+\.)?linkedin\.com\/(in|sales)\/\S+$/i.test(s)) return true;
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s)) return true;
+  if (/^\+?[\d\s\-().]{7,20}$/.test(s)) return true;
+  return false;
+}
+
+function handleContact(req, res) {
+  const key = process.env.SIGNALHIRE_KEY;
+  if (!key) return send(res, 501, 'application/json', JSON.stringify({ error: 'not_configured' }));
+  const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+  const now = Date.now();
+  const hits = (shHits.get(ip) || []).filter(t => now - t < 3600e3);
+  if (hits.length >= 30) return send(res, 429, 'application/json', JSON.stringify({ error: 'слишком часто — лимит 30 пробивов в час' }));
+  hits.push(now); shHits.set(ip, hits);
+
+  let raw = '';
+  req.on('data', c => { raw += c; if (raw.length > 1e4) req.destroy(); });
+  req.on('end', async () => {
+    let body = {}; try { body = JSON.parse(raw || '{}'); } catch {}
+    const item = String(body.item || '').trim().slice(0, 300);
+    if (!validContactItem(item))
+      return send(res, 400, 'application/json', JSON.stringify({ error: 'нужна ссылка на LinkedIn-профиль, email или телефон' }));
+    const ck = item.toLowerCase();
+    const cached = shCache.get(ck);
+    if (cached && now - cached.at < 7 * 24 * 3600e3)
+      return send(res, 200, 'application/json', JSON.stringify(Object.assign({ cached: true }, cached.data)));
+    try {
+      const ctl = new AbortController();
+      const tm = setTimeout(() => ctl.abort(), 25000);
+      const r = await fetch(SH_URL, {
+        method: 'POST', signal: ctl.signal,
+        headers: { apikey: key, 'content-type': 'application/json' },
+        body: JSON.stringify({ items: [item], withoutWaterfall: true }),
+      });
+      clearTimeout(tm);
+      const credits = parseInt(r.headers.get('x-credits-left') || '', 10);
+      if (r.status === 402) return send(res, 402, 'application/json', JSON.stringify({ error: 'кредиты SignalHire закончились' }));
+      if (r.status === 401) return send(res, 502, 'application/json', JSON.stringify({ error: 'SignalHire: неверный ключ' }));
+      if (r.status === 429) return send(res, 429, 'application/json', JSON.stringify({ error: 'SignalHire: слишком много запросов, подожди минуту' }));
+      const arr = await r.json();
+      if (!r.ok || !Array.isArray(arr))
+        return send(res, 502, 'application/json', JSON.stringify({ error: (arr && (arr.error || arr.message)) || 'SignalHire error' }));
+      const it = arr[0] || {};
+      if (it.status !== 'success') {
+        const msg = it.status === 'credits_are_over' ? 'кредиты SignalHire закончились'
+          : it.status === 'duplicate_query' ? 'повторный запрос — подожди пару минут'
+          : 'профиль не найден в базе SignalHire';
+        const code = it.status === 'credits_are_over' ? 402 : 200;
+        return send(res, code, 'application/json', JSON.stringify({ status: it.status || 'failed', error: msg, credits: isNaN(credits) ? null : credits }));
+      }
+      const c = it.candidate || {};
+      const contacts = (Array.isArray(c.contacts) ? c.contacts : [])
+        .filter(x => x && x.value && (x.type === 'email' || x.type === 'phone'))
+        .map(x => ({ type: x.type, value: String(x.value), rating: x.rating || null, subType: x.subType || null }));
+      const exp0 = Array.isArray(c.experience) && c.experience[0] ? c.experience[0] : null;
+      const data = {
+        status: 'success',
+        fullName: c.fullName || '',
+        headline: c.headLine || (exp0 ? [exp0.position, exp0.company].filter(Boolean).join(' · ') : ''),
+        location: (Array.isArray(c.locations) && c.locations[0] && c.locations[0].name) || '',
+        contacts,
+        credits: isNaN(credits) ? null : credits,
+      };
+      shCache.set(ck, { at: now, data });
+      if (shCache.size > 1000) shCache.delete(shCache.keys().next().value);
+      send(res, 200, 'application/json', JSON.stringify(data));
+    } catch (e) {
+      send(res, 500, 'application/json', JSON.stringify({ error: String((e && e.message) || e) }));
+    }
+  });
+}
+
 const STATS_PAGE = path.join(__dirname, 'stats.html');
 
 const server = http.createServer((req, res) => {
@@ -286,6 +366,7 @@ const server = http.createServer((req, res) => {
   if (req.method === 'POST' && req.url === '/api/lead') return handleLead(req, res);
   if (req.method === 'POST' && req.url === '/api/nick') return handleNick(req, res);
   if (req.method === 'POST' && req.url === '/api/count') return handleCount(req, res);
+  if (req.method === 'POST' && req.url === '/api/contact') return handleContact(req, res);
   if (req.method === 'GET' && req.url.split('?')[0] === '/api/stats') return handleStats(req, res);
   if (req.method === 'GET' && req.url.split('?')[0] === '/stats') {
     return fs.readFile(STATS_PAGE, (err, data) => {

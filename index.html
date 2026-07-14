@@ -372,6 +372,14 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
 .nk-man{color:var(--muted)}
 .card.nk-dim{opacity:.55}
 .card.nk-dim:hover{opacity:.85}
+/* пробив контактов */
+.sh-item{word-break:break-all}
+.sh-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.sh-row:last-of-type{border-bottom:none}
+.sh-t{font:500 10px var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:#8B8066;min-width:44px}
+.sh-v{font:600 14px var(--f-mono);color:var(--amber-hi);text-decoration:none;word-break:break-all;flex:1}
+.sh-v:hover{text-decoration:underline dotted}
+.btn.copy.sm{flex:none;padding:5px 10px;font-size:11px}
 
 
 /* ── история целей ── */
@@ -536,7 +544,7 @@ body.working .radar{width:238px;height:238px}
     <div class="console">
       <div class="console-cap"><span id="capLbl">Поисковый запрос</span><span class="qmode"><button class="on" data-m="goal" onclick="setQmode('goal')">запрос</button><button data-m="vac" onclick="setQmode('vac')">вакансия</button></span></div>
       <div class="console-in">
-        <textarea id="q" placeholder="Кого ищем: «сеньор python разработчик в Москве с Django», «маркетолог спб», «логист ВЭД» — или @никнейм для поиска профилей…"></textarea>
+        <textarea id="q" placeholder="Кого ищем: «сеньор python разработчик в Москве с Django», «логист ВЭД» — или @никнейм, или ссылка на LinkedIn для пробива контактов…"></textarea>
         <button class="go" onclick="run()">Выследить<span class="go-ic">→</span></button>
       </div>
     </div>
@@ -1021,6 +1029,7 @@ async function run(){
   const res = document.getElementById('results');
   const pr = document.getElementById('parsed');
   const raw = document.getElementById('q').value.trim();
+  if(raw && isContactId(raw)){ renderContact(raw); return; }
   const v = validateQuery(raw);
   if(!v.ok){ res.innerHTML='<div class="empty">'+v.msg+'</div>'; pr.style.display='none'; return; }
   if(raw && /^@[\w.\-]{2,32}$/.test(raw)){ renderNick(raw.slice(1)); return; }
@@ -1161,6 +1170,69 @@ function renderNick(n){
   acquirePulse();
   if(MOTION_OK){ armDecrypt(); pr.scrollIntoView({behavior:'smooth',block:'start'}); }
   nickCheck(n);
+}
+
+/* ── пробив контактов (SignalHire): LinkedIn URL / email / телефон в главном поле ── */
+function isContactId(s){
+  if(/^https?:\/\/([\w-]+\.)?linkedin\.com\/(in|sales)\/\S+$/i.test(s)) return true;
+  if(/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s)) return true;
+  if(/^\+?[\d\s\-().]{7,20}$/.test(s) && /\d{6}/.test(s.replace(/\D/g,''))) return true;
+  return false;
+}
+function renderContact(item){
+  const res=document.getElementById('results'), pr=document.getElementById('parsed');
+  const kind = /linkedin\.com/i.test(item)?'LinkedIn-профиль':(item.includes('@')?'Email':'Телефон');
+  document.body.classList.add('working');
+  pr.innerHTML='<i class="ck tl"></i><i class="ck tr"></i><i class="ck bl"></i><i class="ck br"></i>'+
+    '<div class="dhead"><span>Пробив контакта</span><span class="dmeta" id="shCred"></span></div>'+
+    '<div class="dfields"><span class="df hot" style="--d:0ms"><label>'+kind+'</label><span class="dv"><b class="sh-item">'+esc(item)+'</b></span></span>'+
+    '<span class="df" style="--d:80ms"><label>Источник</label><span class="dv"><b>SignalHire</b></span></span></div>';
+  pr.style.display='flex';
+  res.innerHTML=
+    '<div class="group g-nick"><div class="ghead"><h2><i>CH-CT</i>Контакты цели</h2></div>'+
+    '<div class="cards"><div class="card g-nick sh-card" style="--d:0ms">'+
+      '<div class="ttl">Раскрытие контактов</div>'+
+      '<div class="desc">Peleng запросит email и телефон по этому идентификатору. Спишется 1 кредит SignalHire — только при успешном совпадении.</div>'+
+      '<div class="row"><button class="btn open" id="shGo">Раскрыть контакты</button>'+
+      '<span class="btn copy" onclick="resetAll()">Отмена</span></div>'+
+    '</div></div></div>';
+  document.getElementById('shGo').onclick=()=>contactReveal(item);
+  saveHist(item);
+  acquirePulse();
+  if(MOTION_OK) pr.scrollIntoView({behavior:'smooth',block:'start'});
+}
+async function contactReveal(item){
+  const btn=document.getElementById('shGo');
+  btn.textContent='Запрашиваю…'; btn.style.pointerEvents='none';
+  const card=document.querySelector('.sh-card');
+  try{
+    const r=await fetch('/api/contact',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({item})});
+    const d=await r.json();
+    if(r.status===501) throw new Error('Пробив не настроен — нужен ключ SignalHire на сервере (SIGNALHIRE_KEY)');
+    if(!r.ok) throw new Error(d.error||'ошибка');
+    if(d.status!=='success'){
+      card.innerHTML='<div class="ttl">Не найдено</div><div class="desc">'+esc(d.error||'Профиль не найден в базе SignalHire.')+'<br>Кредит не списан.</div>'+
+        '<div class="row"><span class="btn copy" onclick="resetAll()">К поиску</span></div>';
+      if(d.credits!=null) setCred(d.credits);
+      return;
+    }
+    const rows=d.contacts.length? d.contacts.map(c=>{
+      const href=c.type==='email'?'mailto:'+c.value:'tel:'+c.value.replace(/[^\d+]/g,'');
+      return '<div class="sh-row"><span class="sh-t">'+(c.type==='email'?'email':'тел')+'</span>'+
+        '<a class="sh-v" href="'+href+'">'+esc(c.value)+'</a>'+
+        '<span class="btn copy sm" onclick="cp(this)" data-s="'+esc(c.value)+'">Копировать</span></div>';
+    }).join('') : '<div class="desc">Профиль найден, но открытых контактов нет.</div>';
+    card.innerHTML='<div class="ttl">'+esc(d.fullName||'Контакты')+'</div>'+
+      (d.headline?'<div class="desc">'+esc(d.headline)+(d.location?' · '+esc(d.location):'')+'</div>':'')+
+      rows+
+      (d.contacts.length?'<div class="row"><span class="btn copy" onclick="cp(this)" data-s="'+esc(d.contacts.map(c=>c.value).join('\n'))+'">Копировать все</span></div>':'');
+    if(d.credits!=null) setCred(d.credits);
+    if(MOTION_OK) decryptEl(card.querySelector('.ttl'),700);
+  }catch(e){
+    btn.textContent='Раскрыть контакты'; btn.style.pointerEvents='';
+    toast(e.message);
+  }
+  function setCred(n){ const el=document.getElementById('shCred'); if(el) el.textContent='кредитов осталось: '+n; }
 }
 
 /* серверная проверка существования профилей: бейджи на карточках */
