@@ -1087,7 +1087,7 @@ async function run(){
   const rl=document.getElementById('rCoreLbl'); if(rl){ const n=cards.length%100, n1=n%10;
     rl.textContent=(n>10&&n<20)?'сигналов':(n1===1?'сигнал':(n1>1&&n1<5?'сигнала':'сигналов')); }
   const rd=document.querySelector('.radar'); if(rd) rd.classList.add('live');
-  decryptAll();
+  armDecrypt();
   if(raw && UI.qmode!=='vac'){
     saveHist(raw);
     try{
@@ -1144,7 +1144,7 @@ function renderNick(n){
   saveHist('@'+n);
   try{ const sp=new URLSearchParams(); sp.set('q','@'+n); history.replaceState(null,'','?'+sp.toString()); }catch(_){}
   acquirePulse();
-  if(MOTION_OK){ decryptAll(); pr.scrollIntoView({behavior:'smooth',block:'start'}); }
+  if(MOTION_OK){ armDecrypt(); pr.scrollIntoView({behavior:'smooth',block:'start'}); }
   nickCheck(n);
 }
 
@@ -1368,7 +1368,7 @@ function repaintMain(){
   const m=document.getElementById('deckMain'); if(!m) return;
   if(!MOTION_OK){ m.innerHTML=mainHTML(); return; }
   m.classList.add('sw');
-  setTimeout(()=>{ m.innerHTML=mainHTML(); requestAnimationFrame(()=>m.classList.remove('sw')); },130);
+  setTimeout(()=>{ m.innerHTML=mainHTML(); requestAnimationFrame(()=>m.classList.remove('sw')); armDecrypt(); },130);
 }
 function switchTab(k){ if(UI.tab===k) return; UI.tab=k; refreshRail(); repaintMain(); }
 function setSort(v){ UI.sort=v; lsSet('peleng_sort',v); document.querySelectorAll('.sortseg button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); repaintMain(); }
@@ -1413,20 +1413,39 @@ function blipHi(k,on){ document.querySelectorAll('.blip[data-ch="'+k+'"]').forEa
 /* расшифровка перехвата: названия источников декодируются из шифра */
 const DCHARS='ABCDEFGHKMNPRSTUVXZ0123456789#$%&';
 function decryptEl(el,dur){
-  const fin=el.textContent; if(!fin) return;
+  // декодируем только текст заголовка, не трогая дочерние бейджи (.serp/.nk)
+  const node = (el.firstChild && el.firstChild.nodeType===3) ? el.firstChild : null;
+  const fin = node ? node.nodeValue : el.textContent;
+  if(!fin) return;
+  const put = s => { if(node) node.nodeValue=s; else el.textContent=s; };
   const t0=performance.now();
   const tick=t=>{
     const k=Math.min((t-t0)/dur,1), n=Math.floor(fin.length*k);
     let s=fin.slice(0,n);
     for(let i=n;i<fin.length;i++) s+= fin[i]===' '?' ':DCHARS[(Math.random()*DCHARS.length)|0];
-    el.textContent=s;
-    if(k<1) requestAnimationFrame(tick); else el.textContent=fin;
+    put(s);
+    if(k<1) requestAnimationFrame(tick); else put(fin);
   };
   requestAnimationFrame(tick);
 }
-function decryptAll(){
+/* декодинг заголовков по мере доскролла: каждый источник — при первом появлении в зоне видимости */
+let _decObs=null;
+function armDecrypt(){
   if(!MOTION_OK) return;
-  document.querySelectorAll('#deckMain .card .ttl').forEach((el,i)=>{ if(i<20) setTimeout(()=>decryptEl(el,950), i*70); });
+  const els=document.querySelectorAll('#deckMain .card .ttl');
+  if(!('IntersectionObserver' in window)){
+    els.forEach((el,i)=>{ if(i<20) setTimeout(()=>decryptEl(el,950), i*70); });
+    return;
+  }
+  if(!_decObs){
+    _decObs=new IntersectionObserver((entries,obs)=>{
+      entries.filter(e=>e.isIntersecting).forEach((e,i)=>{
+        const el=e.target; obs.unobserve(el);
+        setTimeout(()=>decryptEl(el,950), i*60); // лёгкий каскад для видимой пачки
+      });
+    },{ rootMargin:'0px 0px -6% 0px', threshold:.12 });
+  }
+  els.forEach(el=>{ if(el.dataset.dec) return; el.dataset.dec='1'; _decObs.observe(el); });
 }
 function countUp(scope){
   scope.querySelectorAll('.cnt').forEach(el=>{
