@@ -3,7 +3,10 @@
 // Запуск: node server.js   (PORT по умолчанию 3000)
 //
 // Переменные окружения:
-//   OPENROUTER_API_KEY — обязательно (ключ sk-or-... ; задаётся в Coolify, НЕ в коде)
+//   OPENROUTER_API_KEY — ключ sk-or-... для прямого вызова OpenRouter (если IP сервера не заблокирован)
+//   AI_RELAY_URL       — URL Cloudflare Worker-relay (обходит блокировку IP; см. relay-worker.js).
+//                        Если задан — используется вместо прямого вызова, ключ OpenRouter живёт в воркере.
+//   RELAY_SECRET       — необязательно: общий секрет, чтобы воркером не пользовались чужие (тот же и в воркере)
 //   AI_MODEL           — необязательно (по умолчанию openai/gpt-4o-mini)
 //   LEADS_FILE         — куда писать email-заявки (по умолчанию ./data/leads.jsonl;
 //                        в Coolify смонтируй volume на эту папку, иначе файл сотрётся при редеплое)
@@ -28,8 +31,9 @@ function send(res, code, type, body) {
 }
 
 function handleAI(req, res) {
+  const relay = process.env.AI_RELAY_URL; // Cloudflare Worker (обходит блок IP сервера)
   const key = process.env.OPENROUTER_API_KEY;
-  if (!key) return send(res, 500, 'application/json', JSON.stringify({ error: 'OPENROUTER_API_KEY не задан на сервере' }));
+  if (!relay && !key) return send(res, 500, 'application/json', JSON.stringify({ error: 'OPENROUTER_API_KEY или AI_RELAY_URL не задан на сервере' }));
   let raw = '';
   req.on('data', c => { raw += c; if (raw.length > 1e6) req.destroy(); });
   req.on('end', async () => {
@@ -37,6 +41,19 @@ function handleAI(req, res) {
     const system = body.system || '', user = body.user || '';
     if (!user) return send(res, 400, 'application/json', JSON.stringify({ error: 'нет поля user' }));
     try {
+      // Вариант 1: через relay-воркер (ключ живёт в секретах Cloudflare, не на Beget)
+      if (relay) {
+        const r = await fetch(relay, {
+          method: 'POST',
+          headers: Object.assign({ 'content-type': 'application/json' },
+            process.env.RELAY_SECRET ? { 'x-relay-auth': process.env.RELAY_SECRET } : {}),
+          body: JSON.stringify({ system, user, model: MODEL }),
+        });
+        const d = await r.json();
+        if (!r.ok) return send(res, 502, 'application/json', JSON.stringify({ error: (d && (d.error || d.message)) || 'relay error' }));
+        return send(res, 200, 'application/json', JSON.stringify({ text: d.text || '' }));
+      }
+      // Вариант 2: напрямую в OpenRouter (работает, если IP сервера не заблокирован)
       const r = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
