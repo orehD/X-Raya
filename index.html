@@ -90,9 +90,9 @@ a{color:inherit}
   border-radius:16px;padding:7px}
 .console-cap{display:flex;justify-content:space-between;gap:10px;padding:7px 12px 9px;
   font:500 10px/1 var(--f-mono);letter-spacing:.22em;text-transform:uppercase;color:var(--muted)}
-.console-cap .cap-r{color:#6E6753}
+.console-cap .cap-r{color:#8B8066}
 .qmode{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
-.qmode button{background:transparent;border:none;color:#6E6753;font:500 9.5px var(--f-mono);
+.qmode button{background:transparent;border:none;color:var(--muted);font:500 10px var(--f-mono);
   letter-spacing:.14em;text-transform:uppercase;padding:4px 11px;cursor:pointer;
   transition:color .18s var(--ease), background-color .18s var(--ease)}
 .qmode button:hover{color:var(--txt)}
@@ -103,7 +103,7 @@ a{color:inherit}
 textarea{flex:1;min-width:240px;min-height:76px;resize:vertical;background:transparent;
   color:var(--txt);border:none;font:400 13.5px/1.6 var(--f-mono);padding:6px 8px}
 textarea:focus{outline:none}
-textarea::placeholder{color:#6E6753}
+textarea::placeholder{color:var(--muted)}
 button.go{display:inline-flex;align-items:center;gap:10px;background:var(--red);color:#150B07;border:none;
   border-radius:9px;font:500 13.5px var(--f-disp);letter-spacing:.06em;text-transform:uppercase;
   padding:0 16px 0 20px;min-height:46px;cursor:pointer;align-self:stretch;
@@ -160,7 +160,7 @@ body.glitching .logo{animation:glitch .4s steps(3,end) 1}
 
 /* ── примеры / переключатели ── */
 .examples{margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.examples .lbl{color:#6E6753;font:500 10.5px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;margin-right:4px}
+.examples .lbl{color:#8B8066;font:500 10.5px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;margin-right:4px}
 .examples a{cursor:pointer;font:400 12px var(--f-mono);color:var(--muted);background:transparent;
   border:1px dashed var(--line2);padding:6px 11px;border-radius:7px;
   transition:color .2s var(--ease), border-color .2s var(--ease)}
@@ -184,8 +184,8 @@ body.glitching .logo{animation:glitch .4s steps(3,end) 1}
 .techchips.tall{max-height:220px}
 @media(max-width:900px){.filters .fcols{grid-template-columns:1fr}.techchips.tall{max-height:120px}}
 .frow{display:flex;flex-wrap:wrap;align-items:flex-start;gap:10px}
-.frow>label{font:500 10px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;color:#6E6753;
-  min-width:126px;padding-top:10px}
+.frow>label{font:500 10.5px/1.6 var(--f-mono);letter-spacing:.18em;text-transform:uppercase;color:#8B8066;
+  flex:0 0 126px;padding-top:8px}
 .seg{display:inline-flex;background:var(--panel2);border:1px solid var(--line);border-radius:8px;overflow:hidden}
 .seg button{background:transparent;border:none;color:var(--muted);font:400 12px var(--f-mono);
   padding:8px 14px;cursor:pointer;transition:color .18s var(--ease), background-color .18s var(--ease)}
@@ -220,7 +220,7 @@ body.glitching .logo{animation:glitch .4s steps(3,end) 1}
 .pd-search input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:7px;color:var(--txt);
   font:400 12px var(--f-mono);padding:6px 10px;transition:border-color .2s var(--ease)}
 .pd-search input:focus{outline:none;border-color:rgba(242,169,59,.5)}
-.pd-none{font:400 11.5px var(--f-mono);color:#6E6753;padding:10px;display:none}
+.pd-none{font:400 12px var(--f-mono);color:var(--muted);padding:10px;display:none}
 /* вариант для панели фильтров */
 .pd.f .pd-btn{color:var(--txt);border:1px solid var(--line);border-radius:8px;padding:8px 12px;
   font:400 12.5px var(--f-mono);min-width:210px;background:var(--panel2);justify-content:space-between;
@@ -236,10 +236,11 @@ body.glitching .logo{animation:glitch .4s steps(3,end) 1}
 input.aiin{flex:1;min-width:260px;background:var(--panel2);color:var(--txt);border:1px solid var(--line);
   border-radius:8px;padding:8px 12px;font:400 12.5px var(--f-mono);
   transition:border-color .2s var(--ease)}
-input.aiin::placeholder{color:#6E6753}
+input.aiin::placeholder{color:var(--muted)}
 input.aiin:hover{border-color:var(--line2)}
 input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
-.aihint{font:400 11.5px var(--f-body);color:#6E6753;line-height:1.5}
+.aihint{font:400 13px/1.6 var(--f-body);color:var(--muted);max-width:75ch}
+.aihint b{color:var(--txt)}
 .freset{align-self:flex-start;background:transparent;border:1px solid var(--line);color:var(--muted);
   border-radius:8px;padding:8px 15px;font:400 11.5px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;
   cursor:pointer;transition:color .2s var(--ease), border-color .2s var(--ease)}
@@ -259,10 +260,10 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
 :is(.parsed,.pro) .br{right:-1px;bottom:-1px;border-right-width:2px;border-bottom-width:2px}
 .dhead{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
   font:500 10.5px/1 var(--f-mono);letter-spacing:.26em;text-transform:uppercase;color:var(--amber)}
-.dhead .dmeta{color:#6E6753;letter-spacing:.14em}
+.dhead .dmeta{color:#8B8066;letter-spacing:.14em}
 .dfields{display:flex;flex-wrap:wrap;gap:10px 28px}
 .df{display:flex;flex-direction:column;gap:4px;animation:dfIn .65s var(--ease) both;animation-delay:var(--d,0s)}
-.df label{font:500 9.5px/1 var(--f-mono);letter-spacing:.24em;text-transform:uppercase;color:#6E6753}
+.df label{font:500 10px/1 var(--f-mono);letter-spacing:.24em;text-transform:uppercase;color:#8B8066}
 .df b{font:600 14px var(--f-mono);color:var(--txt);font-weight:600}
 .df.hot b{color:var(--amber-hi)}
 @keyframes dfIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
@@ -275,7 +276,7 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
   font:500 13px var(--f-disp);letter-spacing:.14em;text-transform:uppercase;color:var(--txt)}
 .group h2 i{white-space:nowrap;font:600 10.5px var(--f-mono);font-style:normal;letter-spacing:.12em;color:var(--amber);
   border:1px solid rgba(242,169,59,.4);border-radius:4px;padding:3px 7px;background:var(--amber-ghost)}
-.group h2 span{color:#6E6753;font:500 11px var(--f-mono);letter-spacing:.1em}
+.group h2 span{color:#8B8066;font:500 11px var(--f-mono);letter-spacing:.1em}
 .group h2 span::before{content:"· "}
 .gbtns{display:flex;gap:8px}
 .openall{background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:7px;
@@ -325,7 +326,7 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
 .btn.copy{background:transparent;color:var(--muted)}
 .btn.copy:hover{color:var(--amber);border-color:rgba(242,169,59,.5)}
 .vrow{margin-top:8px}
-.vbtn{flex:1;text-align:center;font:400 11px var(--f-mono);color:#6E6753;background:transparent;
+.vbtn{flex:1;text-align:center;font:400 11.5px var(--f-mono);color:var(--muted);background:transparent;
   border:1px dashed var(--line);border-radius:7px;padding:6px;cursor:pointer;user-select:none;
   transition:color .18s var(--ease), border-color .18s var(--ease)}
 .vbtn:hover{color:var(--amber);border-color:rgba(242,169,59,.5)}
@@ -354,12 +355,12 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
   transition:color .15s var(--ease), border-color .15s var(--ease), background-color .15s var(--ease)}
 .dchip .cc:hover{color:var(--amber);border-color:rgba(242,169,59,.5)}
 .dchip .cc.on{color:var(--amber-hi);border-style:solid;border-color:rgba(242,169,59,.55);background:var(--amber-dim)}
-.dchip b{cursor:pointer;color:#6E6753;font-weight:600;padding:0 1px;transition:color .15s var(--ease)}
+.dchip b{cursor:pointer;color:#8B8066;font-weight:600;padding:0 1px;transition:color .15s var(--ease)}
 .dchip b:hover{color:#E2705A}
-.dchip.plus{cursor:pointer;color:#6E6753;transition:color .15s var(--ease), border-color .15s var(--ease)}
+.dchip.plus{cursor:pointer;color:var(--muted);transition:color .15s var(--ease), border-color .15s var(--ease)}
 .dchip.plus:hover{color:var(--amber);border-color:rgba(242,169,59,.5)}
 /* призрачные чипы: целевой набор роли, ещё не добавлен в поиск */
-.dchip.ghost{cursor:pointer;color:#6E6753;background:transparent;border-style:dashed;
+.dchip.ghost{cursor:pointer;color:var(--muted);background:transparent;border-style:dashed;
   transition:color .15s var(--ease), border-color .15s var(--ease), background-color .15s var(--ease)}
 .dchip.ghost:hover{color:var(--amber-hi);border-color:rgba(242,169,59,.5);background:var(--amber-ghost)}
 /* бейджи проверки ника */
@@ -368,25 +369,25 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
 @keyframes nkPulse{50%{opacity:.35}}
 .nk-yes{color:var(--amber-hi)}
 .nk-none{color:#E2705A}
-.nk-man{color:#6E6753}
+.nk-man{color:var(--muted)}
 .card.nk-dim{opacity:.55}
 .card.nk-dim:hover{opacity:.85}
 
 
 /* ── история целей ── */
 .history{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.history .lbl{color:#6E6753;font:500 10.5px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;margin-right:4px}
+.history .lbl{color:#8B8066;font:500 10.5px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;margin-right:4px}
 .history a{cursor:pointer;font:400 12px var(--f-mono);color:var(--muted);background:var(--panel);
   border:1px solid var(--line);padding:6px 11px;border-radius:7px;max-width:320px;overflow:hidden;
   text-overflow:ellipsis;white-space:nowrap;transition:color .2s var(--ease), border-color .2s var(--ease)}
 .history a:hover{color:var(--amber);border-color:rgba(242,169,59,.5)}
-.hclear{cursor:pointer;color:#6E6753;font:400 13px var(--f-mono);border:1px solid var(--line);
+.hclear{cursor:pointer;color:var(--muted);font:400 13px var(--f-mono);border:1px solid var(--line);
   border-radius:7px;padding:5px 10px;transition:color .2s var(--ease), border-color .2s var(--ease)}
 .hclear:hover{color:#E2705A;border-color:#E2705A}
 
 /* ── колода: тулбар, рейл каналов, вкладки ── */
 .toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:28px 0 14px}
-.tl-lab{font:500 10.5px/1 var(--f-mono);letter-spacing:.24em;text-transform:uppercase;color:#6E6753}
+.tl-lab{font:500 10.5px/1 var(--f-mono);letter-spacing:.24em;text-transform:uppercase;color:#8B8066}
 .tl-r{display:inline-flex;align-items:center;gap:14px;flex-wrap:wrap}
 .ctnote{font:400 10.5px/1.6 var(--f-mono);letter-spacing:.04em;text-transform:none;color:var(--amber);font-style:normal;margin-left:10px}
 .ctnote a{color:var(--muted);text-decoration:underline dotted;cursor:pointer;transition:color .15s var(--ease)}
@@ -414,7 +415,7 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
   background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:8px;padding:9px 12px;
   font:400 11px var(--f-mono);letter-spacing:.03em;cursor:pointer;
   transition:color .18s var(--ease), border-color .18s var(--ease), background-color .18s var(--ease), transform .14s var(--ease)}
-.rail button b{color:#6E6753;font-weight:600}
+.rail button b{color:var(--muted);font-weight:600}
 .rail button:hover{color:var(--txt);border-color:var(--line2)}
 .rail button.on{background:var(--amber-dim);border-color:rgba(242,169,59,.5);color:var(--amber-hi)}
 .rail button.on b{color:var(--amber)}
@@ -438,11 +439,13 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
 .pro-head{max-width:640px}
 .pro-cap{font:600 10.5px/1 var(--f-mono);letter-spacing:.24em;text-transform:uppercase;color:var(--amber)}
 .pro-txt{margin:9px 0 0;font:400 13.5px/1.55 var(--f-body);color:var(--muted)}
-.pro-feats{list-style:none;margin:0;padding:0;display:grid;gap:14px 26px;grid-template-columns:repeat(2,minmax(0,1fr))}
-.pro-feats li{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:start}
-.pro-feats .pf-ic{grid-row:1/3;font-size:20px;line-height:1.1;filter:grayscale(.15)}
-.pro-feats b{font:600 13.5px var(--f-body);color:var(--txt)}
-.pro-feats i{font:400 12.5px/1.5 var(--f-body);font-style:normal;color:var(--muted)}
+.pro-feats{list-style:none;margin:0;padding:0;display:grid;gap:16px 28px;grid-template-columns:repeat(2,minmax(0,1fr))}
+.pro-feats li{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;align-items:start}
+.pro-feats .pf-ic{grid-row:1/3;width:38px;height:38px;display:flex;align-items:center;justify-content:center;
+  color:var(--amber);background:var(--panel2);border:1px solid var(--line2);border-radius:9px}
+.pro-feats .pf-ic svg{width:21px;height:21px}
+.pro-feats b{font:600 14px var(--f-body);color:var(--txt);align-self:end}
+.pro-feats i{font:400 13px/1.55 var(--f-body);font-style:normal;color:var(--muted)}
 @media(max-width:640px){.pro-feats{grid-template-columns:1fr}}
 .pro-f{display:flex;gap:9px;flex-wrap:wrap;align-items:center}
 .pro-f input{background:var(--bg);color:var(--txt);border:1px solid var(--line);border-radius:8px;
@@ -457,7 +460,7 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
 .pro-ok{font:500 13px var(--f-mono);color:var(--amber-hi)}
 @media(max-width:700px){.pro{margin:34px 16px 0;padding:18px}}
 footer{position:relative;z-index:1;border-top:1px solid var(--line);margin-top:26px;padding:26px 20px 34px;
-  text-align:center;font:400 10.5px var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:#6E6753}
+  text-align:center;font:400 10.5px var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:#8B8066}
 footer b{color:var(--muted);font-weight:400}
 
 .btn.did{animation:copyPulse .3s var(--ease)}
@@ -490,7 +493,7 @@ body.working .radar{width:238px;height:238px}
   .sub{letter-spacing:.26em}
   .wrap{padding:8px 16px 44px}
   button.go{width:100%;justify-content:center;min-height:48px}
-  .frow>label{min-width:100%;padding-top:0}
+  .frow>label{flex-basis:100%;padding-top:0}
   .ghead{flex-direction:column;align-items:flex-start}
 }
 
@@ -579,10 +582,10 @@ body.working .radar{width:238px;height:238px}
     <p class="pro-txt">Базовый поиск по 30+ каналам — навсегда бесплатно. Pro добавит тяжёлые инструменты для сорсинга. Оставь почту — позовём первым, первой сотне вечная скидка.</p>
   </div>
   <ul class="pro-feats">
-    <li><span class="pf-ic">🔓</span><b>Открытие контактов</b><i>Email и телефон кандидата прямо в выдаче — без ручного пробива по сервисам.</i></li>
-    <li><span class="pf-ic">🧠</span><b>AI-разбор вакансии</b><i>Вставляешь текст вакансии — Peleng сам раскладывает требования по фильтрам и распознаёт любую роль.</i></li>
-    <li><span class="pf-ic">🎯</span><b>Умные варианты запросов</b><i>Одним кликом — «шире», «уже» или «по-другому», если выдача пустая или слишком широкая.</i></li>
-    <li><span class="pf-ic">📁</span><b>Подборки кандидатов</b><i>Сохраняй найденных, помечай статусы и возвращайся к поиску позже.</i></li>
+    <li><span class="pf-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 7 8.5 6 8.5-6"/><circle cx="18.5" cy="16" r="2.6" fill="var(--panel2)"/><path d="M18.5 14.8v1.2l.9.6"/></svg></span><b>Открытие контактов</b><i>Email и телефон кандидата прямо в выдаче — без ручного пробива по сервисам.</i></li>
+    <li><span class="pf-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/><rect x="10" y="10" width="4" height="4"/><path d="M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3"/></svg></span><b>AI-разбор вакансии</b><i>Вставляешь текст вакансии — Peleng сам раскладывает требования по фильтрам и распознаёт любую роль.</i></li>
+    <li><span class="pf-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg></span><b>Умные варианты запросов</b><i>Одним кликом — «шире», «уже» или «по-другому», если выдача пустая или слишком широкая.</i></li>
+    <li><span class="pf-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M9 13.5h6M9 16h4"/></svg></span><b>Подборки кандидатов</b><i>Сохраняй найденных, помечай статусы и возвращайся к поиску позже.</i></li>
   </ul>
   <form class="pro-f" id="proF" onsubmit="return leadSubmit(event)">
     <input type="email" id="proEmail" placeholder="you@company.ru" required autocomplete="email">
