@@ -105,7 +105,7 @@ a{color:inherit}
   transition:color .18s var(--ease), background-color .18s var(--ease)}
 .qmode button:hover{color:var(--txt)}
 .qmode button.on{background:var(--amber-dim);color:var(--amber-hi)}
-.console-in{display:flex;gap:10px;flex-wrap:wrap;background:var(--panel2);border:1px solid var(--line);
+.console-in{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start;background:var(--panel2);border:1px solid var(--line);
   border-radius:11px;padding:10px;transition:border-color .25s var(--ease), box-shadow .25s var(--ease)}
 .console-in:focus-within{border-color:rgba(242,169,59,.5);box-shadow:0 0 0 3px var(--amber-ghost)}
 textarea{flex:1;min-width:240px;min-height:76px;resize:vertical;background:transparent;
@@ -114,7 +114,7 @@ textarea:focus{outline:none}
 textarea::placeholder{color:var(--muted)}
 button.go{display:inline-flex;align-items:center;gap:10px;background:var(--red);color:#150B07;border:none;
   border-radius:9px;font:500 13.5px var(--f-disp);letter-spacing:.06em;text-transform:uppercase;
-  padding:0 16px 0 20px;min-height:46px;cursor:pointer;align-self:stretch;
+  padding:0 16px 0 20px;height:56px;flex:none;cursor:pointer;
   transition:filter .2s var(--ease), transform .15s var(--ease)}
 button.go:hover{filter:brightness(1.12)}
 button.go:active{transform:scale(.97)}
@@ -168,7 +168,10 @@ body.glitching .logo{animation:glitch .4s steps(3,end) 1}
 
 /* ── примеры / переключатели ── */
 .examples{margin-top:16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.examples .lbl{color:#8B8066;font:500 10.5px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;margin-right:4px}
+.examples .lbl{color:#8B8066;font:500 10.5px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;margin-right:4px;
+  display:inline-flex;align-items:center;gap:6px}
+.examples .lbl::before{content:"";width:13px;height:13px;flex:none;opacity:.7;
+  background:no-repeat center/contain url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23F2A93B' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10c.7.7 1 1.4 1 2h6c0-.6.3-1.3 1-2a6 6 0 0 0-4-10Z'/%3E%3C/svg%3E")}
 .examples a{cursor:pointer;font:400 12px var(--f-mono);color:var(--muted);background:transparent;
   border:1px dashed var(--line2);padding:6px 11px;border-radius:7px;
   transition:color .2s var(--ease), border-color .2s var(--ease)}
@@ -259,8 +262,9 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
 /* ── досье цели ── */
 .wrap{position:relative;z-index:1;max-width:1160px;margin:0 auto;padding:10px 20px 56px}
 .parsed{position:relative;flex-direction:column;gap:12px;margin:30px 0 0;
-  border:1px solid var(--line2);border-radius:4px;padding:16px 18px;
-  background:linear-gradient(180deg, var(--amber-ghost), transparent 70%)}
+  border:1px solid rgba(242,169,59,.28);border-radius:4px;padding:17px 20px;
+  background:linear-gradient(180deg, rgba(242,169,59,.09), var(--panel) 60%);
+  box-shadow:0 0 0 1px rgba(242,169,59,.04), 0 14px 40px -20px rgba(0,0,0,.7)}
 :is(.parsed,.pro) .ck{position:absolute;width:13px;height:13px;border:0 solid var(--amber);opacity:.85}
 :is(.parsed,.pro) .tl{left:-1px;top:-1px;border-left-width:2px;border-top-width:2px}
 :is(.parsed,.pro) .tr{right:-1px;top:-1px;border-right-width:2px;border-top-width:2px}
@@ -393,8 +397,11 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
 
 
 /* ── история целей ── */
-.history{margin-top:14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.history{margin-top:16px;padding-top:16px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .history .lbl{color:#8B8066;font:500 10.5px/1 var(--f-mono);letter-spacing:.2em;text-transform:uppercase;margin-right:4px}
+.hmore{cursor:pointer;font:500 11px var(--f-mono);color:var(--amber);background:transparent;
+  border:1px dashed rgba(242,169,59,.4);border-radius:7px;padding:6px 11px;transition:color .18s var(--ease),border-color .18s var(--ease)}
+.hmore:hover{color:var(--amber-hi);border-color:var(--amber)}
 .hchip{display:inline-flex;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:7px;
   overflow:hidden;transition:border-color .2s var(--ease)}
 .hchip:hover{border-color:var(--line2)}
@@ -428,8 +435,9 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
   transition:color .18s var(--ease), border-color .18s var(--ease)}
 .tl-chk:hover{color:var(--amber-hi);border-color:var(--amber)}
 .tl-chk:disabled{opacity:.6;cursor:default}
-.tl-pro{cursor:pointer;font:500 10.5px/1 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;
-  color:#8B8066;padding:9px 4px;transition:color .18s var(--ease)}
+.tl-pro{display:inline-flex;align-items:center;gap:6px;cursor:pointer;font:500 10.5px/1 var(--f-mono);
+  letter-spacing:.1em;text-transform:uppercase;color:#8B8066;padding:9px 4px;transition:color .18s var(--ease)}
+.tl-pro svg{width:13px;height:13px;color:var(--amber)}
 .tl-pro:hover{color:var(--amber)}
 .serp{margin-left:8px;font:500 10px var(--f-mono);letter-spacing:.05em;vertical-align:2px;white-space:nowrap}
 .serp.s0{color:#E2705A}
@@ -1324,6 +1332,7 @@ function pinToggle(q){
   if(i>=0) p.splice(i,1); else { p.unshift(q); p=p.slice(0,8); }
   lsSet('peleng_pins', JSON.stringify(p)); renderHist();
 }
+let _histOpen=false;
 function renderHist(){
   const el=document.getElementById('hist'); if(!el) return;
   let a=[]; try{ a=JSON.parse(lsGet('peleng_hist')||'[]'); }catch(_){}
@@ -1332,15 +1341,20 @@ function renderHist(){
   a=a.filter(q=>!pinSet.has(q.toLowerCase()));
   if(!a.length && !pins.length){ el.style.display='none'; return; }
   el.style.display='flex';
-  const chip=(q,pinned)=>'<span class="hchip'+(pinned?' pinned':'')+'">'+
+  const VIS=3;                                   // недавних показываем 3, остальное — под «ещё»
+  const shown = _histOpen ? a : a.slice(0, VIS);
+  const hidden = a.length - shown.length;
+  const chip=(q,pinned)=>'<span class="hchip'+(pinned?' pinned':'')+'" data-q="'+esc(q).replace(/"/g,'&quot;')+'">'+
     '<a onclick="ex(this.parentNode.dataset.q)">'+esc(q)+'</a>'+
     '<i class="hpin" onclick="pinToggle(this.parentNode.dataset.q)" title="'+(pinned?'Открепить':'Закрепить — останется наверху')+'">★</i></span>';
   el.innerHTML='<span class="lbl">'+(pins.length?'Закреплённые и недавние':'Недавние запросы')+'</span>'+
     pins.map(q=>chip(q,true)).join('')+
-    a.map(q=>chip(q,false)).join('')+
+    shown.map(q=>chip(q,false)).join('')+
+    (hidden>0?'<span class="hmore" onclick="histMore()">ещё '+hidden+'</span>':'')+
+    (_histOpen && a.length>VIS?'<span class="hmore" onclick="histMore()">свернуть</span>':'')+
     (a.length?'<span class="hclear" onclick="histClear()" title="Очистить недавние (закреплённые останутся)">×</span>':'');
-  el.querySelectorAll('.hchip').forEach((c,i)=>{ c.dataset.q=(i<pins.length?pins[i]:a[i-pins.length]); });
 }
+function histMore(){ _histOpen=!_histOpen; renderHist(); }
 function histClear(){ lsSet('peleng_hist','[]'); renderHist(); }
 
 /* ── колода результатов: рейл каналов + вкладки + сортировка + избранное ── */
@@ -1428,7 +1442,7 @@ function renderDeck(){
       '<div class="tl-r"><div class="sort"><span>сортировка</span><div class="seg sortseg">'+
         [["prio","приоритет"],["narrow","точные"],["az","А–Я"]].map(o=>'<button data-v="'+o[0]+'"'+(UI.sort===o[0]?' class="on"':'')+' onclick="setSort(\''+o[0]+'\')">'+o[1]+'</button>').join('')+'</div></div>'+
       '<button class="tl-chk" id="serpBtn" onclick="checkSerps(this)" title="Сколько результатов даёт каждый X-Ray запрос в Google — пустые сразу видно">Проверить выдачу</button>'+
-      (typeof IS_PRO!=='undefined'&&IS_PRO?'':'<a class="tl-pro" onclick="document.getElementById(\'pro\').scrollIntoView({behavior:\'smooth\'})" title="В Pro пустые каналы подсвечиваются сами, без клика">⚡ автопроверка — в Pro</a>')+
+      (typeof IS_PRO!=='undefined'&&IS_PRO?'':'<a class="tl-pro" onclick="document.getElementById(\'pro\').scrollIntoView({behavior:\'smooth\'})" title="В Pro пустые каналы подсвечиваются сами, без клика"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z"/></svg>автопроверка — в Pro</a>')+
       '<button class="tl-chk" onclick="shareSearch(this)" title="Скопировать ссылку на этот поиск — откроется с теми же фильтрами">Поделиться</button>'+
       '<button class="tl-x" onclick="resetAll()" title="Очистить всё и вернуться на главный экран">✕ Очистить всё</button></div></div>'+
     '<div class="deck"><nav class="rail" id="rail">'+railHTML()+'</nav>'+
@@ -1790,6 +1804,16 @@ function termParts(){
 }
 /* режим «вакансия»: текст → роль/грейд/город/стек; секции «Требования»→must, «Будет плюсом»→nice */
 let _lastVac='';
+(function(){
+  const q=document.getElementById('q'); if(!q) return;
+  q.addEventListener('keydown', e=>{
+    if(e.key==='Enter' && !e.shiftKey && !e.isComposing){
+      // запрос/контакты: Enter ищет. Вакансия многострочная — только Cmd/Ctrl+Enter
+      if(UI.qmode==='vac' && !(e.metaKey||e.ctrlKey)) return;
+      e.preventDefault(); run();
+    }
+  });
+})();
 function setQmode(m){
   UI.qmode=m;
   document.querySelectorAll('.qmode button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));
