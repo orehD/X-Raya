@@ -403,6 +403,7 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
 .serp{margin-left:8px;font:500 10px var(--f-mono);letter-spacing:.05em;vertical-align:2px;white-space:nowrap}
 .serp.s0{color:#E2705A}
 .serp.s1{color:var(--amber-hi)}
+.serp.s2{color:var(--amber)}
 .sort{display:inline-flex;align-items:center;gap:9px;font:500 10px/1 var(--f-mono);letter-spacing:.18em;
   text-transform:uppercase;color:#6E6753}
 .deck{display:grid;grid-template-columns:222px minmax(0,1fr);gap:22px;align-items:start;animation:deckIn .6s var(--ease) backwards}
@@ -1279,27 +1280,30 @@ function renderDeck(){
     '<div class="deck-main" id="deckMain">'+mainHTML()+'</div></div>';
 }
 /* ── проверка выдачи: сколько результатов даёт X-Ray запрос в Google ── */
-const _serp = new Map(); // str запроса → found
+const _serp = new Map(); // str запроса → {found, approx}
 let _serpOff = false;    // сервер без ключа — не дёргаем повторно
 function fmtN(n){ return n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(n<1e4?1:0)+'K':''+n; }
 function serpBadge(str){
   if(!_serp.has(str)) return '';
-  const n=_serp.get(str);
-  return n===0 ? '<span class="serp s0">· пусто в Google</span>'
-               : '<span class="serp s1">· ~'+fmtN(n)+' в Google</span>';
+  const {found,approx}=_serp.get(str);
+  if(found===0) return '<span class="serp s0">· пусто в Google</span>';
+  if(approx) return found>=10
+    ? '<span class="serp s1">· выдача есть</span>'
+    : '<span class="serp s2">· мало · '+found+'</span>';
+  return '<span class="serp s1">· ~'+fmtN(found)+' в Google</span>';
 }
 async function serpOne(str){
-  if(_serp.has(str)) return _serp.get(str);
+  if(_serp.has(str)) return _serp.get(str).found;
   const r=await fetch('/api/count',{method:'POST',headers:{'content-type':'application/json'},
     body:JSON.stringify({q:str})});
   if(r.status===501){ _serpOff=true; throw new Error('notconf'); }
   const d=await r.json();
   if(!r.ok) throw new Error(d.error||'ошибка');
-  _serp.set(str,d.found);
+  _serp.set(str,{found:d.found,approx:!!d.approx});
   return d.found;
 }
 async function checkSerps(btn){
-  if(_serpOff){ toast('Проверка выдачи не настроена — нужен ключ Google CSE на сервере'); return; }
+  if(_serpOff){ toast('Проверка выдачи не настроена — нужен ключ Serper.dev (или Google CSE) на сервере'); return; }
   const cards=[...document.querySelectorAll('.card')].filter(c=>c.dataset.eng);
   const jobs=cards.map(c=>({c, q:(c.querySelector('.btn.copy')||{}).getAttribute? c.querySelector('.btn.copy').getAttribute('data-s'):''})).filter(j=>j.q);
   if(!jobs.length) return;
@@ -1322,12 +1326,12 @@ async function checkSerps(btn){
   };
   try{
     for(let i=0;i<jobs.length;i+=3) await Promise.all(jobs.slice(i,i+3).map(pool));
-    const zero=jobs.filter(j=>_serp.get(j.q)===0).length;
+    const zero=jobs.filter(j=>(_serp.get(j.q)||{}).found===0).length;
     btn.textContent = zero? 'Пустых: '+zero+' из '+jobs.length : 'Все запросы с выдачей ✓';
     setTimeout(()=>{ btn.textContent='Проверить выдачу'; btn.disabled=false; }, 4000);
   }catch(_){
     btn.textContent='Проверить выдачу'; btn.disabled=false;
-    toast(_serpOff? 'Проверка выдачи не настроена — нужен ключ Google CSE на сервере' : 'Часть проверок не прошла — попробуй ещё раз');
+    toast(_serpOff? 'Проверка выдачи не настроена — нужен ключ Serper.dev (или Google CSE) на сервере' : 'Часть проверок не прошла — попробуй ещё раз');
   }
 }
 

@@ -8,7 +8,9 @@
 //   LEADS_FILE         — куда писать email-заявки (по умолчанию ./data/leads.jsonl;
 //                        в Coolify смонтируй volume на эту папку, иначе файл сотрётся при редеплое)
 //   TG_BOT_TOKEN, TG_CHAT_ID — необязательно: уведомление в Telegram о каждой заявке
-//   GOOGLE_CSE_KEY, GOOGLE_CSE_CX — необязательно: проверка размера выдачи через Google Custom Search
+//   SERPER_KEY         — необязательно: проверка размера выдачи через Serper.dev (проще всего;
+//                        serper.dev → Sign up → API key; 2500 бесплатных проверок). Приоритетнее CSE.
+//   GOOGLE_CSE_KEY, GOOGLE_CSE_CX — необязательно, альтернатива Serper: Google Custom Search
 //                        (programmablesearchengine.google.com → поисковик «весь интернет» → cx;
 //                         ключ — в Google Cloud Console, Custom Search API; 100 запросов/день бесплатно)
 
@@ -167,13 +169,47 @@ function handleNick(req, res) {
   });
 }
 
-// ── проверка размера выдачи через Google Custom Search API ──
-const countCache = new Map(); // qhash → {at, found}
+// ── проверка размера выдачи (Serper.dev приоритетно, иначе Google CSE) ──
+const countCache = new Map(); // qhash → {at, found, approx}
 const countHits = new Map();
 
+// Serper.dev: отдаёт список органики. approx=true → found это число результатов на первой
+// странице (10 = «есть много», меньше = реальное малое число, 0 = пусто).
+async function countViaSerper(q, key) {
+  const ctl = new AbortController();
+  const tm = setTimeout(() => ctl.abort(), 10000);
+  try {
+    const r = await fetch('https://google.serper.dev/search', {
+      method: 'POST', signal: ctl.signal,
+      headers: { 'X-API-KEY': key, 'content-type': 'application/json' },
+      body: JSON.stringify({ q, num: 10, gl: 'ru', hl: 'ru' }),
+    });
+    const d = await r.json();
+    if (!r.ok) { const e = new Error((d && (d.message || d.error)) || 'serper error'); e.code = r.status; throw e; }
+    const found = Array.isArray(d.organic) ? d.organic.length : 0;
+    return { found, approx: true };
+  } finally { clearTimeout(tm); }
+}
+
+// Google CSE: даёт оценку общего числа результатов (approx=false → показываем ~N).
+async function countViaCSE(q, key, cx) {
+  const u = 'https://www.googleapis.com/customsearch/v1?key=' + encodeURIComponent(key) +
+    '&cx=' + encodeURIComponent(cx) + '&num=1&fields=searchInformation(totalResults)&q=' + encodeURIComponent(q);
+  const ctl = new AbortController();
+  const tm = setTimeout(() => ctl.abort(), 10000);
+  try {
+    const r = await fetch(u, { signal: ctl.signal });
+    const d = await r.json();
+    if (!r.ok) { const e = new Error((d.error && d.error.message) || 'cse error'); e.code = /quota|limit/i.test(e.message) ? 429 : 502; throw e; }
+    const found = parseInt((d.searchInformation && d.searchInformation.totalResults) || '0', 10) || 0;
+    return { found, approx: false };
+  } finally { clearTimeout(tm); }
+}
+
 function handleCount(req, res) {
-  const key = process.env.GOOGLE_CSE_KEY, cx = process.env.GOOGLE_CSE_CX;
-  if (!key || !cx) return send(res, 501, 'application/json', JSON.stringify({ error: 'not_configured' }));
+  const serper = process.env.SERPER_KEY;
+  const cseKey = process.env.GOOGLE_CSE_KEY, cseCx = process.env.GOOGLE_CSE_CX;
+  if (!serper && !(cseKey && cseCx)) return send(res, 501, 'application/json', JSON.stringify({ error: 'not_configured' }));
   const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
   const now = Date.now();
   const hits = (countHits.get(ip) || []).filter(t => now - t < 3600e3);
@@ -189,28 +225,14 @@ function handleCount(req, res) {
     const ck = q.toLowerCase();
     const cached = countCache.get(ck);
     if (cached && now - cached.at < 24 * 3600e3)
-      return send(res, 200, 'application/json', JSON.stringify({ found: cached.found, cached: true }));
+      return send(res, 200, 'application/json', JSON.stringify({ found: cached.found, approx: cached.approx, cached: true }));
     try {
-      const u = 'https://www.googleapis.com/customsearch/v1?key=' + encodeURIComponent(key) +
-        '&cx=' + encodeURIComponent(cx) + '&num=1&fields=searchInformation(totalResults)' +
-        '&q=' + encodeURIComponent(q);
-      const ctl = new AbortController();
-      const tm = setTimeout(() => ctl.abort(), 10000);
-      const r = await fetch(u, { signal: ctl.signal });
-      clearTimeout(tm);
-      const d = await r.json();
-      if (!r.ok) {
-        const msg = (d.error && d.error.message) || 'upstream error';
-        // дневная квота CSE исчерпана — фронту отдаём как «не настроено сейчас»
-        const code = /quota|limit/i.test(msg) ? 429 : 502;
-        return send(res, code, 'application/json', JSON.stringify({ error: msg.slice(0, 200) }));
-      }
-      const found = parseInt((d.searchInformation && d.searchInformation.totalResults) || '0', 10) || 0;
-      countCache.set(ck, { at: now, found });
+      const out = serper ? await countViaSerper(q, serper) : await countViaCSE(q, cseKey, cseCx);
+      countCache.set(ck, { at: now, found: out.found, approx: out.approx });
       if (countCache.size > 3000) countCache.delete(countCache.keys().next().value);
-      send(res, 200, 'application/json', JSON.stringify({ found }));
+      send(res, 200, 'application/json', JSON.stringify(out));
     } catch (e) {
-      send(res, 500, 'application/json', JSON.stringify({ error: String((e && e.message) || e) }));
+      send(res, e.code || 500, 'application/json', JSON.stringify({ error: String((e && e.message) || e).slice(0, 200) }));
     }
   });
 }

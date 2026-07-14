@@ -7,10 +7,7 @@ _Подробные пошаговые инструкции по каждому 
 
 - [ ] **Redeploy в Coolify** — накопились: только-Google, проверка выдачи, сбор email, check nickname, целевые наборы, полный сброс, понятные названия.
 - [ ] **Volume в Coolify на `./data`** — иначе файл заявок `leads.jsonl` стирается при каждом редеплое.
-- [ ] **Google CSE ключи** (~10 мин, бесплатно 100/день):
-  1. programmablesearchengine.google.com → поисковик «весь интернет» → скопировать **cx»
-  2. console.cloud.google.com → проект → включить Custom Search API → API key
-  3. Coolify: `GOOGLE_CSE_KEY`, `GOOGLE_CSE_CX` → Redeploy
+- [ ] **Ключ Serper.dev** (проверка выдачи, ~3 мин, 2500 бесплатно): serper.dev → Sign up → API Key → Coolify env `SERPER_KEY` → Redeploy. (Google CSE — запасной вариант, см. LAUNCH.md.)
 - [ ] **Прогнать 10–15 реальных запросов на проде**: пустая выдача, мусор в каналах, ошибки ролей. Особо смотреть SpeakerDeck/Sessionize/Stack Overflow с городом.
 - [ ] **Проверить check nickname с прода** (`@ник`): VK и Telegram должны определяться с RU-IP сервера (локально не проверялись).
 
