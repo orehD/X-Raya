@@ -298,13 +298,34 @@ function handleAuthGo(req, res) {
 function handleMe(req, res) {
   const s = getUser(req);
   if (!s) return send(res, 401, 'application/json', JSON.stringify({ error: 'auth' }));
-  send(res, 200, 'application/json', JSON.stringify({ email: s.email, plan: s.u.plan || 'free',
-    searches: s.u.searches || 0, contacts: s.u.contacts || 0, createdAt: s.u.createdAt, hasPw: !!s.u.pw }));
+  const plan = planOf(s.u);
+  const daysLeft = (plan === 'pro' && s.u.proUntil)
+    ? Math.max(0, Math.ceil((new Date(s.u.proUntil) - Date.now()) / 86400e3)) : null;
+  send(res, 200, 'application/json', JSON.stringify({ email: s.email, plan,
+    searches: s.u.searches || 0, contacts: s.u.contacts || 0, createdAt: s.u.createdAt, hasPw: !!s.u.pw,
+    proUntil: (plan === 'pro' && s.u.proUntil) || null, daysLeft }));
 }
 function handleLogout(req, res) {
   res.setHeader('Set-Cookie', 'plg_sess=; Path=/; HttpOnly; Max-Age=0');
   send(res, 200, 'application/json', JSON.stringify({ ok: true }));
 }
+// ── срок подписки Pro ──
+function proDays(tariff) { return tariff === 'quarter' ? 90 : 30; }
+// продление: если Pro ещё активен — дни добавляются к текущему концу, иначе от сегодня
+function grantPro(u, days) {
+  const now = new Date();
+  const base = (u.plan === 'pro' && u.proUntil && new Date(u.proUntil) > now) ? new Date(u.proUntil) : now;
+  u.plan = 'pro';
+  u.proUntil = new Date(base.getTime() + days * 86400e3).toISOString();
+}
+// эффективный план: ленивый даунгрейд по истечении срока (без proUntil — бессрочный)
+function planOf(u) {
+  if (u.plan === 'pro' && u.proUntil && new Date(u.proUntil) < new Date()) {
+    u.plan = 'free'; delete u.proUntil; saveUsers();
+  }
+  return u.plan || 'free';
+}
+
 // ручная выдача Pro (пароль — тот же STATS_TOKEN)
 function handleAdminPlan(req, res) {
   const token = process.env.STATS_TOKEN;
@@ -321,21 +342,24 @@ function handleAdminPlan(req, res) {
       return send(res, 400, 'application/json', JSON.stringify({ error: 'некорректный email' }));
     // аккаунта может ещё не быть (выдача Pro по заявке) — создаём заранее, план подхватится при первом входе
     if (!users[email]) users[email] = { plan: 'free', createdAt: new Date().toISOString(), searches: 0, contacts: 0 };
-    const wasPro = users[email].plan === 'pro';
-    users[email].plan = plan; saveUsers();
-    // автоуведомление при включении Pro (не при снятии и не при повторном клике)
+    const wasPro = planOf(users[email]) === 'pro';
+    const days = Math.min(3650, Math.max(1, parseInt(body.days, 10) || 30));
+    if (plan === 'pro') grantPro(users[email], days);
+    else { users[email].plan = 'free'; delete users[email].proUntil; }
+    saveUsers();
+    // автоуведомление при включении Pro (не при снятии; при продлении — тоже молча)
     if (plan === 'pro' && !wasPro) {
       const cab = baseUrl(req) + '/cabinet';
       sendEmail(email, 'Peleng Pro включён',
         '<div style="font-family:monospace;background:#12100A;color:#EDE6D4;padding:32px;border-radius:12px">' +
         '<div style="color:#F2A93B;font-size:18px;font-weight:bold;margin-bottom:14px">PELENG</div>' +
-        '<p>Тебе включён <b style="color:#FFC96B">Pro-доступ</b> — автопроверка выдачи, раскрытие контактов и AI-инструменты.</p>' +
+        '<p>Тебе включён <b style="color:#FFC96B">Pro-доступ</b> на ' + days + ' дн. — автопроверка выдачи, раскрытие контактов и AI-инструменты.</p>' +
         '<p><a href="' + cab + '" style="display:inline-block;background:#F2A93B;color:#1A1508;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold">Войти в кабинет</a></p>' +
         '<p style="color:#9A9077;font-size:12px">Вход без пароля: введи эту почту на странице кабинета — придёт ссылка.</p></div>'
       ).then(() => console.log('pro email sent:', email))
        .catch(e => console.error('pro email failed:', email, e.message));
     }
-    send(res, 200, 'application/json', JSON.stringify({ ok: true, email, plan, mail: plan === 'pro' && !wasPro ? 'queued' : 'no' }));
+    send(res, 200, 'application/json', JSON.stringify({ ok: true, email, plan, proUntil: users[email].proUntil || null, mail: plan === 'pro' && !wasPro ? 'queued' : 'no' }));
   });
 }
 
@@ -450,7 +474,7 @@ function handleStats(req, res) {
   }
   const searchesTotal = Object.values(dailyHits).reduce((a, b) => a + b, 0);
   const userList = Object.entries(users)
-    .map(([email, u]) => ({ email, plan: u.plan || 'free', searches: u.searches || 0, contacts: u.contacts || 0, createdAt: u.createdAt || '', ref: u.ref || '' }))
+    .map(([email, u]) => ({ email, plan: planOf(u), proUntil: u.proUntil || null, searches: u.searches || 0, contacts: u.contacts || 0, createdAt: u.createdAt || '', ref: u.ref || '' }))
     .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '')).slice(0, 200);
   send(res, 200, 'application/json', JSON.stringify({ total: rows.length, partners, recent, days, searchesTotal, users: userList }));
 }
@@ -703,7 +727,7 @@ function handleProIntent(req, res) {
     const promo = String(body.promo || '').trim().toUpperCase().slice(0, 30);
     const discount = promoDiscount(promo);
     const activated = discount === 100;
-    if (activated) { sess.u.plan = 'pro'; saveUsers(); }
+    if (activated) { grantPro(sess.u, proDays(tariff)); saveUsers(); }
     const rec = JSON.stringify({ email: sess.email, tariff, ref: sess.u.ref || '',
       promo: discount ? promo : '', discount, activated, at: new Date().toISOString() });
     try {
@@ -728,7 +752,7 @@ function handleProIntent(req, res) {
       sendEmail(sess.email, 'Peleng Pro включён',
         '<div style="font-family:monospace;background:#12100A;color:#EDE6D4;padding:32px;border-radius:12px">' +
         '<div style="color:#F2A93B;font-size:18px;font-weight:bold;margin-bottom:14px">PELENG</div>' +
-        '<p>Промокод сработал — тебе включён <b style="color:#FFC96B">Pro</b>: автопроверка выдачи, раскрытие контактов и AI-инструменты.</p>' +
+        '<p>Промокод сработал — тебе включён <b style="color:#FFC96B">Pro</b> на ' + proDays(tariff) + ' дн.: автопроверка выдачи, раскрытие контактов и AI-инструменты.</p>' +
         '<p><a href="' + cab + '" style="display:inline-block;background:#F2A93B;color:#1A1508;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold">Открыть кабинет</a></p></div>'
       ).catch(e => console.error('promo email failed:', e.message));
     }

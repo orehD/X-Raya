@@ -74,6 +74,8 @@
   .pbtn:hover{border-color:var(--amber);color:var(--amber-hi);filter:none}
   .promo-msg{font-size:12px;margin-top:8px;min-height:15px;color:var(--muted)}
   .promo-msg.ok{color:var(--amber-hi)}
+  .pbtn.renew{margin-left:12px;padding:5px 12px;font-size:10px}
+  .soon{font:400 11.5px/1.5 var(--body);color:var(--red);margin-top:6px;font-weight:400;text-align:right}
   .opt{text-transform:none;letter-spacing:0;color:var(--muted);font-size:10.5px}
   .pwset{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
   .pwrow{display:flex;gap:8px}
@@ -117,6 +119,7 @@
     <div class="panel">
       <div class="row"><span class="k">Аккаунт</span><span class="v" id="cEmail"></span></div>
       <div class="row"><span class="k">План</span><span id="cPlan"></span></div>
+      <div class="row hidden" id="subRow"><span class="k">Подписка</span><span class="v" id="cSub"></span></div>
       <div class="row"><span class="k">Поисков</span><span class="v" id="cSearches"></span></div>
       <div class="row"><span class="k">Контактов раскрыто</span><span class="v" id="cContacts"></span></div>
       <div class="hint" id="proHint"></div>
@@ -136,7 +139,7 @@
 
     <!-- оплата Pro: тарифы сразу, без переключений (для free; ?pay=1 — показать всегда) -->
     <div class="upsell hidden" id="upsell">
-      <h2>Peleng Pro</h2>
+      <h2 id="upsellH">Peleng Pro</h2>
       <ul>
         <li>Автопроверка выдачи — пустые каналы подсвечиваются сами</li>
         <li>Автоматический ослабленный запрос, когда выдача пустая</li>
@@ -188,6 +191,18 @@
       $('cab').classList.remove('hidden');
       $('cEmail').textContent=me.email;
       $('cPlan').innerHTML='<span class="plan '+me.plan+'">'+(me.plan==='pro'?'Pro':'Free')+'</span>';
+      if(me.plan==='pro'){
+        $('subRow').classList.remove('hidden');
+        if(me.proUntil){
+          const d=new Date(me.proUntil);
+          const dd=d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'});
+          $('cSub').innerHTML='до '+dd+' <span class="opt">· осталось '+me.daysLeft+' дн.</span>'+
+            '<button class="pbtn renew" onclick="renewShow()">Продлить</button>';
+          if(me.daysLeft<=5) $('cSub').innerHTML+='<div class="soon">Подписка скоро закончится — продли, чтобы не потерять автопроверку.</div>';
+        } else {
+          $('cSub').textContent='бессрочно';
+        }
+      }
       $('cSearches').textContent=me.searches;
       $('cContacts').textContent=me.contacts;
       $('proHint').textContent = me.plan==='pro'
@@ -197,6 +212,7 @@
       if(me.hasPw) $('pwMsg').textContent='Пароль задан. Здесь можно его сменить.';
       if(me.plan!=='pro' || new URLSearchParams(location.search).get('pay')==='1')
         $('upsell').classList.remove('hidden');
+      if(me.plan==='pro') $('upsellH').textContent='Продление Pro';
     }catch(_){
       $('login').classList.remove('hidden');
     }
@@ -237,6 +253,10 @@
     }catch(e){ $('err2').textContent=e.message; btn.disabled=false; btn.textContent='Подтвердить'; }
   }
   function backStep(e){ e.preventDefault(); $('step2').classList.add('hidden'); $('step1').classList.remove('hidden'); }
+  function renewShow(){
+    $('upsell').classList.remove('hidden');
+    $('upsell').scrollIntoView({behavior:'smooth',block:'start'});
+  }
   async function savePw(){
     const pw=$('npw').value, msg=$('pwMsg');
     try{

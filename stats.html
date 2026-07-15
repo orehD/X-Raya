@@ -129,9 +129,13 @@
         '<td class="barcell"><div class="pbar" style="width:'+Math.round((p.count+(p.users||0))/max*100)+'%"></div></td></tr>';
     }).join('') || '<tr><td colspan="5" class="muted">пока нет заявок</td></tr>';
     document.getElementById('usersT').innerHTML = (d.users||[]).map(u=>{
-      const plan = u.plan==='pro' ? '<span class="ref-chip">PRO</span>' : '<span class="ref-none">free</span>';
+      const until = u.proUntil ? '<small class="muted"> до '+new Date(u.proUntil).toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'2-digit'})+'</small>' : (u.plan==='pro'?'<small class="muted"> бессрочно</small>':'');
+      const plan = (u.plan==='pro' ? '<span class="ref-chip">PRO</span>' : '<span class="ref-none">free</span>')+until;
       const uref = u.ref ? '<span class="ref-chip">'+esc(u.ref)+'</span>' : '<span class="ref-none">прямые</span>';
-      const btn = '<button class="mini" onclick="setPlan(\''+esc(u.email)+'\',\''+(u.plan==='pro'?'free':'pro')+'\')">'+(u.plan==='pro'?'снять Pro':'дать Pro')+'</button>';
+      const btn = u.plan==='pro'
+        ? '<button class="mini" onclick="setPlan(\''+esc(u.email)+'\',\'pro\')" title="+30 дней к текущему сроку">+30 дн</button> '+
+          '<button class="mini" onclick="setPlan(\''+esc(u.email)+'\',\'free\')">снять</button>'
+        : '<button class="mini" onclick="setPlan(\''+esc(u.email)+'\',\'pro\')" title="Pro на 30 дней, письмо уйдёт само">дать Pro</button>';
       return '<tr><td>'+esc(u.email)+'</td><td>'+uref+'</td><td>'+plan+'</td><td class="num">'+u.searches+'</td><td class="num">'+u.contacts+'</td><td>'+btn+'</td></tr>';
     }).join('') || '<tr><td colspan="6" class="muted">пока нет аккаунтов</td></tr>';
     const planBy = {}; (d.users||[]).forEach(u=>{ planBy[u.email]=u.plan; });
