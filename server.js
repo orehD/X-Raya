@@ -231,7 +231,10 @@ function handleAdminPlan(req, res) {
     let body = {}; try { body = JSON.parse(raw || '{}'); } catch {}
     const email = String(body.email || '').trim().toLowerCase();
     const plan = body.plan === 'pro' ? 'pro' : 'free';
-    if (!users[email]) return send(res, 404, 'application/json', JSON.stringify({ error: 'нет такого пользователя' }));
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email))
+      return send(res, 400, 'application/json', JSON.stringify({ error: 'некорректный email' }));
+    // аккаунта может ещё не быть (выдача Pro по заявке) — создаём заранее, план подхватится при первом входе
+    if (!users[email]) users[email] = { plan: 'free', createdAt: new Date().toISOString(), searches: 0, contacts: 0 };
     users[email].plan = plan; saveUsers();
     send(res, 200, 'application/json', JSON.stringify({ ok: true, email, plan }));
   });
