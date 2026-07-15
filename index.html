@@ -701,7 +701,7 @@ body.working .radar{width:238px;height:238px}
     </div>
 
     <div class="console">
-      <div class="console-cap"><span id="capLbl">Поисковый запрос</span><span class="qmode"><button class="on" data-m="goal" onclick="setQmode('goal')">запрос</button><button data-m="vac" onclick="setQmode('vac')">вакансия</button><button data-m="ct" onclick="setQmode('ct')">контакты</button></span></div>
+      <div class="console-cap"><span id="capLbl">Найти людей по запросу</span><span class="qmode"><button class="on" data-m="goal" onclick="setQmode('goal')">запрос</button><button data-m="vac" onclick="setQmode('vac')">вакансия</button><button data-m="ct" onclick="setQmode('ct')">контакты</button></span></div>
       <div class="console-in">
         <textarea id="q" placeholder="Кого ищем: «сеньор python разработчик в Москве с Django», «логист ВЭД», «коммерческий директор»…"></textarea>
         <button class="go" onclick="run()">Выследить<span class="go-ic">→</span></button>
@@ -1192,7 +1192,7 @@ async function run(){
   if(UI.qmode==='ct'){
     if(isCt){ renderContact(raw); return; }
     if(isNk){ renderNick(raw.slice(1)); return; }
-    res.innerHTML='<div class="empty">Режим «контакты»: вставь ссылку на LinkedIn-профиль, email или телефон — раскрою контакты. Или @никнейм — найду профили на площадках.</div>';
+    res.innerHTML='<div class="empty">Вставь ссылку на LinkedIn-профиль, email или телефон — найду контакты человека.<br>Или введи @никнейм — проверю, на каких площадках он есть.</div>';
     pr.style.display='none'; return;
   }
   if(isCt || isNk){ /* идентификатор в режиме поиска — переключаем сами */
@@ -1979,14 +1979,14 @@ function setQmode(m){
   document.querySelectorAll('.qmode button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));
   const q=document.getElementById('q'), cap=document.getElementById('capLbl');
   if(m==='vac'){
-    q.placeholder='Вставь текст вакансии целиком — роль, грейд, город, требования и «будет плюсом» разложатся по фильтрам сами…';
-    q.style.minHeight='170px'; if(cap) cap.textContent='Текст вакансии';
+    q.placeholder='Скопируй текст вакансии и вставь сюда целиком — я сам вытащу роль, грейд, город и требования и соберу запросы…';
+    q.style.minHeight='170px'; if(cap) cap.textContent='Найти людей по вакансии';
   } else if(m==='ct'){
-    q.placeholder='Ссылка на LinkedIn-профиль, email или телефон — раскрою контакты кандидата. Или @никнейм — найду его профили на 16 площадках…';
-    q.style.minHeight='76px'; if(cap) cap.textContent='Пробив контакта';
+    q.placeholder='Вставь ссылку на LinkedIn, email или телефон — найду контакты человека. Или введи @никнейм — проверю его профили на 16 площадках…';
+    q.style.minHeight='76px'; if(cap) cap.textContent='Найти контакты человека';
   } else {
-    q.placeholder='Кого ищем: «сеньор python разработчик в Москве с Django», «маркетолог таргетолог спб», «коммерческий директор», «логист ВЭД»…';
-    q.style.minHeight='76px'; if(cap) cap.textContent='Поисковый запрос';
+    q.placeholder='Напиши, кого найти: «сеньор python разработчик в Москве», «маркетолог спб», «коммерческий директор», «логист ВЭД»…';
+    q.style.minHeight='76px'; if(cap) cap.textContent='Найти людей по запросу';
   }
 }
 const VAC_MUST=/(требовани|обязательн|ожидаем от тебя|что нужно|необходимо|ты умеешь|мы ждём|мы ждем|важно)/i;
