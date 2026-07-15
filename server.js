@@ -153,6 +153,19 @@ function baseUrl(req) {
   return proto + '://' + host;
 }
 const authHits = new Map();
+// отправка письма через Resend (fire-and-forget использовать с .catch)
+async function sendEmail(to, subject, html) {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) throw new Error('RESEND_API_KEY не задан');
+  const r = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: { authorization: 'Bearer ' + key, 'content-type': 'application/json' },
+    body: JSON.stringify({ from: process.env.RESEND_FROM || 'Peleng <onboarding@resend.dev>', to: [to], subject, html }),
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error((d && (d.message || d.error)) || 'не удалось отправить письмо');
+  return d;
+}
 function handleAuthRequest(req, res) {
   const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
   const now = Date.now();
@@ -235,8 +248,21 @@ function handleAdminPlan(req, res) {
       return send(res, 400, 'application/json', JSON.stringify({ error: 'некорректный email' }));
     // аккаунта может ещё не быть (выдача Pro по заявке) — создаём заранее, план подхватится при первом входе
     if (!users[email]) users[email] = { plan: 'free', createdAt: new Date().toISOString(), searches: 0, contacts: 0 };
+    const wasPro = users[email].plan === 'pro';
     users[email].plan = plan; saveUsers();
-    send(res, 200, 'application/json', JSON.stringify({ ok: true, email, plan }));
+    // автоуведомление при включении Pro (не при снятии и не при повторном клике)
+    if (plan === 'pro' && !wasPro) {
+      const cab = baseUrl(req) + '/cabinet';
+      sendEmail(email, 'Peleng Pro включён',
+        '<div style="font-family:monospace;background:#12100A;color:#EDE6D4;padding:32px;border-radius:12px">' +
+        '<div style="color:#F2A93B;font-size:18px;font-weight:bold;margin-bottom:14px">PELENG</div>' +
+        '<p>Тебе включён <b style="color:#FFC96B">Pro-доступ</b> — автопроверка выдачи, раскрытие контактов и AI-инструменты.</p>' +
+        '<p><a href="' + cab + '" style="display:inline-block;background:#F2A93B;color:#1A1508;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold">Войти в кабинет</a></p>' +
+        '<p style="color:#9A9077;font-size:12px">Вход без пароля: введи эту почту на странице кабинета — придёт ссылка. На бете Pro бесплатен.</p></div>'
+      ).then(() => console.log('pro email sent:', email))
+       .catch(e => console.error('pro email failed:', email, e.message));
+    }
+    send(res, 200, 'application/json', JSON.stringify({ ok: true, email, plan, mail: plan === 'pro' && !wasPro ? 'queued' : 'no' }));
   });
 }
 
