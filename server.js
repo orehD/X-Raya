@@ -550,6 +550,35 @@ function handleContact(req, res) {
   });
 }
 
+// ── заявка на оплату Pro (фаза 1: платёжка не подключена — пишем интент и шлём в TG) ──
+const PAY_FILE = process.env.PAY_FILE || path.join(__dirname, 'data', 'pay.jsonl');
+function handleProIntent(req, res) {
+  const sess = getUser(req);
+  if (!sess) return send(res, 401, 'application/json', JSON.stringify({ error: 'auth' }));
+  let raw = '';
+  req.on('data', c => { raw += c; if (raw.length > 1e4) req.destroy(); });
+  req.on('end', () => {
+    let body = {}; try { body = JSON.parse(raw || '{}'); } catch {}
+    const tariff = String(body.tariff || 'month').slice(0, 20);
+    const rec = JSON.stringify({ email: sess.email, tariff, at: new Date().toISOString() });
+    try {
+      fs.mkdirSync(path.dirname(PAY_FILE), { recursive: true });
+      fs.appendFileSync(PAY_FILE, rec + '\n');
+    } catch (e) { console.error('pay intent write failed:', e.message); }
+    const tk = process.env.TG_BOT_TOKEN, chat = process.env.TG_CHAT_ID;
+    if (tk && chat) {
+      fetch('https://api.telegram.org/bot' + tk + '/sendMessage', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ chat_id: chat,
+          text: '💳 Peleng: хочет оплатить Pro\n' + sess.email + '\nтариф: ' + tariff + '\n→ выдай Pro в /stats' }),
+      }).catch(() => {});
+    }
+    console.log('pro intent:', sess.email, tariff);
+    send(res, 200, 'application/json', JSON.stringify({ ok: true }));
+  });
+}
+
 const STATS_PAGE = path.join(__dirname, 'stats.html');
 
 const server = http.createServer((req, res) => {
@@ -563,6 +592,7 @@ const server = http.createServer((req, res) => {
   if (req.method === 'GET' && req.url.split('?')[0] === '/auth') return handleAuthGo(req, res);
   if (req.method === 'GET' && req.url === '/api/me') return handleMe(req, res);
   if (req.method === 'POST' && req.url === '/api/logout') return handleLogout(req, res);
+  if (req.method === 'POST' && req.url === '/api/pro/intent') return handleProIntent(req, res);
   if (req.method === 'POST' && req.url.split('?')[0] === '/api/admin/plan') return handleAdminPlan(req, res);
   if (req.method === 'GET' && req.url.split('?')[0] === '/cabinet') {
     return fs.readFile(path.join(__dirname, 'cabinet.html'), (err, data) => {

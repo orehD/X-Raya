@@ -48,6 +48,30 @@
   .devlink{word-break:break-all;font-size:11.5px;margin-top:10px}
   .devlink a{color:var(--amber)}
   .hidden{display:none}
+  /* ── блок и окно оплаты Pro ── */
+  .upsell{margin-top:16px;border:1px solid rgba(242,169,59,.32);border-radius:12px;padding:20px 24px;
+    background:linear-gradient(180deg, var(--amber-dim), var(--panel) 60%)}
+  .upsell h2{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--amber-hi);margin:0 0 10px}
+  .upsell ul{margin:0 0 4px;padding-left:18px;font:400 13px/1.7 var(--body);color:var(--txt)}
+  .paywrap{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;
+    padding:18px;z-index:60}
+  .paywrap.hidden{display:none}
+  .paybox{width:100%;max-width:440px;background:var(--panel);border:1px solid rgba(242,169,59,.4);border-radius:14px;
+    padding:26px;position:relative}
+  .paybox h2{font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--amber);margin:0 0 18px}
+  .payx{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font:400 20px/1 var(--mono);
+    cursor:pointer;padding:4px;margin:0}
+  .payx:hover{color:var(--txt);filter:none}
+  .tariff{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid var(--line2);
+    border-radius:10px;padding:14px 16px;margin-bottom:10px;cursor:pointer;background:var(--panel2)}
+  .tariff.on{border-color:var(--amber);background:var(--amber-dim)}
+  .tariff .tn{font-weight:600;font-size:13px}
+  .tariff .td{font:400 11.5px/1.5 var(--body);color:var(--muted)}
+  .tariff .tp{font-weight:700;font-size:15px;color:var(--amber-hi);white-space:nowrap}
+  .tariff .tp small{display:block;font-weight:400;font-size:10px;color:var(--muted);text-align:right}
+  .paynote{font:400 11.5px/1.6 var(--body);color:var(--muted);margin-top:14px}
+  .paybtn{width:100%;margin-top:16px}
+  .payok{color:var(--amber-hi);font-size:13px;line-height:1.7;margin-top:6px}
 </style>
 </head>
 <body>
@@ -81,6 +105,39 @@
         <button class="ghostbtn" onclick="logout()">Выйти</button>
       </div>
     </div>
+
+    <!-- апселл Pro (только для free) -->
+    <div class="upsell hidden" id="upsell">
+      <h2>Peleng Pro</h2>
+      <ul>
+        <li>Автопроверка выдачи — пустые каналы подсвечиваются сами</li>
+        <li>Автоматический ослабленный запрос, когда выдача пустая</li>
+        <li>Приоритетные AI-лимиты и новые фичи первыми</li>
+      </ul>
+      <button onclick="payOpen()">Перейти на Pro</button>
+    </div>
+  </div>
+
+  <!-- окно оплаты -->
+  <div class="paywrap hidden" id="paywrap" onclick="if(event.target===this)payClose()">
+    <div class="paybox">
+      <button class="payx" onclick="payClose()" title="Закрыть">×</button>
+      <h2>Оплата Pro</h2>
+      <div id="payPick">
+        <div class="tariff on" data-t="month" onclick="payTariff(this)">
+          <div><div class="tn">Месяц</div><div class="td">Отмена в любой момент</div></div>
+          <div class="tp">990 ₽<small>в месяц</small></div>
+        </div>
+        <div class="tariff" data-t="quarter" onclick="payTariff(this)">
+          <div><div class="tn">3 месяца</div><div class="td">Выгоднее на 16%</div></div>
+          <div class="tp">2 490 ₽<small>830 ₽/мес</small></div>
+        </div>
+        <button class="paybtn" id="payGo" onclick="paySubmit()">Оплатить</button>
+        <div class="err" id="payErr"></div>
+        <div class="paynote">Бета-цены. Оплата картой РФ (ЮKassa) — подключаем; пока заявка уходит нам, включим Pro вручную и напишем на твою почту.</div>
+      </div>
+      <div class="payok hidden" id="payOk">✓ Заявка получена. Включим Pro вручную и напишем на твою почту — обычно в течение пары часов. Оплату возьмём, когда подключим приём платежей.</div>
+    </div>
   </div>
 
   <a class="back" href="/">← Вернуться к Peleng</a>
@@ -100,7 +157,8 @@
       $('cContacts').textContent=me.contacts;
       $('proHint').textContent = me.plan==='pro'
         ? 'Pro активен: раскрытие контактов, AI-разбор и автопроверка выдачи включены.'
-        : 'На бете Pro выдаётся вручную — напиши нам, включим. Раскрытие контактов и AI уже доступны после входа.';
+        : 'Раскрытие контактов и AI уже доступны после входа. Автопроверка выдачи — в Pro.';
+      if(me.plan!=='pro') $('upsell').classList.remove('hidden');
     }catch(_){
       $('login').classList.remove('hidden');
     }
@@ -123,6 +181,31 @@
     }
   }
   async function logout(){ await fetch('/api/logout',{method:'POST'}); location.href='/'; }
+
+  /* ── окно оплаты (фаза 1: интент без платёжки) ── */
+  let payT='month';
+  function payOpen(){ $('paywrap').classList.remove('hidden'); }
+  function payClose(){ $('paywrap').classList.add('hidden'); }
+  function payTariff(el){
+    payT=el.dataset.t;
+    document.querySelectorAll('.tariff').forEach(t=>t.classList.toggle('on', t===el));
+  }
+  async function paySubmit(){
+    const btn=$('payGo'); $('payErr').textContent='';
+    btn.disabled=true; btn.textContent='Секунду…';
+    try{
+      const r=await fetch('/api/pro/intent',{method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({tariff:payT})});
+      const d=await r.json();
+      if(!r.ok) throw new Error(d.error==='auth'?'нужен вход':(d.error||'ошибка'));
+      $('payPick').classList.add('hidden');
+      $('payOk').classList.remove('hidden');
+    }catch(e){
+      $('payErr').textContent=e.message;
+      btn.disabled=false; btn.textContent='Оплатить';
+    }
+  }
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape') payClose(); });
   $('em')&&$('em').addEventListener('keydown',e=>{ if(e.key==='Enter') requestLink(); });
   boot();
 </script>

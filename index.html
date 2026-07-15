@@ -408,6 +408,12 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
 .vbtn:hover{color:var(--amber);border-color:rgba(242,169,59,.5)}
 .vbtn.busy{opacity:.45;pointer-events:none}
 .vhint{font:400 11.5px/1.5 var(--f-body);color:#E2705A;margin-top:9px}
+.vhint.wk{color:var(--muted)}
+.vhint.wk code{display:block;margin:7px 0;padding:8px 10px;background:var(--ink);border:1px solid var(--line);
+  border-radius:7px;font:400 11px/1.6 var(--f-mono);color:var(--txt);white-space:pre-wrap;word-break:break-word}
+.wk-btns{display:flex;gap:8px;flex-wrap:wrap}
+.wk-btns a.vbtn{text-decoration:none;color:var(--muted)}
+.wk-btns a.vbtn:hover{color:var(--amber)}
 .card.nk-dim .vbtn:first-child{color:var(--amber);border-color:rgba(242,169,59,.55);border-style:solid}
 
 /* ── контролы досье ── */
@@ -1577,14 +1583,61 @@ async function serpOne(str){
   _serp.set(str,{found:d.found,approx:!!d.approx});
   return d.found;
 }
-/* пустая выдача: приглушить карточку и подсказать «шире» */
-function markEmpty(c, empty){
+/* пустая выдача: приглушить карточку, подсказать «шире» и сразу подобрать ослабленный вариант */
+function markEmpty(c, empty, q){
   c.classList.toggle('nk-dim', empty);
   const old=c.querySelector('.vhint'); if(old) old.remove();
   if(empty){
     const vr=c.querySelector('.vrow');
-    if(vr) vr.insertAdjacentHTML('beforebegin','<div class="vhint">Выдача пустая — жми «шире», уберу лишние условия</div>');
+    if(vr) vr.insertAdjacentHTML('beforebegin','<div class="vhint">Выдача пустая — подбираю ослабленный вариант…</div>');
+    if(q) suggestWeaker(c, q);
+  } else {
+    delete c.dataset.wk;
   }
+}
+/* каскад ослаблений: без минус-слов → без кавычек → только site: + роль */
+function weakenVariants(q){
+  const out=[];
+  const push=v=>{ v=v.replace(/\s{2,}/g,' ').trim(); if(v && v!==q && !out.includes(v)) out.push(v); };
+  const noNeg=q.replace(/(^|\s)-("[^"]*"|\S+)/g,' ');
+  push(noNeg);
+  push(noNeg.replace(/"/g,''));
+  const site=(q.match(/site:\S+/)||[])[0], phrase=(q.match(/"([^"]+)"/)||[])[1];
+  if(site && phrase) push(site+' '+phrase);
+  return out;
+}
+async function suggestWeaker(c, q){
+  if(_serpOff || c.dataset.wk) return;
+  c.dataset.wk='1';
+  for(const v of weakenVariants(q)){
+    try{
+      const n=await serpOne(v);
+      if(n>0){
+        const h=c.querySelector('.vhint');
+        const html='<div class="vhint wk">Выдача пустая. Ослабил запрос — '+(n>=10?'выдача есть':'нашлось '+n)+':'+
+          '<code>'+hiQ(v)+'</code><span class="wk-btns">'+
+          '<a class="vbtn" href="https://www.google.com/search?q='+encodeURIComponent(v)+'" target="_blank" rel="noopener">Открыть</a>'+
+          '<span class="vbtn" onclick="useWeak(this)" data-q="'+esc(v).replace(/"/g,'&quot;')+'">Заменить в карточке</span></span></div>';
+        if(h) h.outerHTML=html;
+        else{ const vr=c.querySelector('.vrow'); if(vr) vr.insertAdjacentHTML('beforebegin', html); }
+        return;
+      }
+    }catch(_){ break; }
+  }
+  const h=c.querySelector('.vhint');
+  if(h) h.textContent='Выдача пустая даже после ослабления — жми «шире», переформулирую через AI';
+}
+function useWeak(el){
+  const v=el.getAttribute('data-q'), c=el.closest('.card');
+  if(!v || !c) return;
+  const code=c.querySelector('code'); if(code) code.innerHTML=hiQ(v);
+  const cp=c.querySelector('.btn.copy'); if(cp) cp.setAttribute('data-s', v);
+  const open=c.querySelector('a.btn.open'); if(open) open.href='https://www.google.com/search?q='+encodeURIComponent(v);
+  const ttl=c.querySelector('.ttl');
+  if(ttl){ const old=ttl.querySelector('.serp'); if(old) old.remove(); ttl.insertAdjacentHTML('beforeend', serpBadge(v)); }
+  c.classList.remove('nk-dim');
+  const h=c.querySelector('.vhint'); if(h) h.remove();
+  toast('Заменил запрос в карточке на ослабленный');
 }
 /* Pro-флаг: план аккаунта (из /api/me) или ручной ?pro=1 для демо без входа. */
 let IS_PRO = (function(){
@@ -1629,7 +1682,7 @@ async function autoSerp(){
       const n=await serpOne(q);
       const ttl=c.querySelector('.ttl');
       if(ttl){ const old=ttl.querySelector('.serp'); if(old) old.remove(); ttl.insertAdjacentHTML('beforeend', serpBadge(q)); }
-      markEmpty(c, n===0);
+      markEmpty(c, n===0, q);
     }catch(e){ if(_serpOff) return; }
   }
 }
@@ -1648,7 +1701,7 @@ async function checkSerps(btn){
       const ttl=job.c.querySelector('.ttl');
       const old=ttl.querySelector('.serp'); if(old) old.remove();
       ttl.insertAdjacentHTML('beforeend', serpBadge(job.q));
-      markEmpty(job.c, n===0);
+      markEmpty(job.c, n===0, job.q);
     }catch(e){
       fail++;
       if(String(e.message)==='notconf'){ done=jobs.length; throw e; }
