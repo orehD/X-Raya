@@ -67,6 +67,14 @@
   .tariff button.ghost:hover{border-color:var(--amber);color:var(--amber-hi);filter:none}
   .paynote{font:400 11.5px/1.6 var(--body);color:var(--muted);margin-top:14px}
   .payok{color:var(--amber-hi);font-size:13px;line-height:1.7}
+  .promo-row{display:flex;gap:8px;margin-top:12px}
+  .promo-row input{flex:1;width:auto;text-transform:uppercase}
+  .promo-row input::placeholder{text-transform:none}
+  .pbtn{margin-top:0;background:transparent;border:1px solid var(--line2);color:var(--txt)}
+  .pbtn:hover{border-color:var(--amber);color:var(--amber-hi);filter:none}
+  .promo-msg{font-size:12px;margin-top:8px;min-height:15px;color:var(--muted)}
+  .promo-msg.ok{color:var(--amber-hi)}
+  .tp s{color:var(--muted);font-weight:400;font-size:14px;margin-right:6px}
 </style>
 </head>
 <body>
@@ -111,21 +119,26 @@
       </ul>
       <div id="payPick">
         <div class="plans">
-          <div class="tariff">
+          <div class="tariff" data-t="month" data-price="990">
             <div class="tn">Месяц</div>
             <div class="tp">990 ₽<small>/мес</small></div>
             <div class="td">Отмена в любой момент</div>
             <button class="ghost" onclick="paySubmit(this,'month')">Оплатить</button>
           </div>
-          <div class="tariff best">
+          <div class="tariff best" data-t="quarter" data-price="2490">
             <div class="tn">3 месяца</div>
             <div class="tp">2 490 ₽<small>830 ₽/мес</small></div>
             <div class="td">Выгоднее на 16%</div>
             <button onclick="paySubmit(this,'quarter')">Оплатить</button>
           </div>
         </div>
+        <div class="promo-row">
+          <input id="promoIn" placeholder="Промокод" autocomplete="off">
+          <button class="pbtn" onclick="promoApply()">Применить</button>
+        </div>
+        <div class="promo-msg" id="promoMsg"></div>
         <div class="err" id="payErr"></div>
-        <div class="paynote">Бета-цены. Приём карт (ЮKassa) ещё подключаем, поэтому сейчас деньги не списываются: жмёшь «Оплатить» — мы получаем заявку, включаем Pro вручную и пишем тебе на почту.</div>
+        <div class="paynote">Приём карт (ЮKassa) подключаем, поэтому сейчас деньги не списываются: жмёшь «Оплатить» — мы получаем заявку, включаем Pro вручную и пишем тебе на почту.</div>
       </div>
       <div class="payok hidden" id="payOk">✓ Заявка получена, деньги не списаны. Включим Pro вручную и напишем на твою почту — обычно в течение пары часов. Оплату попросим, когда подключим приём платежей.</div>
     </div>
@@ -149,7 +162,7 @@
       const me=await r.json();
       $('cab').classList.remove('hidden');
       $('cEmail').textContent=me.email;
-      $('cPlan').innerHTML='<span class="plan '+me.plan+'">'+(me.plan==='pro'?'Pro · бета':'Free')+'</span>';
+      $('cPlan').innerHTML='<span class="plan '+me.plan+'">'+(me.plan==='pro'?'Pro':'Free')+'</span>';
       $('cSearches').textContent=me.searches;
       $('cContacts').textContent=me.contacts;
       $('proHint').textContent = me.plan==='pro'
@@ -180,22 +193,48 @@
   }
   async function logout(){ await fetch('/api/logout',{method:'POST'}); location.href='/'; }
 
-  /* ── оплата (фаза 1: интент без платёжки) ── */
+  /* ── оплата (интент без платёжки) + промокоды ── */
+  let PROMO=null;
+  const fmtP=v=>v.toLocaleString('ru-RU');
+  async function promoApply(){
+    const code=$('promoIn').value.trim(), msg=$('promoMsg');
+    msg.classList.remove('ok');
+    if(!code){ msg.textContent='Введи промокод'; return; }
+    try{
+      const r=await fetch('/api/promo',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({code})});
+      const d=await r.json();
+      if(!r.ok) throw new Error(d.error||'неверный промокод');
+      PROMO={code, discount:d.discount};
+      msg.textContent='✓ Промокод принят — скидка '+d.discount+'%';
+      msg.classList.add('ok');
+      document.querySelectorAll('.tariff').forEach(t=>{
+        const base=+t.dataset.price, nv=Math.round(base*(100-d.discount)/100);
+        t.querySelector('.tp').innerHTML = d.discount===100
+          ? '<s>'+fmtP(base)+' ₽</s> Бесплатно'
+          : '<s>'+fmtP(base)+' ₽</s> '+fmtP(nv)+' ₽';
+        t.querySelector('button').textContent = d.discount===100 ? 'Активировать' : 'Оплатить';
+      });
+    }catch(e){ PROMO=null; msg.textContent=e.message; }
+  }
   async function paySubmit(btn, tariff){
     $('payErr').textContent='';
     btn.disabled=true; btn.textContent='Секунду…';
     try{
       const r=await fetch('/api/pro/intent',{method:'POST',headers:{'content-type':'application/json'},
-        body:JSON.stringify({tariff, ref:getRef()})});
+        body:JSON.stringify({tariff, ref:getRef(), promo:PROMO?PROMO.code:''})});
       const d=await r.json();
       if(!r.ok) throw new Error(d.error==='auth'?'нужен вход':(d.error||'ошибка'));
       $('payPick').classList.add('hidden');
-      $('payOk').classList.remove('hidden');
+      const ok=$('payOk');
+      if(d.activated) ok.textContent='✓ Промокод сработал — Pro активирован. Обновляю кабинет…';
+      ok.classList.remove('hidden');
+      if(d.activated) setTimeout(()=>location.reload(), 1600);
     }catch(e){
       $('payErr').textContent=e.message;
-      btn.disabled=false; btn.textContent='Оплатить';
+      btn.disabled=false; btn.textContent=PROMO&&PROMO.discount===100?'Активировать':'Оплатить';
     }
   }
+  $('promoIn')&&$('promoIn').addEventListener('keydown',e=>{ if(e.key==='Enter') promoApply(); });
   $('em')&&$('em').addEventListener('keydown',e=>{ if(e.key==='Enter') requestLink(); });
   boot();
 </script>

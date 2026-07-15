@@ -563,7 +563,7 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--panel);
   border:1px solid var(--line2);color:var(--txt);padding:10px 16px;border-radius:8px;z-index:50;
   font:400 12.5px var(--f-mono);box-shadow:0 12px 36px -12px rgba(0,0,0,.8);max-width:90%}
-/* ── Pro: ранний доступ ── */
+/* ── плашка Pro ── */
 .pro{position:relative;z-index:1;max-width:1160px;margin:44px auto 0;padding:26px 28px;border-radius:12px;
   background:linear-gradient(180deg, rgba(242,169,59,.08), var(--panel) 55%);
   border:1px solid rgba(242,169,59,.32);box-shadow:0 0 0 1px rgba(242,169,59,.04);
@@ -744,8 +744,8 @@ body.working .radar{width:238px;height:238px}
 <section class="pro" id="pro">
   <i class="ck tl"></i><i class="ck tr"></i><i class="ck bl"></i><i class="ck br"></i>
   <div class="pro-head">
-    <div class="pro-cap">Peleng Pro // ранний доступ</div>
-    <p class="pro-txt">Базовый поиск по 30+ каналам — навсегда бесплатно. Pro добавит тяжёлые инструменты для сорсинга. Оставь почту — позовём первым, первой сотне вечная скидка.</p>
+    <div class="pro-cap">Peleng Pro</div>
+    <p class="pro-txt">Базовый поиск по 30+ каналам — бесплатно, без ограничений и регистрации. Pro добавляет тяжёлые инструменты для сорсинга — от 830 ₽/мес.</p>
   </div>
   <ul class="pro-feats">
     <li><span class="pf-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 7 8.5 6 8.5-6"/><circle cx="18.5" cy="16" r="2.6" fill="var(--panel2)"/><path d="M18.5 14.8v1.2l.9.6"/></svg></span><b>Открытие контактов</b><i>Email и телефон кандидата прямо в выдаче — без ручного пробива по сервисам.</i></li>
@@ -753,13 +753,10 @@ body.working .radar{width:238px;height:238px}
     <li><span class="pf-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/></svg></span><b>Умные варианты запросов</b><i>Одним кликом — «шире», «уже» или «по-другому», если выдача пустая или слишком широкая.</i></li>
     <li><span class="pf-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M9 13.5h6M9 16h4"/></svg></span><b>Подборки кандидатов</b><i>Сохраняй найденных, помечай статусы и возвращайся к поиску позже.</i></li>
   </ul>
-  <form class="pro-f" id="proF" onsubmit="return leadSubmit(event)">
-    <input type="email" id="proEmail" placeholder="you@company.ru" required autocomplete="email">
-    <button type="submit" id="proBtn">Хочу ранний доступ</button>
-    <span class="pro-or">или</span>
-    <a class="pro-pay" href="/cabinet">Оплатить и перейти на Pro →</a>
-    <span class="pro-legal">Нажимая кнопку, соглашаешься с <a href="/privacy">политикой обработки данных</a> — только письмо о запуске, без спама.</span>
-  </form>
+  <div class="pro-f">
+    <a class="pro-pay" href="/cabinet">Перейти на Pro →</a>
+    <span class="pro-or">Есть промокод? Введи его в кабинете — скидка до 100%.</span>
+  </div>
 </section>
 
 <footer><b>Peleng</b> · сорсинг-разведка · поисковые запросы выполняются в твоём браузере и не сохраняются · <a class="flink" href="/cabinet">кабинет</a> · <a class="flink" href="/privacy">политика данных</a></footer>
@@ -1383,7 +1380,7 @@ async function contactReveal(item){
     const r=await fetch('/api/contact',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({item})});
     const d=await r.json();
     if(r.status===401){
-      card.innerHTML='<div class="ttl">Нужен вход</div><div class="desc">Раскрытие контактов доступно после входа — это бесплатно на бете, нужен только email.</div>'+
+      card.innerHTML='<div class="ttl">Нужен вход</div><div class="desc">Раскрытие контактов доступно после входа — нужен только email, без пароля.</div>'+
         '<div class="row"><a class="btn open" href="/cabinet">Войти</a><span class="btn copy" onclick="resetAll()">К поиску</span></div>';
       return;
     }
@@ -1666,8 +1663,6 @@ let ME=null;
     if(ME.plan==='pro') IS_PRO=true;
     const a=document.getElementById('acctLink');
     if(a){ a.textContent='Кабинет'+(ME.plan==='pro'?' · PRO':''); a.classList.add('in'); }
-    const pe=document.getElementById('proEmail');
-    if(pe && !pe.value) pe.value=ME.email;
   }catch(_){}
 })();
 /* 401 от Pro-фич: зовём войти */
@@ -1729,31 +1724,6 @@ async function checkSerps(btn){
   }
 }
 
-/* ── заявка на ранний доступ ── */
-function leadDone(email){
-  const f=document.getElementById('proF');
-  if(f) f.outerHTML='<div class="pro-ok">✓ Ты в списке — напишем на '+esc(email)+'</div>';
-}
-async function leadSubmit(e){
-  e.preventDefault();
-  const inp=document.getElementById('proEmail'), btn=document.getElementById('proBtn');
-  const email=(inp.value||'').trim();
-  if(!email) return false;
-  btn.disabled=true; btn.textContent='…';
-  try{
-    const r=await fetch('/api/lead',{method:'POST',headers:{'content-type':'application/json'},
-      body:JSON.stringify({email, ref:new URLSearchParams(location.search).get('ref')||lsGet('peleng_ref')||''})});
-    const d=await r.json();
-    if(!r.ok) throw new Error(d.error||'ошибка');
-    lsSet('peleng_lead', email);
-    leadDone(email);
-  }catch(err){
-    btn.disabled=false; btn.textContent='В список';
-    toast('Не получилось: '+err.message);
-  }
-  return false;
-}
-(function(){ const e=lsGet('peleng_lead'); if(e) leadDone(e); })();
 
 function plural(n,one,few,many){ const m=n%100, m1=n%10; return (m>10&&m<20)?many:(m1===1?one:(m1>1&&m1<5?few:many)); }
 function ctOffQuick(){ F.ct=false; const c=document.getElementById('ctOn'); if(c) c.checked=false; updateFiltCnt(); run(); }

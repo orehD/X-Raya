@@ -236,7 +236,7 @@ function handleLogout(req, res) {
   res.setHeader('Set-Cookie', 'plg_sess=; Path=/; HttpOnly; Max-Age=0');
   send(res, 200, 'application/json', JSON.stringify({ ok: true }));
 }
-// ручная выдача Pro на бете (пароль — тот же STATS_TOKEN)
+// ручная выдача Pro (пароль — тот же STATS_TOKEN)
 function handleAdminPlan(req, res) {
   const token = process.env.STATS_TOKEN;
   const url = new URL(req.url, 'http://x');
@@ -262,7 +262,7 @@ function handleAdminPlan(req, res) {
         '<div style="color:#F2A93B;font-size:18px;font-weight:bold;margin-bottom:14px">PELENG</div>' +
         '<p>Тебе включён <b style="color:#FFC96B">Pro-доступ</b> — автопроверка выдачи, раскрытие контактов и AI-инструменты.</p>' +
         '<p><a href="' + cab + '" style="display:inline-block;background:#F2A93B;color:#1A1508;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold">Войти в кабинет</a></p>' +
-        '<p style="color:#9A9077;font-size:12px">Вход без пароля: введи эту почту на странице кабинета — придёт ссылка. На бете Pro бесплатен.</p></div>'
+        '<p style="color:#9A9077;font-size:12px">Вход без пароля: введи эту почту на странице кабинета — придёт ссылка.</p></div>'
       ).then(() => console.log('pro email sent:', email))
        .catch(e => console.error('pro email failed:', email, e.message));
     }
@@ -270,7 +270,7 @@ function handleAdminPlan(req, res) {
   });
 }
 
-// ── сбор email-заявок (ранний доступ к Pro) ──
+// ── сбор email-заявок (историческое: форма раннего доступа убрана, endpoint оставлен) ──
 const LEADS_FILE = process.env.LEADS_FILE || path.join(__dirname, 'data', 'leads.jsonl');
 const seenLeads = new Set();
 try {
@@ -598,7 +598,28 @@ function handleContact(req, res) {
   });
 }
 
-// ── заявка на оплату Pro (фаза 1: платёжка не подключена — пишем интент и шлём в TG) ──
+// ── промокоды: env PROMOS="КОД:50,КОД2:80,КОД3:100" (скидка в %; 100 — активирует Pro сразу) ──
+function promoDiscount(code) {
+  if (!code) return 0;
+  const map = {};
+  String(process.env.PROMOS || '').split(',').forEach(p => {
+    const [c, d] = p.split(':');
+    if (c && d) map[c.trim().toUpperCase()] = Math.min(100, Math.max(0, parseInt(d, 10) || 0));
+  });
+  return map[String(code).trim().toUpperCase()] || 0;
+}
+function handlePromo(req, res) {
+  let raw = '';
+  req.on('data', c => { raw += c; if (raw.length > 1e4) req.destroy(); });
+  req.on('end', () => {
+    let body = {}; try { body = JSON.parse(raw || '{}'); } catch {}
+    const d = promoDiscount(body.code);
+    if (!d) return send(res, 404, 'application/json', JSON.stringify({ error: 'неверный промокод' }));
+    send(res, 200, 'application/json', JSON.stringify({ discount: d }));
+  });
+}
+
+// ── заявка на оплату Pro (платёжка не подключена — пишем интент и шлём в TG) ──
 const PAY_FILE = process.env.PAY_FILE || path.join(__dirname, 'data', 'pay.jsonl');
 function handleProIntent(req, res) {
   const sess = getUser(req);
@@ -610,22 +631,40 @@ function handleProIntent(req, res) {
     const tariff = String(body.tariff || 'month').slice(0, 20);
     const bref = String(body.ref || '').slice(0, 60).trim();
     if (bref && !sess.u.ref) { sess.u.ref = bref; saveUsers(); } // метка могла прийти позже регистрации
-    const rec = JSON.stringify({ email: sess.email, tariff, ref: sess.u.ref || '', at: new Date().toISOString() });
+    const promo = String(body.promo || '').trim().toUpperCase().slice(0, 30);
+    const discount = promoDiscount(promo);
+    const activated = discount === 100;
+    if (activated) { sess.u.plan = 'pro'; saveUsers(); }
+    const rec = JSON.stringify({ email: sess.email, tariff, ref: sess.u.ref || '',
+      promo: discount ? promo : '', discount, activated, at: new Date().toISOString() });
     try {
       fs.mkdirSync(path.dirname(PAY_FILE), { recursive: true });
       fs.appendFileSync(PAY_FILE, rec + '\n');
     } catch (e) { console.error('pay intent write failed:', e.message); }
     const tk = process.env.TG_BOT_TOKEN, chat = process.env.TG_CHAT_ID;
     if (tk && chat) {
+      const text = activated
+        ? '🎁 Peleng: Pro активирован по промокоду ' + promo + '\n' + sess.email + (sess.u.ref ? '\nпартнёр: ' + sess.u.ref : '')
+        : '💳 Peleng: хочет оплатить Pro\n' + sess.email + '\nтариф: ' + tariff +
+          (discount ? '\nпромокод: ' + promo + ' (−' + discount + '%)' : '') +
+          (sess.u.ref ? '\nпартнёр: ' + sess.u.ref : '') + '\n→ выдай Pro в /stats';
       fetch('https://api.telegram.org/bot' + tk + '/sendMessage', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ chat_id: chat,
-          text: '💳 Peleng: хочет оплатить Pro\n' + sess.email + '\nтариф: ' + tariff + (sess.u.ref ? '\nпартнёр: ' + sess.u.ref : '') + '\n→ выдай Pro в /stats' }),
+        body: JSON.stringify({ chat_id: chat, text }),
       }).catch(() => {});
     }
-    console.log('pro intent:', sess.email, tariff);
-    send(res, 200, 'application/json', JSON.stringify({ ok: true }));
+    if (activated) {
+      const cab = baseUrl(req) + '/cabinet';
+      sendEmail(sess.email, 'Peleng Pro включён',
+        '<div style="font-family:monospace;background:#12100A;color:#EDE6D4;padding:32px;border-radius:12px">' +
+        '<div style="color:#F2A93B;font-size:18px;font-weight:bold;margin-bottom:14px">PELENG</div>' +
+        '<p>Промокод сработал — тебе включён <b style="color:#FFC96B">Pro</b>: автопроверка выдачи, раскрытие контактов и AI-инструменты.</p>' +
+        '<p><a href="' + cab + '" style="display:inline-block;background:#F2A93B;color:#1A1508;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold">Открыть кабинет</a></p></div>'
+      ).catch(e => console.error('promo email failed:', e.message));
+    }
+    console.log('pro intent:', sess.email, tariff, promo || '-', discount);
+    send(res, 200, 'application/json', JSON.stringify({ ok: true, activated, discount }));
   });
 }
 
@@ -649,6 +688,7 @@ const server = http.createServer((req, res) => {
   if (req.method === 'GET' && req.url === '/api/me') return handleMe(req, res);
   if (req.method === 'POST' && req.url === '/api/logout') return handleLogout(req, res);
   if (req.method === 'POST' && req.url === '/api/pro/intent') return handleProIntent(req, res);
+  if (req.method === 'POST' && req.url === '/api/promo') return handlePromo(req, res);
   if (req.method === 'POST' && req.url.split('?')[0] === '/api/admin/plan') return handleAdminPlan(req, res);
   if (req.method === 'GET' && req.url.split('?')[0] === '/cabinet') {
     return fs.readFile(path.join(__dirname, 'cabinet.html'), (err, data) => {
