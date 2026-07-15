@@ -228,6 +228,8 @@ body.glitching .logo{animation:glitch .4s steps(3,end) 1}
   font:600 12px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;padding:10px 18px;
   transition:background-color .18s var(--ease), transform .15s var(--ease)}
 .onb-go:hover{background:var(--amber-hi)}
+.onb-help{margin:16px 0 0 16px;font:400 12px var(--f-mono);color:var(--muted);text-decoration:none}
+.onb-help:hover{color:var(--amber)}
 .onb-go:active{transform:scale(.97)}
 
 /* ── примеры / переключатели ── */
@@ -698,6 +700,7 @@ body.working .radar{width:238px;height:238px}
         <li>Открывай ссылки, уточняй фильтры, отмечай нужное звёздочкой. Для контактов — вкладка <b>контакты</b>.</li>
       </ol>
       <button class="onb-go" onclick="onbClose()">Понятно, поехали</button>
+      <a class="onb-help" href="/help">Справка по всем кнопкам →</a>
     </div>
 
     <div class="console">
@@ -760,7 +763,7 @@ body.working .radar{width:238px;height:238px}
   </div>
 </section>
 
-<footer><b>Peleng</b> · сорсинг-разведка · поисковые запросы выполняются в твоём браузере и не сохраняются · <a class="flink" href="/cabinet">кабинет</a> · <a class="flink" href="/privacy">политика данных</a></footer>
+<footer><b>Peleng</b> · сорсинг-разведка · поисковые запросы выполняются в твоём браузере и не сохраняются · <a class="flink" href="/help">справка</a> · <a class="flink" href="/cabinet">кабинет</a> · <a class="flink" href="/privacy">политика данных</a></footer>
 
 <script>
 /* ===================== ДАННЫЕ ===================== */

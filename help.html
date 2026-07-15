@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Peleng — справка: все кнопки и функции</title>
+<script>(function(){try{var t=localStorage.getItem('peleng_theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<style>
+  :root{color-scheme:dark; --bg:#12100A; --panel:#1E190F; --panel2:#171309; --line:#332B18; --line2:#463A20;
+    --amber:#F2A93B; --amber-hi:#FFC96B; --amber-dim:rgba(242,169,59,.14);
+    --red:#E0472F; --txt:#EDE6D4; --muted:#9A9077;
+    --mono:'JetBrains Mono',Menlo,Consolas,monospace; --body:'IBM Plex Sans',-apple-system,sans-serif}
+  :root[data-theme="light"]{color-scheme:light; --bg:#EFE9DA; --panel:#F8F3E8; --panel2:#E9E1CE;
+    --line:#DBD1B9; --line2:#C6B994; --amber:#AF6D08; --amber-hi:#875000; --amber-dim:rgba(175,109,8,.15);
+    --red:#CE3E28; --txt:#231E13; --muted:#6C5F42}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:400 14px/1.65 var(--body);padding:34px 18px 80px;
+    display:flex;justify-content:center}
+  .wrap{width:100%;max-width:680px}
+  .logo{font:700 15px var(--mono);letter-spacing:.2em;color:var(--txt);text-decoration:none}
+  .logo b{color:var(--amber)}
+  h1{font:600 15px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--amber);margin:26px 0 6px}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:26px}
+  h2{font:600 11px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin:30px 0 10px}
+  details{background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-bottom:8px;overflow:hidden}
+  details[open]{border-color:var(--line2)}
+  summary{cursor:pointer;padding:13px 16px;font:600 13.5px var(--body);list-style:none;display:flex;gap:10px;align-items:baseline}
+  summary::-webkit-details-marker{display:none}
+  summary::before{content:'▸';color:var(--amber);font-size:11px;flex:none;transition:transform .15s}
+  details[open] summary::before{transform:rotate(90deg)}
+  summary:hover{color:var(--amber-hi)}
+  .a{padding:0 16px 14px;color:var(--txt)}
+  .a p{margin:0 0 10px}
+  .a p:last-child{margin-bottom:0}
+  .a ul{margin:0 0 10px;padding-left:20px}
+  .a li{margin-bottom:5px}
+  b.k{font:600 12px var(--mono);background:var(--panel2);border:1px solid var(--line2);border-radius:5px;
+    padding:1px 7px;white-space:nowrap;color:var(--amber-hi)}
+  .a .m{color:var(--muted)}
+  .a code{font:400 12px var(--mono);background:var(--panel2);border:1px solid var(--line);border-radius:5px;padding:1px 6px}
+  .back{display:inline-block;margin-top:30px;color:var(--muted);text-decoration:none;font:400 13px var(--mono)}
+  .back:hover{color:var(--amber)}
+  a{color:var(--amber)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="logo" href="/"><b>P</b>ELENG</a>
+  <h1>Справка</h1>
+  <div class="sub">Все кнопки и функции — что они делают и когда пригодятся.</div>
+
+  <h2>Поиск</h2>
+
+  <details open>
+    <summary>С чего начать?</summary>
+    <div class="a">
+      <p>Напиши в главном поле, кого ищешь, обычными словами — <code>сеньор python разработчик в Москве</code>, <code>логист ВЭД</code>, <code>коммерческий директор</code> — и нажми <b class="k">Выследить</b> (или Enter).</p>
+      <p>Peleng разберёт запрос на роль, грейд, город и стек и соберёт готовые поисковые запросы по 30+ каналам: LinkedIn, hh.ru, Habr, GitHub, Telegram, VK, TenChat, конференции и другие. Останется открывать ссылки и смотреть кандидатов.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Три вкладки над полем: запрос / вакансия / контакты</summary>
+    <div class="a">
+      <ul>
+        <li><b class="k">запрос</b> — обычный поиск: описываешь роль своими словами.</li>
+        <li><b class="k">вакансия</b> — вставляешь текст вакансии целиком: Peleng сам вытащит роль, грейд, город, а секции «Требования» и «Будет плюсом» превратит в обязательные и желательные навыки. Поиск здесь запускается по <b class="k">Cmd/Ctrl + Enter</b> (Enter делает перенос строки).</li>
+        <li><b class="k">контакты</b> — пробив человека: ссылка на LinkedIn, email или телефон → контакты кандидата; <code>@никнейм</code> → проверка, на каких площадках он есть.</li>
+      </ul>
+      <p class="m">Если вставить ссылку или @никнейм в обычный «запрос», Peleng сам переключится на «контакты».</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>«Профиль поиска» — что это за блок после поиска?</summary>
+    <div class="a">
+      <p>Это то, как Peleng понял твой запрос: должность, категория, грейд, стек, локация. Каждое поле можно поменять — запросы пересоберутся сразу.</p>
+      <p>У технологий в стеке есть селектор режима: <b class="k">желательно</b> — учитывается как плюс, <b class="k">обязательно</b> — жёсткое условие в запросе, <b class="k">исключить</b> — минус-слово. Крестик убирает технологию совсем, кнопка <b class="k">+</b> добавляет свою.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>«Параметры поиска» — ручные фильтры</summary>
+    <div class="a">
+      <p>Кнопка под полем раскрывает фильтры: категория, специализация, грейд, город, добавить/исключить слова. Работают и без текстового запроса — можно собрать поиск только из них.</p>
+      <p>Галочка <b class="k">Контакты в профилях</b> оставляет только запросы, которые ищут страницы с email/телефоном — каналы без таких операторов скроются (счётчик покажет, сколько скрыто).</p>
+      <p><b class="k">✕ Очистить всё</b> (и клик по логотипу) сбрасывает всё и возвращает на главный экран.</p>
+    </div>
+  </details>
+
+  <h2>Результаты</h2>
+
+  <details>
+    <summary>Как устроена выдача: каналы, сортировка, карточки</summary>
+    <div class="a">
+      <p>Слева — список каналов (CH-01 Профессиональные площадки, CH-02 Комьюнити и портфолио и т.д.), клик фильтрует выдачу. Сортировка: <b class="k">приоритет</b> — курируемый порядок, <b class="k">точные</b> — сначала самые узкие запросы, <b class="k">А–Я</b> — по алфавиту.</p>
+      <p>В каждой карточке: сам поисковый запрос с подсветкой синтаксиса, <b class="k">Открыть</b> — выполнить его в новой вкладке, <b class="k">Копировать</b> — забрать текст запроса. Звёздочка ★ добавляет карточку в «Избранное» (появится отдельной вкладкой слева).</p>
+      <p>У каждой группы есть <b class="k">Копировать все</b> и <b class="k">Открыть все</b> — если браузер откроет не всё, разреши всплывающие окна для сайта.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Кнопки «шире», «уже», «по-другому» в карточках</summary>
+    <div class="a">
+      <p>AI-варианты запроса для Google-карточек (нужен вход):</p>
+      <ul>
+        <li><b class="k">шире</b> — добавит синонимы роли и ослабит условия, когда выдача пустая или маленькая;</li>
+        <li><b class="k">уже</b> — добавит уточнения и минус-слова, когда кандидатов слишком много;</li>
+        <li><b class="k">по-другому</b> — другой подход к поиску на этой же площадке.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details>
+    <summary>«Проверить выдачу» — зачем и что значат бейджи</summary>
+    <div class="a">
+      <p>Кнопка над результатами прогоняет X-Ray запросы через Google и показывает у каждой карточки: <b class="k">выдача есть</b>, <b class="k">мало · N</b> или <b class="k">пусто в Google</b>. Пустые каналы видно сразу — не тратишь время на клики по ним.</p>
+      <p>Если запрос пустой, Peleng сам подберёт <b>ослабленный вариант</b> (убирает минус-слова, кавычки, лишние условия) и предложит его прямо в карточке: <b class="k">Открыть</b> — посмотреть в Google, <b class="k">Заменить в карточке</b> — подставить вместо исходного.</p>
+      <p class="m">В Pro проверка запускается сама после каждого поиска — пустые каналы подсвечиваются без клика.</p>
+    </div>
+  </details>
+
+  <h2>Контакты и пробив</h2>
+
+  <details>
+    <summary>Как найти email и телефон кандидата</summary>
+    <div class="a">
+      <p>Вкладка <b class="k">контакты</b> → вставь ссылку на LinkedIn-профиль (или email/телефон) → <b class="k">Выследить</b>. Peleng запросит данные у провайдера контактов и покажет email, телефоны и соцсети кандидата. Нужен вход (бесплатно, только email).</p>
+      <p class="m">Результат кэшируется на 7 дней — повторный пробив того же человека не тратит лимит.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Проверка @никнейма по площадкам</summary>
+    <div class="a">
+      <p>Введи <code>@никнейм</code> — Peleng проверит, существует ли такой профиль на GitHub, GitLab, Habr, Telegram, VK, Dribbble и других площадках (всего 16). Найденные — сразу ссылками. Площадки с защитой от ботов честно помечаются «проверь вручную».</p>
+      <p class="m">Зачем: у кандидатов ник часто одинаковый везде — по нику из одной сети находится GitHub с кодом или Telegram для связи.</p>
+    </div>
+  </details>
+
+  <h2>История и обмен</h2>
+
+  <details>
+    <summary>Недавние запросы и закрепление</summary>
+    <div class="a">
+      <p>Под примерами показываются 3 последних запроса (остальные — под «ещё»). Звёздочка ★ на чипе закрепляет запрос — он останется наверху навсегда, пока не открепишь. Крестик чистит недавние (закреплённые не трогает).</p>
+      <p class="m">История хранится только в твоём браузере — на сервер она не уходит.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>«Поделиться» — отправить поиск коллеге</summary>
+    <div class="a">
+      <p>Кнопка над результатами копирует ссылку на текущий поиск со всеми фильтрами. Коллега откроет её и увидит те же запросы — вход не нужен.</p>
+    </div>
+  </details>
+
+  <h2>Аккаунт и Pro</h2>
+
+  <details>
+    <summary>Как войти и зачем</summary>
+    <div class="a">
+      <p>Базовый поиск работает без входа. Вход (нужен для контактов и AI-функций) — на странице <a href="/cabinet">кабинета</a>: вводишь email → приходит письмо с 6-значным кодом → вводишь код на любом устройстве. Открыл письмо с телефона — просто набери код на компе.</p>
+      <p>В кабинете можно задать <b>пароль</b> — тогда дальше входишь по email + паролю вообще без писем.</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>Что бесплатно, а что в Pro</summary>
+    <div class="a">
+      <ul>
+        <li><b>Бесплатно без входа:</b> поиск по всем каналам, фильтры, проверка выдачи кнопкой, история, избранное, «Поделиться».</li>
+        <li><b>Бесплатно после входа:</b> раскрытие контактов, AI-разбор вакансии, «шире/уже/по-другому».</li>
+        <li><b>Pro</b> (990 ₽/мес или 2 490 ₽/3 мес): автопроверка выдачи после каждого поиска, автоподбор ослабленных запросов, приоритетные AI-лимиты и новые функции первыми.</li>
+      </ul>
+      <p>Есть промокод? Введи его в <a href="/cabinet">кабинете</a> в блоке оплаты — скидка применится к ценам, код на 100% включает Pro сразу.</p>
+    </div>
+  </details>
+
+  <h2>Прочее</h2>
+
+  <details>
+    <summary>Горячие клавиши и мелочи</summary>
+    <div class="a">
+      <ul>
+        <li><b class="k">Enter</b> — запустить поиск (в режиме «вакансия» — <b class="k">Cmd/Ctrl + Enter</b>).</li>
+        <li>Кнопка с луной/солнцем в шапке — тёмная/светлая тема.</li>
+        <li>Клик по логотипу — сброс и возврат на главный экран.</li>
+        <li>Радар в шапке — не только красота: точки на нём соответствуют группам каналов, клик по точке открывает группу.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details>
+    <summary>Приватность: что вы храните?</summary>
+    <div class="a">
+      <p>Поисковые запросы выполняются в твоём браузере и <b>не сохраняются на сервере</b>. История и настройки лежат локально у тебя. Из личного мы храним только email аккаунта и счётчики использования. Трекеров и рекламных куки нет. Подробнее — в <a href="/privacy">политике данных</a>.</p>
+    </div>
+  </details>
+
+  <a class="back" href="/">← Вернуться к Peleng</a>
+</div>
+</body>
+</html>

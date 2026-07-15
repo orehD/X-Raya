@@ -762,6 +762,12 @@ const server = http.createServer((req, res) => {
   if (req.method === 'POST' && req.url === '/api/pro/intent') return handleProIntent(req, res);
   if (req.method === 'POST' && req.url === '/api/promo') return handlePromo(req, res);
   if (req.method === 'POST' && req.url.split('?')[0] === '/api/admin/plan') return handleAdminPlan(req, res);
+  if (req.method === 'GET' && req.url.split('?')[0] === '/help') {
+    return fs.readFile(path.join(__dirname, 'help.html'), (err, data) => {
+      if (err) return send(res, 500, 'text/plain', 'help.html not found');
+      send(res, 200, 'text/html; charset=utf-8', data);
+    });
+  }
   if (req.method === 'GET' && req.url.split('?')[0] === '/cabinet') {
     return fs.readFile(path.join(__dirname, 'cabinet.html'), (err, data) => {
       if (err) return send(res, 500, 'text/plain', 'cabinet.html not found');
