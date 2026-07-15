@@ -1666,6 +1666,8 @@ let ME=null;
     if(ME.plan==='pro') IS_PRO=true;
     const a=document.getElementById('acctLink');
     if(a){ a.textContent='Кабинет'+(ME.plan==='pro'?' · PRO':''); a.classList.add('in'); }
+    const pe=document.getElementById('proEmail');
+    if(pe && !pe.value) pe.value=ME.email;
   }catch(_){}
 })();
 /* 401 от Pro-фич: зовём войти */
