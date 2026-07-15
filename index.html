@@ -702,7 +702,7 @@ body.working .radar{width:238px;height:238px}
     <div class="console">
       <div class="console-cap"><span id="capLbl">Поисковый запрос</span><span class="qmode"><button class="on" data-m="goal" onclick="setQmode('goal')">запрос</button><button data-m="vac" onclick="setQmode('vac')">вакансия</button><button data-m="ct" onclick="setQmode('ct')">контакты</button></span></div>
       <div class="console-in">
-        <textarea id="q" placeholder="Кого ищем: «сеньор python разработчик в Москве с Django», «логист ВЭД» — или @никнейм, или ссылка на LinkedIn для пробива контактов…"></textarea>
+        <textarea id="q" placeholder="Кого ищем: «сеньор python разработчик в Москве с Django», «логист ВЭД», «коммерческий директор»…"></textarea>
         <button class="go" onclick="run()">Выследить<span class="go-ic">→</span></button>
       </div>
     </div>
@@ -1622,7 +1622,7 @@ async function suggestWeaker(c, q){
       const n=await serpOne(v);
       if(n>0){
         const h=c.querySelector('.vhint');
-        const html='<div class="vhint wk">Выдача пустая. Ослабил запрос — '+(n>=10?'выдача есть':'нашлось '+n)+':'+
+        const html='<div class="vhint wk">По этому запросу пусто. Ослабленный вариант — '+(n>=10?'выдача есть':'нашлось '+n)+':'+
           '<code>'+hiQ(v)+'</code><span class="wk-btns">'+
           '<a class="vbtn" href="https://www.google.com/search?q='+encodeURIComponent(v)+'" target="_blank" rel="noopener">Открыть</a>'+
           '<span class="vbtn" onclick="useWeak(this)" data-q="'+esc(v).replace(/"/g,'&quot;')+'">Заменить в карточке</span></span></div>';
@@ -1697,7 +1697,7 @@ async function autoSerp(){
   }
 }
 async function checkSerps(btn){
-  if(_serpOff){ toast('Проверка выдачи не настроена — нужен ключ Serper.dev (или Google CSE) на сервере'); return; }
+  if(_serpOff){ toast('Проверка выдачи временно недоступна — попробуй позже'); return; }
   const cards=[...document.querySelectorAll('.card')].filter(c=>c.dataset.eng);
   const jobs=cards.map(c=>({c, q:(c.querySelector('.btn.copy')||{}).getAttribute? c.querySelector('.btn.copy').getAttribute('data-s'):''})).filter(j=>j.q);
   if(!jobs.length) return;
@@ -1725,7 +1725,7 @@ async function checkSerps(btn){
     setTimeout(()=>{ btn.textContent='Проверить выдачу'; btn.disabled=false; }, 4000);
   }catch(_){
     btn.textContent='Проверить выдачу'; btn.disabled=false;
-    toast(_serpOff? 'Проверка выдачи не настроена — нужен ключ Serper.dev (или Google CSE) на сервере' : 'Часть проверок не прошла — попробуй ещё раз');
+    toast(_serpOff? 'Проверка выдачи временно недоступна — попробуй позже' : 'Часть проверок не прошла — попробуй ещё раз');
   }
 }
 

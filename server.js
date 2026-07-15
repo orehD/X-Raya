@@ -198,7 +198,7 @@ function handleAuthRequest(req, res) {
         body: JSON.stringify({
           from: process.env.RESEND_FROM || 'Peleng <onboarding@resend.dev>',
           to: [email],
-          subject: 'Вход в Peleng',
+          subject: 'Твоя ссылка для входа в Peleng',
           html: '<div style="font-family:monospace;background:#12100A;color:#EDE6D4;padding:32px;border-radius:12px">' +
             '<div style="color:#F2A93B;font-size:18px;font-weight:bold;margin-bottom:14px">PELENG</div>' +
             '<p>Ссылка для входа (действует 20 минут):</p>' +
