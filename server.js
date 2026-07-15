@@ -582,6 +582,12 @@ function handleProIntent(req, res) {
 const STATS_PAGE = path.join(__dirname, 'stats.html');
 
 const server = http.createServer((req, res) => {
+  // переезд: старый домен и www → https://peleng.fun (постоянный редирект)
+  const rhost = String(req.headers['x-forwarded-host'] || req.headers.host || '').split(':')[0];
+  if (rhost === 'x-raya.space' || rhost === 'www.x-raya.space' || rhost === 'www.peleng.fun') {
+    res.writeHead(301, { location: 'https://peleng.fun' + req.url });
+    return res.end();
+  }
   if (req.method === 'POST' && req.url === '/api/ai') return handleAI(req, res);
   if (req.method === 'POST' && req.url === '/api/lead') return handleLead(req, res);
   if (req.method === 'POST' && req.url === '/api/nick') return handleNick(req, res);
