@@ -1665,8 +1665,8 @@ let ME=null;
     const a=document.getElementById('acctLink');
     if(a){ a.textContent='Кабинет'+(ME.plan==='pro'?' · PRO':''); a.classList.add('in'); }
     if(ME.plan==='pro'){
-      const f=document.querySelector('.pro-f');
-      if(f) f.innerHTML='<span class="pro-on">✓ Pro активен</span><a class="pro-pay" href="/cabinet">Кабинет →</a>';
+      const p=document.getElementById('pro');
+      if(p) p.style.display='none'; // у Pro нечего продавать — убираем плашку целиком
     }
   }catch(_){}
 })();
