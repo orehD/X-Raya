@@ -153,6 +153,27 @@ function baseUrl(req) {
   return proto + '://' + host;
 }
 const authHits = new Map();
+const pwHits = new Map();
+function overLimit(map, ip, max) {
+  const now = Date.now();
+  const hits = (map.get(ip) || []).filter(t => now - t < 3600e3);
+  if (hits.length >= max) return true;
+  hits.push(now); map.set(ip, hits);
+  return false;
+}
+// пароли: scrypt с солью, сравнение за постоянное время
+function hashPw(pw) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  return salt + '$' + crypto.scryptSync(pw, salt, 64).toString('hex');
+}
+function checkPw(pw, stored) {
+  const [salt, h] = String(stored || '').split('$');
+  if (!salt || !h) return false;
+  const a = crypto.scryptSync(pw, salt, 64), b = Buffer.from(h, 'hex');
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+// одноразовые коды входа (жизнь 10 минут, 5 попыток)
+const loginCodes = new Map(); // email → {code, exp, tries}
 // отправка письма через Resend (fire-and-forget использовать с .catch)
 async function sendEmail(to, subject, html) {
   const key = process.env.RESEND_API_KEY;
@@ -186,32 +207,80 @@ function handleAuthRequest(req, res) {
     if (ref && !users[email].ref) users[email].ref = ref;
     saveUsers();
     const link = baseUrl(req) + '/auth?token=' + encodeURIComponent(makeToken('login', email, 20 * 60e3));
+    const code = String(crypto.randomInt(100000, 1000000));
+    loginCodes.set(email, { code, exp: Date.now() + 10 * 60e3, tries: 0 });
     const key = process.env.RESEND_API_KEY;
     if (!key) {
-      if (process.env.AUTH_DEV === '1') return send(res, 200, 'application/json', JSON.stringify({ ok: true, link }));
+      if (process.env.AUTH_DEV === '1') return send(res, 200, 'application/json', JSON.stringify({ ok: true, link, code }));
       return send(res, 501, 'application/json', JSON.stringify({ error: 'Отправка писем не настроена (RESEND_API_KEY)' }));
     }
     try {
-      const r = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: { authorization: 'Bearer ' + key, 'content-type': 'application/json' },
-        body: JSON.stringify({
-          from: process.env.RESEND_FROM || 'Peleng <onboarding@resend.dev>',
-          to: [email],
-          subject: 'Твоя ссылка для входа в Peleng',
-          html: '<div style="font-family:monospace;background:#12100A;color:#EDE6D4;padding:32px;border-radius:12px">' +
-            '<div style="color:#F2A93B;font-size:18px;font-weight:bold;margin-bottom:14px">PELENG</div>' +
-            '<p>Ссылка для входа (действует 20 минут):</p>' +
-            '<p><a href="' + link + '" style="display:inline-block;background:#F2A93B;color:#1A1508;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold">Войти в Peleng</a></p>' +
-            '<p style="color:#9A9077;font-size:12px">Если ты не запрашивал вход — просто игнорируй это письмо.</p></div>',
-        }),
-      });
-      const d = await r.json().catch(() => ({}));
-      if (!r.ok) return send(res, 502, 'application/json', JSON.stringify({ error: (d && (d.message || d.error)) || 'не удалось отправить письмо' }));
+      await sendEmail(email, code + ' — код для входа в Peleng',
+        '<div style="font-family:monospace;background:#12100A;color:#EDE6D4;padding:32px;border-radius:12px">' +
+        '<div style="color:#F2A93B;font-size:18px;font-weight:bold;margin-bottom:14px">PELENG</div>' +
+        '<p>Код для входа (действует 10 минут):</p>' +
+        '<div style="font-size:34px;font-weight:bold;letter-spacing:8px;color:#FFC96B;margin:10px 0 18px">' + code + '</div>' +
+        '<p style="color:#9A9077;font-size:12px">Введи его на странице входа — на любом устройстве.</p>' +
+        '<p>Или открой ссылку на этом устройстве:</p>' +
+        '<p><a href="' + link + '" style="display:inline-block;background:#F2A93B;color:#1A1508;padding:12px 22px;border-radius:8px;text-decoration:none;font-weight:bold">Войти в Peleng</a></p>' +
+        '<p style="color:#9A9077;font-size:12px">Если ты не запрашивал вход — просто игнорируй это письмо.</p></div>');
       send(res, 200, 'application/json', JSON.stringify({ ok: true }));
     } catch (e) {
-      send(res, 500, 'application/json', JSON.stringify({ error: String((e && e.message) || e) }));
+      send(res, 502, 'application/json', JSON.stringify({ error: String((e && e.message) || e) }));
     }
+  });
+}
+// вход по коду из письма — работает с любого устройства
+function handleAuthCode(req, res) {
+  const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+  if (overLimit(pwHits, ip, 20)) return send(res, 429, 'application/json', JSON.stringify({ error: 'слишком много попыток — подожди час' }));
+  let raw = '';
+  req.on('data', c => { raw += c; if (raw.length > 1e4) req.destroy(); });
+  req.on('end', () => {
+    let body = {}; try { body = JSON.parse(raw || '{}'); } catch {}
+    const email = String(body.email || '').trim().toLowerCase().slice(0, 120);
+    const code = String(body.code || '').trim();
+    const entry = loginCodes.get(email);
+    if (!entry || Date.now() > entry.exp) return send(res, 400, 'application/json', JSON.stringify({ error: 'код устарел — запроси новый' }));
+    if (++entry.tries > 5) { loginCodes.delete(email); return send(res, 400, 'application/json', JSON.stringify({ error: 'слишком много попыток — запроси новый код' })); }
+    if (code !== entry.code) return send(res, 400, 'application/json', JSON.stringify({ error: 'неверный код' }));
+    loginCodes.delete(email);
+    users[email] = users[email] || { plan: 'free', createdAt: new Date().toISOString(), searches: 0, contacts: 0 };
+    users[email].lastLoginAt = new Date().toISOString(); saveUsers();
+    setSession(req, res, email);
+    send(res, 200, 'application/json', JSON.stringify({ ok: true }));
+  });
+}
+// вход по паролю (если задан в кабинете)
+function handleAuthPassword(req, res) {
+  const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+  if (overLimit(pwHits, ip, 20)) return send(res, 429, 'application/json', JSON.stringify({ error: 'слишком много попыток — подожди час' }));
+  let raw = '';
+  req.on('data', c => { raw += c; if (raw.length > 1e4) req.destroy(); });
+  req.on('end', () => {
+    let body = {}; try { body = JSON.parse(raw || '{}'); } catch {}
+    const email = String(body.email || '').trim().toLowerCase().slice(0, 120);
+    const pw = String(body.password || '');
+    if (!users[email] || !users[email].pw || !checkPw(pw, users[email].pw))
+      return send(res, 401, 'application/json', JSON.stringify({ error: 'неверная почта или пароль' }));
+    users[email].lastLoginAt = new Date().toISOString(); saveUsers();
+    setSession(req, res, email);
+    send(res, 200, 'application/json', JSON.stringify({ ok: true }));
+  });
+}
+// задать/сменить пароль (нужна активная сессия)
+function handleSetPassword(req, res) {
+  const sess = getUser(req);
+  if (!sess) return send(res, 401, 'application/json', JSON.stringify({ error: 'auth' }));
+  let raw = '';
+  req.on('data', c => { raw += c; if (raw.length > 1e4) req.destroy(); });
+  req.on('end', () => {
+    let body = {}; try { body = JSON.parse(raw || '{}'); } catch {}
+    const pw = String(body.password || '');
+    if (pw.length < 8 || pw.length > 200)
+      return send(res, 400, 'application/json', JSON.stringify({ error: 'пароль — минимум 8 символов' }));
+    sess.u.pw = hashPw(pw); saveUsers();
+    send(res, 200, 'application/json', JSON.stringify({ ok: true }));
   });
 }
 function handleAuthGo(req, res) {
@@ -230,7 +299,7 @@ function handleMe(req, res) {
   const s = getUser(req);
   if (!s) return send(res, 401, 'application/json', JSON.stringify({ error: 'auth' }));
   send(res, 200, 'application/json', JSON.stringify({ email: s.email, plan: s.u.plan || 'free',
-    searches: s.u.searches || 0, contacts: s.u.contacts || 0, createdAt: s.u.createdAt }));
+    searches: s.u.searches || 0, contacts: s.u.contacts || 0, createdAt: s.u.createdAt, hasPw: !!s.u.pw }));
 }
 function handleLogout(req, res) {
   res.setHeader('Set-Cookie', 'plg_sess=; Path=/; HttpOnly; Max-Age=0');
@@ -684,6 +753,9 @@ const server = http.createServer((req, res) => {
   if (req.method === 'POST' && req.url === '/api/contact') return handleContact(req, res);
   if (req.method === 'POST' && req.url === '/api/hit') return handleHit(req, res);
   if (req.method === 'POST' && req.url === '/api/auth/request') return handleAuthRequest(req, res);
+  if (req.method === 'POST' && req.url === '/api/auth/code') return handleAuthCode(req, res);
+  if (req.method === 'POST' && req.url === '/api/auth/password') return handleAuthPassword(req, res);
+  if (req.method === 'POST' && req.url === '/api/auth/setpw') return handleSetPassword(req, res);
   if (req.method === 'GET' && req.url.split('?')[0] === '/auth') return handleAuthGo(req, res);
   if (req.method === 'GET' && req.url === '/api/me') return handleMe(req, res);
   if (req.method === 'POST' && req.url === '/api/logout') return handleLogout(req, res);

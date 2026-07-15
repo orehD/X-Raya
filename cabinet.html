@@ -74,6 +74,12 @@
   .pbtn:hover{border-color:var(--amber);color:var(--amber-hi);filter:none}
   .promo-msg{font-size:12px;margin-top:8px;min-height:15px;color:var(--muted)}
   .promo-msg.ok{color:var(--amber-hi)}
+  .opt{text-transform:none;letter-spacing:0;color:var(--muted);font-size:10.5px}
+  .pwset{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+  .pwrow{display:flex;gap:8px}
+  .pwrow input{flex:1;width:auto}
+  .pwrow .pbtn{margin-top:0}
+  #step2 .hint a{color:var(--amber)}
   .tp s{color:var(--muted);font-weight:400;font-size:14px;margin-right:6px}
 </style>
 </head>
@@ -85,12 +91,23 @@
   <div id="login" class="hidden">
     <h1>Вход</h1>
     <div class="panel">
-      <label for="em">Email</label>
-      <input type="email" id="em" placeholder="you@company.ru" autocomplete="email">
-      <button id="go" onclick="requestLink()">Получить ссылку для входа</button>
-      <div class="err" id="err"></div>
-      <div class="ok hidden" id="sent">✓ Письмо отправлено — открой ссылку из него. Ссылка действует 20 минут.<div class="devlink" id="devlink"></div></div>
-      <div class="hint">Без паролей: пришлём на почту ссылку, по которой ты войдёшь. Вход нужен для раскрытия контактов и AI-функций — базовый поиск работает и без него.</div>
+      <div id="step1">
+        <label for="em">Email</label>
+        <input type="email" id="em" placeholder="you@company.ru" autocomplete="email">
+        <label for="pw" style="margin-top:14px">Пароль <span class="opt">— если задавал в кабинете</span></label>
+        <input type="password" id="pw" placeholder="••••••••" autocomplete="current-password">
+        <button id="go" onclick="loginGo()">Войти</button>
+        <div class="err" id="err"></div>
+        <div class="hint">Нет пароля — не страшно: пришлём на почту 6-значный код. Вход нужен для раскрытия контактов и AI-функций, базовый поиск работает и без него.</div>
+      </div>
+      <div id="step2" class="hidden">
+        <div class="ok">✓ Код отправлен на <b id="sentTo"></b> — действует 10 минут.<div class="devlink" id="devlink"></div></div>
+        <label for="code" style="margin-top:16px">Код из письма</label>
+        <input id="code" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="one-time-code">
+        <button id="goCode" onclick="codeGo()">Подтвердить</button>
+        <div class="err" id="err2"></div>
+        <div class="hint">Открыл письмо на телефоне? Просто введи код здесь — войдёшь на этом устройстве. Ссылка из письма тоже работает. <a href="#" onclick="backStep(event)">← Другая почта</a></div>
+      </div>
     </div>
   </div>
 
@@ -103,6 +120,14 @@
       <div class="row"><span class="k">Поисков</span><span class="v" id="cSearches"></span></div>
       <div class="row"><span class="k">Контактов раскрыто</span><span class="v" id="cContacts"></span></div>
       <div class="hint" id="proHint"></div>
+      <div class="pwset">
+        <label for="npw">Пароль для входа <span class="opt" id="pwState"></span></label>
+        <div class="pwrow">
+          <input type="password" id="npw" placeholder="Минимум 8 символов" autocomplete="new-password">
+          <button class="pbtn" onclick="savePw()">Сохранить</button>
+        </div>
+        <div class="hint" id="pwMsg">С паролем входишь с любого устройства сразу, без кода из письма.</div>
+      </div>
       <div class="actions">
         <button onclick="location.href='/'">К поиску</button>
         <button class="ghostbtn" onclick="logout()">Выйти</button>
@@ -168,28 +193,59 @@
       $('proHint').textContent = me.plan==='pro'
         ? 'Pro активен: раскрытие контактов, AI-разбор и автопроверка выдачи включены.'
         : 'Раскрытие контактов и AI уже доступны после входа. Автопроверка выдачи — в Pro.';
+      $('pwState').textContent = me.hasPw ? '— задан' : '— не задан';
+      if(me.hasPw) $('pwMsg').textContent='Пароль задан. Здесь можно его сменить.';
       if(me.plan!=='pro' || new URLSearchParams(location.search).get('pay')==='1')
         $('upsell').classList.remove('hidden');
     }catch(_){
       $('login').classList.remove('hidden');
     }
   }
-  async function requestLink(){
-    const email=$('em').value.trim(), btn=$('go');
+  /* вход: пароль введён → сразу; нет — код на почту */
+  async function loginGo(){
+    const email=$('em').value.trim(), pw=$('pw').value, btn=$('go');
     $('err').textContent='';
     if(!email){ $('err').textContent='Введи email'; return; }
-    btn.disabled=true; btn.textContent='Отправляю…';
+    btn.disabled=true; btn.textContent='Секунду…';
     try{
+      if(pw){
+        const r=await fetch('/api/auth/password',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email, password:pw})});
+        const d=await r.json();
+        if(!r.ok) throw new Error(d.error||'ошибка');
+        location.reload(); return;
+      }
       const r=await fetch('/api/auth/request',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email, ref:getRef()})});
       const d=await r.json();
       if(!r.ok) throw new Error(d.error||'ошибка');
-      $('sent').classList.remove('hidden');
-      if(d.link) $('devlink').innerHTML='<a href="'+d.link+'">→ ссылка для входа (dev-режим)</a>';
-      btn.textContent='Отправлено ✓';
-    }catch(e){
-      $('err').textContent=e.message;
-      btn.disabled=false; btn.textContent='Получить ссылку для входа';
-    }
+      $('sentTo').textContent=email;
+      if(d.code) $('devlink').innerHTML='dev-код: <b>'+d.code+'</b>';
+      $('step1').classList.add('hidden'); $('step2').classList.remove('hidden');
+      $('code').focus();
+    }catch(e){ $('err').textContent=e.message; }
+    btn.disabled=false; btn.textContent='Войти';
+  }
+  async function codeGo(){
+    const email=$('em').value.trim(), code=$('code').value.trim(), btn=$('goCode');
+    $('err2').textContent='';
+    if(code.length<6){ $('err2').textContent='Введи 6 цифр из письма'; return; }
+    btn.disabled=true; btn.textContent='Проверяю…';
+    try{
+      const r=await fetch('/api/auth/code',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email, code})});
+      const d=await r.json();
+      if(!r.ok) throw new Error(d.error||'ошибка');
+      location.reload(); return;
+    }catch(e){ $('err2').textContent=e.message; btn.disabled=false; btn.textContent='Подтвердить'; }
+  }
+  function backStep(e){ e.preventDefault(); $('step2').classList.add('hidden'); $('step1').classList.remove('hidden'); }
+  async function savePw(){
+    const pw=$('npw').value, msg=$('pwMsg');
+    try{
+      const r=await fetch('/api/auth/setpw',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({password:pw})});
+      const d=await r.json();
+      if(!r.ok) throw new Error(d.error||'ошибка');
+      $('npw').value=''; $('pwState').textContent='— задан';
+      msg.textContent='✓ Пароль сохранён — теперь входи по нему с любого устройства.';
+    }catch(e){ msg.textContent=e.message; }
   }
   async function logout(){ await fetch('/api/logout',{method:'POST'}); location.href='/'; }
 
@@ -235,7 +291,9 @@
     }
   }
   $('promoIn')&&$('promoIn').addEventListener('keydown',e=>{ if(e.key==='Enter') promoApply(); });
-  $('em')&&$('em').addEventListener('keydown',e=>{ if(e.key==='Enter') requestLink(); });
+  ['em','pw'].forEach(id=>{ $(id)&&$(id).addEventListener('keydown',e=>{ if(e.key==='Enter') loginGo(); }); });
+  $('code')&&$('code').addEventListener('keydown',e=>{ if(e.key==='Enter') codeGo(); });
+  $('npw')&&$('npw').addEventListener('keydown',e=>{ if(e.key==='Enter') savePw(); });
   boot();
 </script>
 </body>
