@@ -687,7 +687,7 @@ body.working .radar{width:238px;height:238px}
 <header class="hero">
   <div class="hero-l">
     <h1 class="logo" onclick="resetAll()" title="На главный экран"><span class="lx">P</span>ELENG<span class="cur" aria-hidden="true"></span></h1>
-    <div class="fold"><div class="fold-in"><p class="tag">Опиши, кого ищешь — роль, стек, город. Peleng соберёт готовые поисковые запросы по LinkedIn, hh.ru, GitHub, Telegram, VK, TenChat, конференциям и профильным площадкам. Для IT и non-IT ролей.</p></div></div>
+    <div class="fold"><div class="fold-in"><p class="tag">Опиши, кого ищешь, — или вставь вакансию целиком. Peleng соберёт готовые поисковые запросы по 30+ площадкам — от LinkedIn и hh.ru до Telegram и GitHub, — покажет, где выдача пустая, и найдёт контакты кандидатов. Для IT и non-IT ролей.</p></div></div>
 
     <div class="onb" id="onb" hidden>
       <button class="onb-x" onclick="onbClose()" aria-label="Закрыть">×</button>
@@ -1973,21 +1973,29 @@ let _lastVac='';
       e.preventDefault(); run();
     }
   });
+  q.addEventListener('input', ()=>autoGrow(q));
 })();
+/* поле растёт под текст (например, вставленную вакансию), но стартует одинаковым во всех режимах */
+function autoGrow(q){
+  q.style.height='auto';
+  q.style.height=Math.min(Math.max(q.scrollHeight, 76), 320)+'px';
+}
 function setQmode(m){
   UI.qmode=m;
   document.querySelectorAll('.qmode button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));
   const q=document.getElementById('q'), cap=document.getElementById('capLbl');
+  q.style.minHeight='76px'; q.style.height='';
   if(m==='vac'){
     q.placeholder='Скопируй текст вакансии и вставь сюда целиком — я сам вытащу роль, грейд, город и требования и соберу запросы…';
-    q.style.minHeight='170px'; if(cap) cap.textContent='Найти людей по вакансии';
+    if(cap) cap.textContent='Найти людей по вакансии';
   } else if(m==='ct'){
     q.placeholder='Вставь ссылку на LinkedIn, email или телефон — найду контакты человека. Или введи @никнейм — проверю его профили на 16 площадках…';
-    q.style.minHeight='76px'; if(cap) cap.textContent='Найти контакты человека';
+    if(cap) cap.textContent='Найти контакты человека';
   } else {
     q.placeholder='Напиши, кого найти: «сеньор python разработчик в Москве», «маркетолог спб», «коммерческий директор», «логист ВЭД»…';
-    q.style.minHeight='76px'; if(cap) cap.textContent='Найти людей по запросу';
+    if(cap) cap.textContent='Найти людей по запросу';
   }
+  autoGrow(q);
 }
 const VAC_MUST=/(требовани|обязательн|ожидаем от тебя|что нужно|необходимо|ты умеешь|мы ждём|мы ждем|важно)/i;
 const VAC_NICE=/(будет плюсом|плюсом будет|желательно|nice to have|преимуществом|бонусом|необязательно|хорошо бы)/i;
