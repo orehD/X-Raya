@@ -46,7 +46,7 @@
   button.mini{background:transparent;border:1px dashed var(--line2);color:var(--muted);border-radius:6px;
     font:500 10px var(--mono, 'JetBrains Mono',monospace);letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;cursor:pointer}
   button.mini:hover{color:var(--amber-hi);border-color:rgba(242,169,59,.5);background:transparent}
-  .bar{height:6px;background:var(--amber);border-radius:3px;min-width:2px}
+  .pbar{height:6px;background:var(--amber);border-radius:3px;min-width:2px}
   .barcell{width:32%}
 </style>
 </head>
@@ -126,7 +126,7 @@
     document.getElementById('partners').innerHTML = d.partners.map(p=>{
       const chip = p.ref==='(прямые)' ? '<span class="ref-none">— прямые —</span>' : '<span class="ref-chip">'+esc(p.ref)+'</span>';
       return '<tr><td>'+chip+'</td><td class="num">'+p.count+'</td>'+
-        '<td class="barcell"><div class="bar" style="width:'+Math.round(p.count/max*100)+'%"></div></td></tr>';
+        '<td class="barcell"><div class="pbar" style="width:'+Math.round(p.count/max*100)+'%"></div></td></tr>';
     }).join('') || '<tr><td colspan="3" class="muted">пока нет заявок</td></tr>';
     document.getElementById('usersT').innerHTML = (d.users||[]).map(u=>{
       const plan = u.plan==='pro' ? '<span class="ref-chip">PRO</span>' : '<span class="ref-none">free</span>';
