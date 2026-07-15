@@ -590,6 +590,11 @@ input.aiin:focus{outline:none;border-color:rgba(242,169,59,.5)}
 .pro-f button:active{transform:scale(.97)}
 .pro-f button:disabled{opacity:.55;pointer-events:none}
 .pro-ok{font:500 13px var(--f-mono);color:var(--amber-hi)}
+.pro-or{font:400 12px var(--f-mono);color:#8B8066}
+.pro-pay{display:inline-block;border:1px solid rgba(242,169,59,.55);border-radius:8px;padding:10px 20px;
+  font:600 12px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--amber-hi);
+  text-decoration:none;transition:background-color .18s var(--ease), border-color .18s var(--ease)}
+.pro-pay:hover{background:var(--amber-dim);border-color:var(--amber)}
 .pro-legal{flex-basis:100%;font:400 11.5px/1.5 var(--f-body);color:#8B8066}
 .pro-legal a{color:var(--muted)}
 .pro-legal a:hover{color:var(--amber)}
@@ -751,11 +756,13 @@ body.working .radar{width:238px;height:238px}
   <form class="pro-f" id="proF" onsubmit="return leadSubmit(event)">
     <input type="email" id="proEmail" placeholder="you@company.ru" required autocomplete="email">
     <button type="submit" id="proBtn">Хочу ранний доступ</button>
+    <span class="pro-or">или</span>
+    <a class="pro-pay" href="/cabinet">Оплатить и перейти на Pro →</a>
     <span class="pro-legal">Нажимая кнопку, соглашаешься с <a href="/privacy">политикой обработки данных</a> — только письмо о запуске, без спама.</span>
   </form>
 </section>
 
-<footer><b>Peleng</b> · сорсинг-разведка · поисковые запросы выполняются в твоём браузере и не сохраняются · <a class="flink" href="/privacy">политика данных</a></footer>
+<footer><b>Peleng</b> · сорсинг-разведка · поисковые запросы выполняются в твоём браузере и не сохраняются · <a class="flink" href="/cabinet">кабинет</a> · <a class="flink" href="/privacy">политика данных</a></footer>
 
 <script>
 /* ===================== ДАННЫЕ ===================== */
