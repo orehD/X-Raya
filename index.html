@@ -2014,11 +2014,6 @@ function vacPrepare(raw){
     if(tch.al.some(a=>hit(tMust,a))) F.tmode[tch.c]='must';
   }
 }
-function cycTerm(n){
-  const cur=F.tmode[n]||'nice', next=cur==='nice'?'must':(cur==='must'?'x':'nice');
-  if(next==='nice') delete F.tmode[n]; else F.tmode[n]=next;
-  updateFiltCnt(); run();
-}
 function modeLabel(m){ return m==='must'?'обязательно':m==='x'?'исключить':'желательно'; }
 let _chipMenu=null;
 function closeChipMenu(){ if(_chipMenu){ _chipMenu.remove(); _chipMenu=null; } }
@@ -2149,13 +2144,13 @@ function initFilters(){
         ['Junior','Middle','Senior','Lead'].map(g=>'<button data-v="'+g+'" onclick="onSeg(this,\'grade\')">'+g+'</button>').join('')+
       '</div></div>'+
     '<div class="frow"><label>Город</label>'+pdHTML('f', cityOpts, F.city, 'onCity')+'</div>'+
-    '<div class="frow"><label>Компании — искать в</label><input class="aiin" id="fInc" placeholder="Сбер, Тинькофф — через запятую" onchange="onComp()"></div>'+
+    '<div class="frow"><label>Компании — искать в</label><input class="aiin" id="fInc" placeholder="Сбер, Т-Банк — через запятую" onchange="onComp()"></div>'+
     '<div class="frow"><label>Компании — исключить</label><input class="aiin" id="fExc" placeholder="Яндекс, VK — через запятую" onchange="onComp()"></div>'+
     '</div><div class="fcol">'+
     '<div class="frow"><label>Языки</label><div class="techchips">'+langs.map(chip).join('')+'</div></div>'+
     '<div class="frow"><label>Стек / инструменты</label><div class="techchips tall">'+tools.map(chip).join('')+'</div></div>'+
     '</div></div>'+
-    '<div class="aihint">Фильтр компаний применяется к X-Ray запросам (Google). Чипы стека в досье: клик — желательно → <b>обязательно</b> → исключить; кнопка «⇄ любой брокер» расширяет технологию до всей группы аналогов.</div>'+
+    '<div class="aihint">Компании учитываются в X-Ray запросах (Google). Клик по чипу добавляет технологию в поиск. Тонкая настройка — в «Профиле поиска» после запуска: там у каждой технологии есть выбор «желательно / обязательно / исключить» и кнопка ⇄ — расширить до группы аналогов, чтобы искать не только Kafka, а любой брокер сообщений.</div>'+
     '<div class="fbtns"><button class="freset" onclick="resetFilters()">Сбросить фильтры</button>'+
     '<button class="freset hard" onclick="resetAll()">✕ Сбросить всё и вернуться</button></div>';
   const fi=document.getElementById('fInc'), fe=document.getElementById('fExc');
@@ -2182,7 +2177,7 @@ function resetFilters(){
   initFilters(); document.getElementById('filters').classList.add('open'); updateFiltCnt(); run();
 }
 /* полный сброс: чистое состояние + возврат на главный экран */
-const EMPTY_HOME='Опиши, кого ищешь, и нажми «Выследить». Соберу готовые запросы по hh.ru, Habr, LinkedIn, GitHub, Telegram, VK, TenChat, конференциям и профильным каналам — под IT и non-IT.';
+const EMPTY_HOME='Здесь появятся готовые запросы — по каналам, с кнопками «Открыть» и «Копировать». Начни с примера выше или опиши свою роль.';
 function resetAll(){
   const q=document.getElementById('q'); if(q) q.value='';
   clearF();
