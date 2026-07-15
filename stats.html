@@ -72,15 +72,15 @@
     <h2>Поиски за 14 дней</h2>
     <div class="chart" id="chart"></div>
 
-    <h2>По партнёрам</h2>
+    <h2>По партнёрам · воронка</h2>
     <table>
-      <thead><tr><th>Партнёр (ref)</th><th class="num">Заявок</th><th class="barcell"></th></tr></thead>
+      <thead><tr><th>Партнёр (ref)</th><th class="num">Заявок</th><th class="num">Аккаунтов</th><th class="num">Хотят оплатить</th><th class="barcell"></th></tr></thead>
       <tbody id="partners"></tbody>
     </table>
 
     <h2>Пользователи (аккаунты)</h2>
     <table>
-      <thead><tr><th>Email</th><th>План</th><th class="num">Поисков</th><th class="num">Контактов</th><th></th></tr></thead>
+      <thead><tr><th>Email</th><th>Партнёр</th><th>План</th><th class="num">Поисков</th><th class="num">Контактов</th><th></th></tr></thead>
       <tbody id="usersT"></tbody>
     </table>
 
@@ -122,17 +122,18 @@
       return '<div class="bar'+(i===days.length-1?' today':'')+'"><span class="n">'+(x.count||'')+'</span>'+
         '<div class="b" style="height:'+h+'px"></div><span class="d">'+dd+'</span></div>';
     }).join('');
-    const max = d.partners.reduce((m,p)=>Math.max(m,p.count),1);
+    const max = d.partners.reduce((m,p)=>Math.max(m,p.count+(p.users||0)),1);
     document.getElementById('partners').innerHTML = d.partners.map(p=>{
       const chip = p.ref==='(прямые)' ? '<span class="ref-none">— прямые —</span>' : '<span class="ref-chip">'+esc(p.ref)+'</span>';
-      return '<tr><td>'+chip+'</td><td class="num">'+p.count+'</td>'+
-        '<td class="barcell"><div class="pbar" style="width:'+Math.round(p.count/max*100)+'%"></div></td></tr>';
-    }).join('') || '<tr><td colspan="3" class="muted">пока нет заявок</td></tr>';
+      return '<tr><td>'+chip+'</td><td class="num">'+p.count+'</td><td class="num">'+(p.users||0)+'</td><td class="num">'+(p.pays||0)+'</td>'+
+        '<td class="barcell"><div class="pbar" style="width:'+Math.round((p.count+(p.users||0))/max*100)+'%"></div></td></tr>';
+    }).join('') || '<tr><td colspan="5" class="muted">пока нет заявок</td></tr>';
     document.getElementById('usersT').innerHTML = (d.users||[]).map(u=>{
       const plan = u.plan==='pro' ? '<span class="ref-chip">PRO</span>' : '<span class="ref-none">free</span>';
+      const uref = u.ref ? '<span class="ref-chip">'+esc(u.ref)+'</span>' : '<span class="ref-none">прямые</span>';
       const btn = '<button class="mini" onclick="setPlan(\''+esc(u.email)+'\',\''+(u.plan==='pro'?'free':'pro')+'\')">'+(u.plan==='pro'?'снять Pro':'дать Pro')+'</button>';
-      return '<tr><td>'+esc(u.email)+'</td><td>'+plan+'</td><td class="num">'+u.searches+'</td><td class="num">'+u.contacts+'</td><td>'+btn+'</td></tr>';
-    }).join('') || '<tr><td colspan="5" class="muted">пока нет аккаунтов</td></tr>';
+      return '<tr><td>'+esc(u.email)+'</td><td>'+uref+'</td><td>'+plan+'</td><td class="num">'+u.searches+'</td><td class="num">'+u.contacts+'</td><td>'+btn+'</td></tr>';
+    }).join('') || '<tr><td colspan="6" class="muted">пока нет аккаунтов</td></tr>';
     const planBy = {}; (d.users||[]).forEach(u=>{ planBy[u.email]=u.plan; });
     document.getElementById('recent').innerHTML = d.recent.map(x=>{
       const ref = x.ref && x.ref.trim() ? '<span class="ref-chip">'+esc(x.ref)+'</span>' : '<span class="ref-none">прямые</span>';

@@ -180,7 +180,11 @@ function handleAuthRequest(req, res) {
     const email = String(body.email || '').trim().toLowerCase().slice(0, 120);
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email))
       return send(res, 400, 'application/json', JSON.stringify({ error: 'некорректный email' }));
-    if (!users[email]) { users[email] = { plan: 'free', createdAt: new Date().toISOString(), searches: 0, contacts: 0 }; saveUsers(); }
+    const ref = String(body.ref || '').slice(0, 60).trim();
+    if (!users[email]) users[email] = { plan: 'free', createdAt: new Date().toISOString(), searches: 0, contacts: 0 };
+    // партнёрская метка: first-touch, но доприсваиваем и старым аккаунтам без метки
+    if (ref && !users[email].ref) users[email].ref = ref;
+    saveUsers();
     const link = baseUrl(req) + '/auth?token=' + encodeURIComponent(makeToken('login', email, 20 * 60e3));
     const key = process.env.RESEND_API_KEY;
     if (!key) {
@@ -347,12 +351,27 @@ function handleStats(req, res) {
       try { return JSON.parse(l); } catch { return null; }
     }).filter(Boolean);
   } catch {}
-  const byRef = {};
-  for (const r of rows) {
-    const k = (r.ref && String(r.ref).trim()) || '(прямые)';
-    byRef[k] = (byRef[k] || 0) + 1;
+  // воронка по партнёрам: заявки → аккаунты → заявки на оплату
+  const refKey = v => (v && String(v).trim()) || '(прямые)';
+  const funnel = {}; // ref → {leads, users, pays}
+  const row = k => (funnel[k] = funnel[k] || { leads: 0, users: 0, pays: 0 });
+  for (const r of rows) row(refKey(r.ref)).leads++;
+  for (const u of Object.values(users)) row(refKey(u.ref)).users++;
+  let payRows = [];
+  try {
+    payRows = fs.readFileSync(PAY_FILE, 'utf8').split('\n').filter(Boolean).map(l => {
+      try { return JSON.parse(l); } catch { return null; }
+    }).filter(Boolean);
+  } catch {}
+  const paidEmails = new Set();
+  for (const p of payRows) {
+    if (paidEmails.has(p.email)) continue; // один человек — один шаг воронки
+    paidEmails.add(p.email);
+    row(refKey(users[p.email] && users[p.email].ref)).pays++;
   }
-  const partners = Object.entries(byRef).map(([ref, count]) => ({ ref, count })).sort((a, b) => b.count - a.count);
+  const partners = Object.entries(funnel)
+    .map(([ref, f]) => ({ ref, count: f.leads, users: f.users, pays: f.pays }))
+    .sort((a, b) => (b.count + b.users) - (a.count + a.users));
   const recent = rows.slice(-100).reverse();
   // поиски за последние 14 дней
   const days = [];
@@ -362,7 +381,7 @@ function handleStats(req, res) {
   }
   const searchesTotal = Object.values(dailyHits).reduce((a, b) => a + b, 0);
   const userList = Object.entries(users)
-    .map(([email, u]) => ({ email, plan: u.plan || 'free', searches: u.searches || 0, contacts: u.contacts || 0, createdAt: u.createdAt || '' }))
+    .map(([email, u]) => ({ email, plan: u.plan || 'free', searches: u.searches || 0, contacts: u.contacts || 0, createdAt: u.createdAt || '', ref: u.ref || '' }))
     .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '')).slice(0, 200);
   send(res, 200, 'application/json', JSON.stringify({ total: rows.length, partners, recent, days, searchesTotal, users: userList }));
 }
@@ -589,7 +608,9 @@ function handleProIntent(req, res) {
   req.on('end', () => {
     let body = {}; try { body = JSON.parse(raw || '{}'); } catch {}
     const tariff = String(body.tariff || 'month').slice(0, 20);
-    const rec = JSON.stringify({ email: sess.email, tariff, at: new Date().toISOString() });
+    const bref = String(body.ref || '').slice(0, 60).trim();
+    if (bref && !sess.u.ref) { sess.u.ref = bref; saveUsers(); } // метка могла прийти позже регистрации
+    const rec = JSON.stringify({ email: sess.email, tariff, ref: sess.u.ref || '', at: new Date().toISOString() });
     try {
       fs.mkdirSync(path.dirname(PAY_FILE), { recursive: true });
       fs.appendFileSync(PAY_FILE, rec + '\n');
@@ -600,7 +621,7 @@ function handleProIntent(req, res) {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ chat_id: chat,
-          text: '💳 Peleng: хочет оплатить Pro\n' + sess.email + '\nтариф: ' + tariff + '\n→ выдай Pro в /stats' }),
+          text: '💳 Peleng: хочет оплатить Pro\n' + sess.email + '\nтариф: ' + tariff + (sess.u.ref ? '\nпартнёр: ' + sess.u.ref : '') + '\n→ выдай Pro в /stats' }),
       }).catch(() => {});
     }
     console.log('pro intent:', sess.email, tariff);

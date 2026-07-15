@@ -1742,7 +1742,7 @@ async function leadSubmit(e){
   btn.disabled=true; btn.textContent='…';
   try{
     const r=await fetch('/api/lead',{method:'POST',headers:{'content-type':'application/json'},
-      body:JSON.stringify({email, ref:new URLSearchParams(location.search).get('ref')||''})});
+      body:JSON.stringify({email, ref:new URLSearchParams(location.search).get('ref')||lsGet('peleng_ref')||''})});
     const d=await r.json();
     if(!r.ok) throw new Error(d.error||'ошибка');
     lsSet('peleng_lead', email);
@@ -2256,6 +2256,11 @@ function lsGet(k){ try{ return localStorage.getItem(k); }catch(_){ return null; 
 function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(_){} }
 function onbClose(){ const el=document.getElementById('onb'); if(el) el.hidden=true; lsSet('peleng_onb','1'); }
 (function(){ try{ if(lsGet('peleng_onb')!=='1'){ const el=document.getElementById('onb'); if(el) el.hidden=false; } }catch(_){} })();
+/* партнёрская метка: запоминаем при первом заходе (first-touch), чтобы не терялась при переходах */
+(function(){ try{
+  const r=new URLSearchParams(location.search).get('ref');
+  if(r && !lsGet('peleng_ref')) lsSet('peleng_ref', r.slice(0,60));
+}catch(_){} })();
 function toggleTheme(){
   const cur=document.documentElement.getAttribute('data-theme')==='light'?'light':'dark';
   const next=cur==='light'?'dark':'light';

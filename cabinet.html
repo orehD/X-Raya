@@ -136,6 +136,12 @@
 
 <script>
   const $=id=>document.getElementById(id);
+  /* партнёрская метка: ловим и тут (вдруг реф-ссылка вела сразу в кабинет) */
+  try{
+    const r=new URLSearchParams(location.search).get('ref');
+    if(r && !localStorage.getItem('peleng_ref')) localStorage.setItem('peleng_ref', r.slice(0,60));
+  }catch(_){}
+  function getRef(){ try{ return localStorage.getItem('peleng_ref')||''; }catch(_){ return ''; } }
   async function boot(){
     try{
       const r=await fetch('/api/me');
@@ -161,7 +167,7 @@
     if(!email){ $('err').textContent='Введи email'; return; }
     btn.disabled=true; btn.textContent='Отправляю…';
     try{
-      const r=await fetch('/api/auth/request',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email})});
+      const r=await fetch('/api/auth/request',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email, ref:getRef()})});
       const d=await r.json();
       if(!r.ok) throw new Error(d.error||'ошибка');
       $('sent').classList.remove('hidden');
@@ -180,7 +186,7 @@
     btn.disabled=true; btn.textContent='Секунду…';
     try{
       const r=await fetch('/api/pro/intent',{method:'POST',headers:{'content-type':'application/json'},
-        body:JSON.stringify({tariff})});
+        body:JSON.stringify({tariff, ref:getRef()})});
       const d=await r.json();
       if(!r.ok) throw new Error(d.error==='auth'?'нужен вход':(d.error||'ошибка'));
       $('payPick').classList.add('hidden');
