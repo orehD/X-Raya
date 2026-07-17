@@ -408,6 +408,38 @@ function handleLead(req, res) {
   });
 }
 
+// ── обратная связь: форма «написать в поддержку» → файл + TG ──
+const FEEDBACK_FILE = process.env.FEEDBACK_FILE || path.join(__dirname, 'data', 'feedback.jsonl');
+const fbHits = new Map();
+function handleFeedback(req, res) {
+  const ip = (req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+  if (overLimit(fbHits, ip, 10)) return send(res, 429, 'application/json', JSON.stringify({ error: 'слишком часто — попробуй позже' }));
+  let raw = '';
+  req.on('data', c => { raw += c; if (raw.length > 2e4) req.destroy(); });
+  req.on('end', () => {
+    let body = {}; try { body = JSON.parse(raw || '{}'); } catch {}
+    const text = String(body.text || '').trim().slice(0, 2000);
+    if (text.length < 5) return send(res, 400, 'application/json', JSON.stringify({ error: 'напиши хотя бы пару слов' }));
+    const sess = getUser(req);
+    const email = (sess && sess.email) || String(body.email || '').trim().toLowerCase().slice(0, 120);
+    const rec = JSON.stringify({ text, email, at: new Date().toISOString() });
+    try {
+      fs.mkdirSync(path.dirname(FEEDBACK_FILE), { recursive: true });
+      fs.appendFileSync(FEEDBACK_FILE, rec + '\n');
+    } catch (e) { console.error('feedback write failed:', e.message); }
+    const tk = process.env.TG_BOT_TOKEN, chat = process.env.TG_CHAT_ID;
+    if (tk && chat) {
+      fetch('https://api.telegram.org/bot' + tk + '/sendMessage', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ chat_id: chat,
+          text: '💬 Peleng: обратная связь\n' + (email ? 'от: ' + email + '\n' : '') + '\n' + text }),
+      }).catch(() => {});
+    }
+    send(res, 200, 'application/json', JSON.stringify({ ok: true }));
+  });
+}
+
 // ── анонимный счётчик поисков по дням (без текста запросов) ──
 const HITS_FILE = process.env.HITS_FILE || path.join(__dirname, 'data', 'hits.json');
 let dailyHits = {};
@@ -785,6 +817,7 @@ const server = http.createServer((req, res) => {
   if (req.method === 'POST' && req.url === '/api/logout') return handleLogout(req, res);
   if (req.method === 'POST' && req.url === '/api/pro/intent') return handleProIntent(req, res);
   if (req.method === 'POST' && req.url === '/api/promo') return handlePromo(req, res);
+  if (req.method === 'POST' && req.url === '/api/feedback') return handleFeedback(req, res);
   if (req.method === 'POST' && req.url.split('?')[0] === '/api/admin/plan') return handleAdminPlan(req, res);
   if (req.method === 'GET' && req.url.split('?')[0] === '/help') {
     return fs.readFile(path.join(__dirname, 'help.html'), (err, data) => {

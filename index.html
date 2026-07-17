@@ -607,6 +607,29 @@ footer .flink:hover{color:var(--amber)}
 footer{position:relative;z-index:1;border-top:1px solid var(--line);margin-top:26px;padding:26px 20px 34px;
   text-align:center;font:400 10.5px var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:#8B8066}
 footer b{color:var(--muted);font-weight:400}
+footer .flink{cursor:pointer}
+
+/* ── поддержка ── */
+.fbwrap{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;
+  padding:18px;z-index:95}
+.fbwrap[hidden]{display:none}
+.fbbox{position:relative;width:100%;max-width:460px;background:var(--panel);border:1px solid rgba(242,169,59,.4);
+  border-radius:12px;padding:22px}
+.fb-h{font:600 12px var(--f-mono);letter-spacing:.2em;text-transform:uppercase;color:var(--amber);margin-bottom:14px}
+.fbx{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--muted);font:400 20px/1 var(--f-mono);
+  cursor:pointer;padding:4px}
+.fbx:hover{color:var(--txt)}
+.fbbox textarea{width:100%;min-height:110px;resize:vertical;background:var(--bg);border:1px solid var(--line);
+  border-radius:8px;color:var(--txt);font:400 13.5px/1.55 var(--f-body);padding:11px 13px}
+.fbbox input{width:100%;margin-top:10px;background:var(--bg);border:1px solid var(--line);border-radius:8px;
+  color:var(--txt);font:400 13px var(--f-mono);padding:10px 13px}
+.fbbox textarea:focus,.fbbox input:focus{outline:none;border-color:rgba(242,169,59,.5)}
+.fb-row{display:flex;align-items:center;gap:12px;margin-top:12px}
+.fb-go{background:var(--amber);color:#1A1508;border:none;border-radius:8px;cursor:pointer;
+  font:600 12px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;padding:11px 20px}
+.fb-go:hover{filter:brightness(1.08)}
+.fb-go:disabled{opacity:.55;pointer-events:none}
+.fb-err{font:400 12px var(--f-body);color:#E2705A}
 
 .btn.did{animation:copyPulse .3s var(--ease)}
 @keyframes copyPulse{30%{filter:blur(2px);opacity:.7}}
@@ -706,7 +729,7 @@ body.working .radar{width:238px;height:238px}
     <div class="console">
       <div class="console-cap"><span id="capLbl">Найти людей по запросу</span><span class="qmode"><button class="on" data-m="goal" onclick="setQmode('goal')">запрос</button><button data-m="vac" onclick="setQmode('vac')">вакансия</button><button data-m="ct" onclick="setQmode('ct')">контакты</button></span></div>
       <div class="console-in">
-        <textarea id="q" placeholder="Кого ищем: «сеньор python разработчик в Москве с Django», «логист ВЭД», «коммерческий директор»…"></textarea>
+        <textarea id="q" placeholder="Напиши, кого найти: «сеньор python разработчик в Москве», «маркетолог спб», «коммерческий директор», «логист ВЭД»…"></textarea>
         <button class="go" onclick="run()">Выследить<span class="go-ic">→</span></button>
       </div>
     </div>
@@ -762,7 +785,18 @@ body.working .radar{width:238px;height:238px}
   </div>
 </section>
 
-<footer><a class="flink" href="/help">Справка</a> · <a class="flink" href="/cabinet">Кабинет</a> · <a class="flink" href="/privacy">Политика данных</a></footer>
+<footer><a class="flink" href="/help">Справка</a> · <a class="flink" onclick="fbOpen()">Поддержка</a> · <a class="flink" href="/cabinet">Кабинет</a> · <a class="flink" href="/privacy">Политика данных</a></footer>
+
+<!-- поддержка / обратная связь -->
+<div class="fbwrap" id="fbwrap" hidden onclick="if(event.target===this)fbClose()">
+  <div class="fbbox">
+    <button class="fbx" onclick="fbClose()" aria-label="Закрыть">×</button>
+    <div class="fb-h">Написать в поддержку</div>
+    <textarea id="fbText" placeholder="Что сломалось, чего не хватает или что понравилось — пиши как есть…"></textarea>
+    <input id="fbMail" type="email" placeholder="Email для ответа (необязательно)" autocomplete="email">
+    <div class="fb-row"><button class="fb-go" onclick="fbSend(this)">Отправить</button><span class="fb-err" id="fbErr"></span></div>
+  </div>
+</div>
 
 <script>
 /* ===================== ДАННЫЕ ===================== */
@@ -1672,6 +1706,31 @@ let ME=null;
     }
   }catch(_){}
 })();
+/* ── поддержка / обратная связь ── */
+function fbOpen(){
+  const w=document.getElementById('fbwrap'); w.hidden=false;
+  const m=document.getElementById('fbMail');
+  if(m && !m.value && ME) m.value=ME.email;
+  document.getElementById('fbText').focus();
+}
+function fbClose(){ document.getElementById('fbwrap').hidden=true; }
+async function fbSend(btn){
+  const t=document.getElementById('fbText'), err=document.getElementById('fbErr');
+  err.textContent='';
+  btn.disabled=true; btn.textContent='Отправляю…';
+  try{
+    const r=await fetch('/api/feedback',{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({text:t.value, email:document.getElementById('fbMail').value.trim()})});
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.error||'не получилось — попробуй ещё раз');
+    t.value=''; fbClose(); toast('Спасибо! Сообщение у нас — ответим на почту, если оставил.');
+  }catch(e){ err.textContent=e.message; }
+  btn.disabled=false; btn.textContent='Отправить';
+}
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') fbClose(); });
+if(location.hash==='#support') setTimeout(fbOpen, 300);
+window.addEventListener('hashchange', ()=>{ if(location.hash==='#support') fbOpen(); });
+
 /* 401 от Pro-фич: зовём войти */
 function authGate(msg){
   toast(msg||'Нужен вход — открываю кабинет…');
