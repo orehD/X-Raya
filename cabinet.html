@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>X-Raya — кабинет</title>
+<script>(function(){try{var t=localStorage.getItem('peleng_theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<style>
+  :root{color-scheme:dark; --bg:#12100A; --panel:#1E190F; --panel2:#171309; --line:#332B18; --line2:#463A20;
+    --amber:#F2A93B; --amber-hi:#FFC96B; --amber-dim:rgba(242,169,59,.14);
+    --red:#E0472F; --txt:#EDE6D4; --muted:#9A9077;
+    --mono:'JetBrains Mono',Menlo,Consolas,monospace; --body:'IBM Plex Sans',-apple-system,sans-serif}
+  :root[data-theme="light"]{color-scheme:light; --bg:#EFE9DA; --panel:#F8F3E8; --panel2:#E9E1CE;
+    --line:#DBD1B9; --line2:#C6B994; --amber:#AF6D08; --amber-hi:#875000; --amber-dim:rgba(175,109,8,.15);
+    --red:#CE3E28; --txt:#231E13; --muted:#6C5F42}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:400 14px/1.6 var(--mono);padding:34px 18px 80px;
+    display:flex;justify-content:center}
+  .wrap{width:100%;max-width:520px}
+  .logo{font-weight:700;font-size:15px;letter-spacing:.2em;color:var(--txt);text-decoration:none}
+  .logo b{color:var(--amber)}
+  h1{font-size:15px;letter-spacing:.2em;text-transform:uppercase;color:var(--amber);margin:26px 0 18px}
+  .panel{position:relative;background:var(--panel);border:1px solid rgba(242,169,59,.3);border-radius:12px;padding:24px}
+  label{display:block;font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+  input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--txt);
+    font:400 14px var(--mono);padding:12px 14px}
+  input:focus{outline:none;border-color:rgba(242,169,59,.5)}
+  button{background:var(--amber);color:#1A1508;border:none;border-radius:8px;cursor:pointer;
+    font:600 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:12px 20px;margin-top:12px}
+  button:hover{filter:brightness(1.1)}
+  button:disabled{opacity:.55;pointer-events:none}
+  .hint{color:var(--muted);font:400 12.5px/1.6 var(--body);margin-top:14px}
+  .ok{color:var(--amber-hi);margin-top:14px;font-size:13px;line-height:1.6}
+  .err{color:#E2705A;margin-top:12px;font-size:12.5px;min-height:16px}
+  .row{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--line)}
+  .row:last-of-type{border-bottom:none}
+  .row .k{color:var(--muted);font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+  .row .v{font-weight:600}
+  .plan{display:inline-block;padding:3px 10px;border-radius:6px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600}
+  .plan.free{background:var(--panel2);border:1px solid var(--line2);color:var(--muted)}
+  .plan.pro{background:var(--amber-dim);border:1px solid rgba(242,169,59,.5);color:var(--amber-hi)}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+  .ghostbtn{background:transparent;border:1px dashed var(--line2);color:var(--muted)}
+  .ghostbtn:hover{color:var(--red);border-color:var(--red);filter:none}
+  .back{display:inline-block;margin-top:26px;color:var(--muted);text-decoration:none;font-size:12.5px}
+  .back:hover{color:var(--amber)}
+  .devlink{word-break:break-all;font-size:11.5px;margin-top:10px}
+  .devlink a{color:var(--amber)}
+  .hidden{display:none}
+  /* ── блок оплаты Pro: тарифы сразу в кабинете ── */
+  .upsell{margin-top:16px;border:1px solid rgba(242,169,59,.32);border-radius:12px;padding:20px 24px 24px;
+    background:linear-gradient(180deg, var(--amber-dim), var(--panel) 60%)}
+  .upsell h2{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--amber-hi);margin:0 0 10px}
+  .upsell ul{margin:0 0 16px;padding-left:18px;font:400 13px/1.7 var(--body);color:var(--txt)}
+  .plans{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media (max-width:460px){.plans{grid-template-columns:1fr}}
+  .tariff{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line2);border-radius:10px;
+    padding:16px;background:var(--panel2)}
+  .tariff.best{border-color:rgba(242,169,59,.55)}
+  .tariff .tn{font-weight:600;font-size:13px;letter-spacing:.06em;text-transform:uppercase}
+  .tariff .tp{font-weight:700;font-size:21px;color:var(--amber-hi);margin-top:8px}
+  .tariff .tp small{font-weight:400;font-size:11px;color:var(--muted);margin-left:4px}
+  .tariff .td{font:400 11.5px/1.5 var(--body);color:var(--muted);margin:2px 0 12px}
+  .tariff button{margin-top:auto;width:100%}
+  .tariff button.ghost{background:transparent;border:1px solid var(--line2);color:var(--txt)}
+  .tariff button.ghost:hover{border-color:var(--amber);color:var(--amber-hi);filter:none}
+  .paynote{font:400 11.5px/1.6 var(--body);color:var(--muted);margin-top:14px}
+  .payok{color:var(--amber-hi);font-size:13px;line-height:1.7}
+  .promo-row{display:flex;gap:8px;margin-top:12px}
+  .promo-row input{flex:1;width:auto;text-transform:uppercase}
+  .promo-row input::placeholder{text-transform:none}
+  .pbtn{margin-top:0;background:transparent;border:1px solid var(--line2);color:var(--txt)}
+  .pbtn:hover{border-color:var(--amber);color:var(--amber-hi);filter:none}
+  .promo-msg{font-size:12px;margin-top:8px;min-height:15px;color:var(--muted)}
+  .promo-msg.ok{color:var(--amber-hi)}
+  .pbtn.renew{margin-left:12px;padding:5px 12px;font-size:10px}
+  .soon{font:400 11.5px/1.5 var(--body);color:var(--red);margin-top:6px;font-weight:400;text-align:right}
+  .opt{text-transform:none;letter-spacing:0;color:var(--muted);font-size:10.5px}
+  .pwset{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+  .pwrow{display:flex;gap:8px}
+  .pwrow input{flex:1;width:auto}
+  .pwrow .pbtn{margin-top:0}
+  #step2 .hint a{color:var(--amber)}
+  .tp s{color:var(--muted);font-weight:400;font-size:14px;margin-right:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="logo" href="/"><b>X</b>-RAYA</a>
+
+  <!-- вход -->
+  <div id="login" class="hidden">
+    <h1>Вход</h1>
+    <div class="panel">
+      <div id="step1">
+        <label for="em">Email</label>
+        <input type="email" id="em" placeholder="you@company.ru" autocomplete="email">
+        <label for="pw" style="margin-top:14px">Пароль <span class="opt">— если задавал в кабинете</span></label>
+        <input type="password" id="pw" placeholder="••••••••" autocomplete="current-password">
+        <button id="go" onclick="loginGo()">Войти</button>
+        <div class="err" id="err"></div>
+        <div class="hint">Нет пароля — не страшно: пришлём на почту 6-значный код. Вход нужен для раскрытия контактов и AI-функций, базовый поиск работает и без него.</div>
+      </div>
+      <div id="step2" class="hidden">
+        <div class="ok">✓ Код отправлен на <b id="sentTo"></b> — действует 10 минут.<div class="devlink" id="devlink"></div></div>
+        <label for="code" style="margin-top:16px">Код из письма</label>
+        <input id="code" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="one-time-code">
+        <button id="goCode" onclick="codeGo()">Подтвердить</button>
+        <div class="err" id="err2"></div>
+        <div class="hint">Открыл письмо на телефоне? Просто введи код здесь — войдёшь на этом устройстве. Ссылка из письма тоже работает. <a href="#" onclick="backStep(event)">← Другая почта</a></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- кабинет -->
+  <div id="cab" class="hidden">
+    <h1>Кабинет</h1>
+    <div class="panel">
+      <div class="row"><span class="k">Аккаунт</span><span class="v" id="cEmail"></span></div>
+      <div class="row"><span class="k">Доступ</span><span class="plan pro">Полный · бесплатно</span></div>
+      <div class="row"><span class="k">Поисков</span><span class="v" id="cSearches"></span></div>
+      <div class="row"><span class="k">Контактов раскрыто</span><span class="v" id="cContacts"></span></div>
+      <div class="hint" id="proHint"></div>
+      <div class="pwset">
+        <label for="npw">Пароль для входа <span class="opt" id="pwState"></span></label>
+        <div class="pwrow">
+          <input type="password" id="npw" placeholder="Минимум 8 символов" autocomplete="new-password">
+          <button class="pbtn" onclick="savePw()">Сохранить</button>
+        </div>
+        <div class="hint" id="pwMsg">С паролем входишь с любого устройства сразу, без кода из письма.</div>
+      </div>
+      <div class="actions">
+        <button onclick="location.href='/'">К поиску</button>
+        <button class="ghostbtn" onclick="logout()">Выйти</button>
+      </div>
+    </div>
+
+  </div>
+
+  <a class="back" href="/">← Вернуться к X-Raya</a>
+  <a class="back" style="margin-left:18px" href="/#support">Написать в поддержку</a>
+</div>
+
+<script>
+  const $=id=>document.getElementById(id);
+  /* партнёрская метка: ловим и тут (вдруг реф-ссылка вела сразу в кабинет) */
+  try{
+    const r=new URLSearchParams(location.search).get('ref');
+    if(r && !localStorage.getItem('peleng_ref')) localStorage.setItem('peleng_ref', r.slice(0,60));
+  }catch(_){}
+  function getRef(){ try{ return localStorage.getItem('peleng_ref')||''; }catch(_){ return ''; } }
+  async function boot(){
+    try{
+      const r=await fetch('/api/me');
+      if(!r.ok) throw 0;
+      const me=await r.json();
+      $('cab').classList.remove('hidden');
+      $('cEmail').textContent=me.email;
+      $('cSearches').textContent=me.searches;
+      $('cContacts').textContent=me.contacts;
+      $('proHint').textContent='Здесь всё бесплатно: раскрытие контактов, AI-разбор и автопроверка выдачи доступны сразу после входа.';
+      $('pwState').textContent = me.hasPw ? '— задан' : '— не задан';
+      if(me.hasPw) $('pwMsg').textContent='Пароль задан. Здесь можно его сменить.';
+    }catch(_){
+      $('login').classList.remove('hidden');
+    }
+  }
+  /* вход: пароль введён → сразу; нет — код на почту */
+  async function loginGo(){
+    const email=$('em').value.trim(), pw=$('pw').value, btn=$('go');
+    $('err').textContent='';
+    if(!email){ $('err').textContent='Введи email'; return; }
+    btn.disabled=true; btn.textContent='Секунду…';
+    try{
+      if(pw){
+        const r=await fetch('/api/auth/password',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email, password:pw})});
+        const d=await r.json();
+        if(!r.ok) throw new Error(d.error||'ошибка');
+        location.reload(); return;
+      }
+      const r=await fetch('/api/auth/request',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email, ref:getRef()})});
+      const d=await r.json();
+      if(!r.ok) throw new Error(d.error||'ошибка');
+      $('sentTo').textContent=email;
+      if(d.code) $('devlink').innerHTML='dev-код: <b>'+d.code+'</b>';
+      $('step1').classList.add('hidden'); $('step2').classList.remove('hidden');
+      $('code').focus();
+    }catch(e){ $('err').textContent=e.message; }
+    btn.disabled=false; btn.textContent='Войти';
+  }
+  async function codeGo(){
+    const email=$('em').value.trim(), code=$('code').value.trim(), btn=$('goCode');
+    $('err2').textContent='';
+    if(code.length<6){ $('err2').textContent='Введи 6 цифр из письма'; return; }
+    btn.disabled=true; btn.textContent='Проверяю…';
+    try{
+      const r=await fetch('/api/auth/code',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({email, code})});
+      const d=await r.json();
+      if(!r.ok) throw new Error(d.error||'ошибка');
+      location.reload(); return;
+    }catch(e){ $('err2').textContent=e.message; btn.disabled=false; btn.textContent='Подтвердить'; }
+  }
+  function backStep(e){ e.preventDefault(); $('step2').classList.add('hidden'); $('step1').classList.remove('hidden'); }
+  async function savePw(){
+    const pw=$('npw').value, msg=$('pwMsg');
+    try{
+      const r=await fetch('/api/auth/setpw',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({password:pw})});
+      const d=await r.json();
+      if(!r.ok) throw new Error(d.error||'ошибка');
+      $('npw').value=''; $('pwState').textContent='— задан';
+      msg.textContent='✓ Пароль сохранён — теперь входи по нему с любого устройства.';
+    }catch(e){ msg.textContent=e.message; }
+  }
+  async function logout(){ await fetch('/api/logout',{method:'POST'}); location.href='/'; }
+
+  ['em','pw'].forEach(id=>{ $(id)&&$(id).addEventListener('keydown',e=>{ if(e.key==='Enter') loginGo(); }); });
+  $('code')&&$('code').addEventListener('keydown',e=>{ if(e.key==='Enter') codeGo(); });
+  $('npw')&&$('npw').addEventListener('keydown',e=>{ if(e.key==='Enter') savePw(); });
+  boot();
+</script>
+</body>
+</html>

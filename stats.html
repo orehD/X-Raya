@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>X-Raya — статистика заявок</title>
+<style>
+  :root{color-scheme:dark; --bg:#0B0A07; --panel:#14110B; --panel2:#0E0C07; --line:#282213; --line2:#3B3219;
+    --amber:#F2A93B; --amber-hi:#FFC96B; --amber-dim:rgba(242,169,59,.14); --txt:#EDE6D4; --muted:#9A9077;
+    --mono:'JetBrains Mono',Menlo,Consolas,monospace;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:400 14px/1.5 var(--mono);padding:28px 18px}
+  .wrap{max-width:820px;margin:0 auto}
+  h1{font-size:16px;letter-spacing:.18em;text-transform:uppercase;color:var(--amber);margin:0 0 4px}
+  .sub{color:var(--muted);font-size:12px;margin-bottom:24px}
+  .gate{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
+  input{background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--txt);
+    font:400 13px var(--mono);padding:10px 13px;min-width:220px}
+  input:focus{outline:none;border-color:rgba(242,169,59,.5)}
+  button{background:var(--amber);color:#1A1508;border:none;border-radius:8px;cursor:pointer;
+    font:600 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:10px 18px}
+  button:hover{background:var(--amber-hi)}
+  .err{color:#E2705A;font-size:12.5px;margin-top:10px;min-height:16px}
+  .totals{display:flex;gap:40px;flex-wrap:wrap;margin:6px 0 20px}
+  .total{font-size:34px;color:var(--amber-hi);font-weight:600}
+  .total small{font-size:13px;color:var(--muted);font-weight:400;letter-spacing:.1em;text-transform:uppercase;margin-left:8px}
+  .chart{display:flex;align-items:flex-end;gap:6px;height:120px;margin-bottom:6px}
+  .chart .bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+  .chart .bar .b{width:100%;max-width:34px;background:var(--amber-dim);border:1px solid rgba(242,169,59,.4);
+    border-radius:4px 4px 0 0;transition:background .15s}
+  .chart .bar.today .b{background:var(--amber);border-color:var(--amber)}
+  .chart .bar .n{font-size:11px;color:var(--amber-hi)}
+  .chart .bar .d{font-size:9px;color:#6E6753;white-space:nowrap}
+  h2{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:#6E6753;margin:26px 0 10px}
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  th{text-align:left;color:#6E6753;font-weight:500;letter-spacing:.06em;text-transform:uppercase;font-size:10px;
+    padding:8px 10px;border-bottom:1px solid var(--line)}
+  td{padding:9px 10px;border-bottom:1px solid var(--line);color:var(--txt)}
+  tr:hover td{background:var(--panel)}
+  .ref-chip{display:inline-block;background:var(--amber-dim);color:var(--amber-hi);border-radius:5px;padding:2px 8px}
+  .ref-none{color:var(--muted)}
+  .num{color:var(--amber-hi);font-weight:600;text-align:right}
+  .muted{color:var(--muted)}
+  .hidden{display:none}
+  button.mini{background:transparent;border:1px dashed var(--line2);color:var(--muted);border-radius:6px;
+    font:500 10px var(--mono, 'JetBrains Mono',monospace);letter-spacing:.06em;text-transform:uppercase;padding:5px 10px;cursor:pointer}
+  button.mini:hover{color:var(--amber-hi);border-color:rgba(242,169,59,.5);background:transparent}
+  .pbar{height:6px;background:var(--amber);border-radius:3px;min-width:2px}
+  .barcell{width:32%}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>X-Raya · статистика заявок</h1>
+  <div class="sub">Пользователи, оплаты и партнёры (метка <b>?ref=</b>)</div>
+
+  <div id="gate">
+    <div class="gate">
+      <input type="password" id="tok" placeholder="пароль (STATS_TOKEN)" autocomplete="off">
+      <button onclick="load()">Показать</button>
+    </div>
+    <div class="err" id="err"></div>
+  </div>
+
+  <div id="data" class="hidden">
+    <div class="totals">
+      <div class="total" id="total"></div>
+      <div class="total" id="searches"></div>
+    </div>
+
+    <h2>Поиски за 14 дней</h2>
+    <div class="chart" id="chart"></div>
+
+    <h2>По партнёрам · воронка</h2>
+    <table>
+      <thead><tr><th>Партнёр (ref)</th><th class="num">Заявок</th><th class="num">Аккаунтов</th><th class="num">Хотят оплатить</th><th class="barcell"></th></tr></thead>
+      <tbody id="partners"></tbody>
+    </table>
+
+    <h2>Пользователи (аккаунты)</h2>
+    <table>
+      <thead><tr><th>Email</th><th>Партнёр</th><th>План</th><th class="num">Поисков</th><th class="num">Контактов</th><th></th></tr></thead>
+      <tbody id="usersT"></tbody>
+    </table>
+
+    <h2>Последние заявки</h2>
+    <table>
+      <thead><tr><th>Email</th><th>Партнёр</th><th>Когда</th><th></th></tr></thead>
+      <tbody id="recent"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  function fmtDate(iso){ try{ const d=new Date(iso); return d.toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}); }catch(_){ return iso; } }
+
+  async function load(){
+    const tok = document.getElementById('tok').value.trim();
+    const err = document.getElementById('err');
+    err.textContent='';
+    if(!tok){ err.textContent='Введи пароль'; return; }
+    try{
+      const r = await fetch('/api/stats?token='+encodeURIComponent(tok));
+      const d = await r.json();
+      if(!r.ok) throw new Error(d.error||'ошибка');
+      localStorage.setItem('peleng_stats_tok', tok);
+      render(d);
+    }catch(e){ err.textContent = e.message; }
+  }
+
+  function render(d){
+    document.getElementById('gate').classList.add('hidden');
+    document.getElementById('data').classList.remove('hidden');
+    document.getElementById('total').innerHTML = d.total + '<small>заявок на Pro</small>';
+    document.getElementById('searches').innerHTML = (d.searchesTotal||0) + '<small>поисков всего</small>';
+    const days=d.days||[], mx=days.reduce((m,x)=>Math.max(m,x.count),1);
+    document.getElementById('chart').innerHTML = days.map((x,i)=>{
+      const h=Math.round(x.count/mx*96)+4;
+      const dd=x.date.slice(8)+'.'+x.date.slice(5,7);
+      return '<div class="bar'+(i===days.length-1?' today':'')+'"><span class="n">'+(x.count||'')+'</span>'+
+        '<div class="b" style="height:'+h+'px"></div><span class="d">'+dd+'</span></div>';
+    }).join('');
+    const max = d.partners.reduce((m,p)=>Math.max(m,p.count+(p.users||0)),1);
+    document.getElementById('partners').innerHTML = d.partners.map(p=>{
+      const chip = p.ref==='(прямые)' ? '<span class="ref-none">— прямые —</span>' : '<span class="ref-chip">'+esc(p.ref)+'</span>';
+      return '<tr><td>'+chip+'</td><td class="num">'+p.count+'</td><td class="num">'+(p.users||0)+'</td><td class="num">'+(p.pays||0)+'</td>'+
+        '<td class="barcell"><div class="pbar" style="width:'+Math.round((p.count+(p.users||0))/max*100)+'%"></div></td></tr>';
+    }).join('') || '<tr><td colspan="5" class="muted">пока нет заявок</td></tr>';
+    document.getElementById('usersT').innerHTML = (d.users||[]).map(u=>{
+      const until = u.proUntil ? '<small class="muted"> до '+new Date(u.proUntil).toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'2-digit'})+'</small>' : (u.plan==='pro'?'<small class="muted"> бессрочно</small>':'');
+      const plan = (u.plan==='pro' ? '<span class="ref-chip">PRO</span>' : '<span class="ref-none">free</span>')+until;
+      const uref = u.ref ? '<span class="ref-chip">'+esc(u.ref)+'</span>' : '<span class="ref-none">прямые</span>';
+      const btn = u.plan==='pro'
+        ? '<button class="mini" onclick="setPlan(\''+esc(u.email)+'\',\'pro\')" title="+30 дней к текущему сроку">+30 дн</button> '+
+          '<button class="mini" onclick="setPlan(\''+esc(u.email)+'\',\'free\')">снять</button>'
+        : '<button class="mini" onclick="setPlan(\''+esc(u.email)+'\',\'pro\')" title="Pro на 30 дней, письмо уйдёт само">дать Pro</button>';
+      return '<tr><td>'+esc(u.email)+'</td><td>'+uref+'</td><td>'+plan+'</td><td class="num">'+u.searches+'</td><td class="num">'+u.contacts+'</td><td>'+btn+'</td></tr>';
+    }).join('') || '<tr><td colspan="6" class="muted">пока нет аккаунтов</td></tr>';
+    const planBy = {}; (d.users||[]).forEach(u=>{ planBy[u.email]=u.plan; });
+    document.getElementById('recent').innerHTML = d.recent.map(x=>{
+      const ref = x.ref && x.ref.trim() ? '<span class="ref-chip">'+esc(x.ref)+'</span>' : '<span class="ref-none">прямые</span>';
+      const act = planBy[x.email]==='pro'
+        ? '<span class="ref-chip">PRO</span>'
+        : '<button class="mini" onclick="setPlan(\''+esc(x.email)+'\',\'pro\')" title="Аккаунт создастся заранее — Pro включится при первом входе">дать Pro</button>';
+      return '<tr><td>'+esc(x.email)+'</td><td>'+ref+'</td><td class="muted">'+fmtDate(x.at)+'</td><td>'+act+'</td></tr>';
+    }).join('') || '<tr><td colspan="4" class="muted">пока нет заявок</td></tr>';
+  }
+
+  async function setPlan(email, plan){
+    const tok=localStorage.getItem('peleng_stats_tok')||document.getElementById('tok').value.trim();
+    try{
+      const r=await fetch('/api/admin/plan?token='+encodeURIComponent(tok),{method:'POST',
+        headers:{'content-type':'application/json'},body:JSON.stringify({email,plan})});
+      const d=await r.json();
+      if(!r.ok) throw new Error(d.error||'ошибка');
+      load();
+    }catch(e){ alert(e.message); }
+  }
+
+  // автовход по сохранённому паролю
+  (function(){ const t=localStorage.getItem('peleng_stats_tok'); if(t){ document.getElementById('tok').value=t; load(); } })();
+  document.getElementById('tok').addEventListener('keydown', e=>{ if(e.key==='Enter') load(); });
+</script>
+</body>
+</html>
