@@ -1091,6 +1091,73 @@ const Q = s => '"'+s+'"';
 const orQ = arr => '('+arr.map(Q).join(' OR ')+')';
 const G = s => 'https://www.google.com/search?q='+enc(s);
 
+/* ===================== CANDY (ATS) ===================== */
+/* Поисковый язык Candy: поля specialization:/location:/file:/level:, операторы AND OR NOT, фразы в кавычках. */
+const CANDY_URL = q => 'https://candy.tbank.ru/candidates/search/extended?query='+enc(q)+'&extended=true&size=20';
+const CQ = s => '"'+String(s).replace(/"/g,'\\"')+'"';
+const CANDY_SPECS = ["Антикоррупционный и этический комплаенс","Compliance","Web аналитик","Аналитик экосистемной безопасности","Экосистемная безопасность","Диспут-менеджер","Риск-менеджер","Риск аналитик","GR","Юристы HQ","Юриспруденция","Графический дизайн","Бренд дизайн","Продуктовый дизайн","1C аналитик","1C","BPM аналитик","Project Manager","Product Manager","Technical Product Manager","Haskell Developer","Haskell","Технический писатель","Развитие инвестиционных продуктов","Инвестиции","Инвестиционное консультирование","UX-редактор","Редактура","Копирайтер","Продуктовый редактор","Редактор","Бизнес-аналитик (технолог)","Развитие сервиса","Финансовый аналитик данных","Финансы","Финансовые аналитики и менеджеры","Налоги","Корпоративное финансирование","HR","Рекрутмент","IT project manager","IT Group Manager","IT Teamlead","Support","Helpdesk","Общекорпоративное развитие","Управление compliance","Управление клиентским сервисом","Управление медиа","Управление","Онлайн привлечение","Оффлайн маркетинг","Бухгалтерия","Депозитарий","Закупки","Казначейство","Аналитик рисков (DA)","Банковский риск-менеджмент","Развитие тех. сопровождения","НДО","TeamLead Бизнес-анализа","DBA","Финансовый бизнес-партнер","Кастодиальный бизнес","Data Center Core","STI Compensations","Линейный редактор","Рекрутинг","Сорсинг","ML Ops","ML","Партнер по компенсациям","JS Vue.js Developer","JS Developer","MDM Engineer","Локализация","Регуляторная отчетность","Правовая поддержка процессов трудовых отношений","LMC-комплаенс","Цифровые государственные сервисы","Гос.технологии и сервисы","Digital Marketing","TeamLead Продуктовой аналитики","Продуктовый аналитик","L&D партнер","Обучение и развитие","Адаптация","Автоматизация процессов обучения/найма","Орг. развитие","Staff Engineer","HR Бизнес-партнер","Развитие платежных решений","Менеджер выпуска","ML Product Manager","Support Engineer","Маркетинговый аналитик","Кросс-селл маркетинг","Специалисты видеостудии","Кадры","Внут. коммуникации","Бренд работодателя","Внутренний контроль (СВК)","Финансовый мониторинг","Data Engineer","Platform data engineer","Бизнес-аналитик BI","NoSQL/NewSQL DBA","Oracle DBA","Postgres DBA","Database","Information security","Контроль режима санкций","Security Engineer","Storage Engineer","Windows Engineer","Network Engineer","JS Angular Developer","JS React Developer","JS React Native Developer","Node.js","Machine Learning","NLP engineer","Бизнес-партнер по информационной безопасности","Android Developer","Mobile Developer","ИТ аудит","Разработка TWork процедур","Актуарии","Аналитик маркетинговых кампаний","Аналитик моделей рисков","Аналитик рисков","Мобильный аналитик","Продуктовый аналитик (DA)","Системный аналитик",".NET Developer","Анализ сомнительных операций","C++ Developer","Full stack Developer","Golang Developer","Java Developer","Oracle PL/SQL Developer","PHP Developer","Python Developer","Rust Developer","Scala Developer","Back-end Developer","Управление кадровым администрированием","IOS Developer","QA Auto","QA","Контент-менеджмент","Маркетинг","CX исследования","Маркетинговые коммуникации","Партнерский маркетинг (CPA)","Поисковое продвижение (SEO)","Работа с блогерами","Репутационный маркетинг (SERM)","Таргетированная реклама","Контекстная и медийная реклама","Ивент-маркетинг","Развитие бизнеса","Архитектор телеком решений","C&B","General HR","Маркетинговые материалы","PR","Дистрибуция","Performance","QA Backend","QA Front","QA Load","QA Mobile","SRE","2nd Line Support Engineer","3rd line","Методолог IDM","Нормативное сопровождение","SMM","Технология расчетов","Трейдеры инвестиций","Core engineering development","Data Center Engineer","Продюсер","Работа с медиа-контрагентами","Режиссер","Безопасность","Аналитик CX","IT Other","Инженерные должности","Развитие продаж","Банковские операции/Платежные транзакции"];
+/* маппинг распознанной роли → специализация Candy: точное имя > вхождение > технология > общий корень */
+const CANDY_GENERIC=/^(developer|разработчик|программист|специалист|engineer|инженер|software engineer)$/i;
+const CANDY_TECH_ALIAS={'go':'golang','c#':'net','js':'javascript'};
+function candySpec(p, langs, allTech){
+  const norm=s=>String(s).toLowerCase();
+  const nosp=s=>norm(s).replace(/[\s._\-\/]/g,'');
+  const cand=[...(p.role.syn||[]), p.role.ru||''].filter(Boolean).map(norm).filter(c=>!CANDY_GENERIC.test(c));
+  if(p.grade && p.grade.key==='Lead' && p.role.cat==='it') return 'IT Teamlead';
+  if(cand.some(c=>nosp(c).includes('teamlead')||c.includes('тимлид')||c.includes('тим лид'))) return 'IT Teamlead';
+  let best=null, bestScore=0;
+  for(const spec of CANDY_SPECS){
+    const sl=norm(spec), sn=nosp(spec);
+    for(const c of cand){
+      const cn=nosp(c); let score=0;
+      if(sl===c || sn===cn) score=100;
+      else if(sn.includes(cn) || cn.includes(sn)) score=Math.min(sn.length,cn.length);
+      else if(sl.slice(0,6)===c.slice(0,6) && c.length>5) score=3; // общий корень: рекрутер~рекрутмент, маркетолог~маркетинг
+      if(score>bestScore){ bestScore=score; best=spec; }
+    }
+  }
+  if(bestScore>=8) return best;
+  // роль общая — подбираем по технологии: точное "<tech> developer", иначе самое короткое имя с ней
+  for(let t of [...(langs||[]), ...(allTech||[])]){
+    t=CANDY_TECH_ALIAS[norm(t)]||t;
+    const tn=nosp(t);
+    if(tn.length<3) continue;
+    const exact=CANDY_SPECS.find(s=>nosp(s)===tn+'developer'||nosp(s)===tn);
+    if(exact) return exact;
+    const has=CANDY_SPECS.filter(s=>nosp(s).includes(tn)).sort((a,b)=>a.length-b.length);
+    if(has.length) return has[0];
+  }
+  return best;
+}
+function buildCandy(p, cards){
+  const allTech=p.techs.map(x=>x.c);
+  const langs=p.techs.filter(x=>x.lang).map(x=>x.c);
+  const must=allTech.filter(t=>F.tmode[t]==='must');
+  const nice=allTech.filter(t=>(F.tmode[t]||'nice')==='nice');
+  const exc=allTech.filter(t=>F.tmode[t]==='x');
+  const loc = p.city ? ' AND location:'+CQ(p.city.ru) : '';
+  const lvl = p.grade && p.grade.key!=='Intern' && p.grade.key!=='Lead' ? ' AND level:'+p.grade.key : '';
+  const fileNot = exc.map(t=>' NOT file:'+CQ(t)).join('');
+  const spec = candySpec(p, langs, allTech);
+  if(spec){
+    const fileAnd = must.map(t=>' AND file:'+CQ(t)).join('');
+    const q='specialization:'+CQ(spec)+lvl+loc+fileAnd+fileNot;
+    cards.push({grp:'candy', ttl:'Candy — по специализации', desc:'Готовый запрос в базу кандидатов. Специализация подобрана из справочника Candy — поправь, если мимо.', str:q, url:CANDY_URL(q)});
+  }
+  // поиск по тексту резюме: роль (если не общая) + обязательные + (желательные через OR)
+  const roleWord=(p.role.syn&&p.role.syn[0])||p.role.ru||'';
+  const parts=[];
+  if(roleWord && !CANDY_GENERIC.test(roleWord)) parts.push('file:'+CQ(roleWord));
+  must.forEach(t=>parts.push('file:'+CQ(t)));
+  const niceLeft=nice.slice(0,4);
+  if(niceLeft.length===1) parts.push('file:'+CQ(niceLeft[0]));
+  else if(niceLeft.length>1) parts.push('('+niceLeft.map(t=>'file:'+CQ(t)).join(' OR ')+')');
+  if(parts.length){
+    const q2=parts.join(' AND ')+lvl+loc+fileNot;
+    cards.push({grp:'candy', ttl:'Candy — по тексту резюме', desc:'Ищет прямо в файлах резюме (поле file:) — ловит тех, у кого специализация в базе не проставлена.', str:q2, url:CANDY_URL(q2)});
+  }
+}
+
 /* ===================== ГЕНЕРАЦИЯ ===================== */
 function build(p){
   const isIT = p.role.cat==='it';
@@ -1106,6 +1173,9 @@ function build(p){
   const techG = allTech.length ? '('+allTech.map(Q).join(' OR ')+')' : '';
   const gradeG = p.grade && p.grade.key!=='Intern' ? Q(p.grade.kw) : '';
   const techStr = allTech.length?allTech.join(' '):p.role.syn[0];
+
+  /* ---- candy (ATS) ---- */
+  buildCandy(p, cards);
 
   /* ---- pro ---- */
   let li = ['site:linkedin.com/in', isIT?langG:techG, orQ(roleSyn), cityG, gradeG, NOISE].filter(Boolean).join(' ');
@@ -1201,6 +1271,7 @@ function build(p){
 
 /* ===================== РЕНДЕР ===================== */
 const GROUPS = [
+  {k:'candy', t:'Candy — база кандидатов (ATS)'},
   {k:'pro', t:'Профессиональные площадки'},
   {k:'community', t:'Комьюнити и портфолио'},
   {k:'role', t:'Профильные по роли'},
@@ -1516,7 +1587,7 @@ let _ctHidden=0;
 const MOTION_OK = !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
 const UI = { tab:'all', sort: lsGet('peleng_sort')||'prio', qmode:'goal' };
 const FAVS = new Set(JSON.parse(lsGet('peleng_favs')||'[]'));
-const SORT_W = {pro:0, role:1, community:2, exec:2, conf:3, social:3, comp:4};
+const SORT_W = {candy:0, pro:0, role:1, community:2, exec:2, conf:3, social:3, comp:4};
 
 function sortCards(arr){
   const a=[...arr];
