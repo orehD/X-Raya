@@ -101,9 +101,26 @@
   </details>
 
   <p class="note">Не нашёл ответа или что-то сломалось? <a href="/#support">Напиши в поддержку</a> — читаем всё.</p>
-  <p class="note">Поисковые запросы выполняются в твоём браузере и не сохраняются на сервере. Подробнее — в <a href="/privacy">политике данных</a>.</p>
+  <p class="note">Поисковые запросы выполняются в твоём браузере и не сохраняются на сервере. Подробнее — в <a href="/privacy">политике данных</a>, <a href="/terms">пользовательском соглашении</a> и <a href="/cookies">политике cookie</a>.</p>
 
   <a class="back" href="/">← Вернуться к Peleng</a>
 </div>
+<style>
+  #ckb{position:fixed;left:0;right:0;bottom:0;z-index:80;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;
+    justify-content:center;padding:12px 18px;background:var(--panel);border-top:1px solid var(--line2);
+    color:var(--muted);font-size:12.5px;line-height:1.5}
+  #ckb[hidden]{display:none}
+  #ckb a{color:var(--amber)}
+  #ckb button{background:var(--amber);color:#1A1508;border:none;border-radius:7px;cursor:pointer;
+    font:600 11px var(--mono);letter-spacing:.06em;text-transform:uppercase;padding:8px 16px;flex:none}
+</style>
+<div id="ckb" role="region" aria-label="Уведомление об использовании cookie">
+  <span>Peleng использует cookie: сессия входа и настройки интерфейса, без рекламных трекеров. Продолжая пользоваться сервисом, ты соглашаешься с <a href="/cookies">политикой использования cookie</a>.</span>
+  <button onclick="ckOk()">Хорошо</button>
+</div>
+<script>
+  try{ if(localStorage.getItem('peleng_ck')==='1') document.getElementById('ckb').hidden=true; }catch(e){}
+  function ckOk(){ try{localStorage.setItem('peleng_ck','1')}catch(e){} document.getElementById('ckb').hidden=true; }
+</script>
 </body>
 </html>

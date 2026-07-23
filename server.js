@@ -829,6 +829,18 @@ const server = http.createServer((req, res) => {
     const qs = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
     res.writeHead(302, { location: '/' + qs }); return res.end();
   }
+  if (req.method === 'GET' && req.url.split('?')[0] === '/terms') {
+    return fs.readFile(path.join(__dirname, 'terms.html'), (err, data) => {
+      if (err) return send(res, 500, 'text/plain', 'terms.html not found');
+      send(res, 200, 'text/html; charset=utf-8', data);
+    });
+  }
+  if (req.method === 'GET' && req.url.split('?')[0] === '/cookies') {
+    return fs.readFile(path.join(__dirname, 'cookies.html'), (err, data) => {
+      if (err) return send(res, 500, 'text/plain', 'cookies.html not found');
+      send(res, 200, 'text/html; charset=utf-8', data);
+    });
+  }
   if (req.method === 'GET' && req.url.split('?')[0] === '/help') {
     return fs.readFile(path.join(__dirname, 'help.html'), (err, data) => {
       if (err) return send(res, 500, 'text/plain', 'help.html not found');

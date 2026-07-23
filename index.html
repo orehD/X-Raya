@@ -230,6 +230,15 @@ body.glitching .logo{animation:glitch .4s steps(3,end) 1}
 .gate-note a{color:var(--muted)}
 .gate-sent{color:var(--muted);font-size:12.5px;line-height:1.6;margin:0 0 14px}
 .gate-sent b{color:var(--amber-hi);font-weight:600}
+/* ── cookie-баннер ── */
+#ckb{position:fixed;left:0;right:0;bottom:0;z-index:80;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;
+  justify-content:center;padding:12px 18px;background:var(--panel);border-top:1px solid var(--line2);
+  color:var(--muted);font-size:12.5px;line-height:1.5}
+#ckb[hidden]{display:none}
+#ckb a{color:var(--amber)}
+#ckb button{background:var(--amber);color:#1A1508;border:none;border-radius:7px;cursor:pointer;
+  font:600 11px var(--f-mono);letter-spacing:.06em;text-transform:uppercase;padding:8px 16px;flex:none}
+#ckb button:hover{filter:brightness(1.08)}
 .radar .r-label{position:absolute;left:50%;bottom:13px;transform:translateX(-50%);
   font:500 9.5px/1 var(--f-mono);letter-spacing:.4em;text-transform:uppercase;color:#6E6753}
 
@@ -740,7 +749,7 @@ body.working .radar{width:238px;height:238px}
         <button class="gate-btn" id="gGo" onclick="gateGo()">Получить код на почту</button>
         <div class="gate-err" id="gErr1"></div>
         <button class="gate-alt" id="gPwToggle" onclick="gateTogglePw()">У меня есть пароль</button>
-        <div class="gate-note">Нажимая кнопку, соглашаешься с <a href="/privacy">политикой обработки данных</a>. Письма — только о входе и бете, без спама.</div>
+        <div class="gate-note">Нажимая кнопку, соглашаешься с <a href="/terms">пользовательским соглашением</a> и <a href="/privacy">политикой обработки данных</a>. Письма — только о входе и бете, без спама.</div>
       </div>
       <div id="gStep2" hidden>
         <p class="gate-sent">Отправили 6-значный код на <b id="gSentTo"></b>. Если письма нет — проверь «Спам».</p>
@@ -837,7 +846,17 @@ body.working .radar{width:238px;height:238px}
   </div>
 </section>
 
-<footer><a class="flink" href="/help">Справка</a> · <a class="flink" href="#support" onclick="fbOpen()">Поддержка</a> · <a class="flink" href="/cabinet">Кабинет</a> · <a class="flink" href="/privacy">Политика данных</a></footer>
+<footer><a class="flink" href="/help">Справка</a> · <a class="flink" href="#support" onclick="fbOpen()">Поддержка</a> · <a class="flink" href="/cabinet">Кабинет</a> · <a class="flink" href="/terms">Пользовательское соглашение</a> · <a class="flink" href="/privacy">Политика данных</a> · <a class="flink" href="/cookies">Cookie</a></footer>
+
+<!-- уведомление об использовании cookie -->
+<div id="ckb" role="region" aria-label="Уведомление об использовании cookie">
+  <span>Peleng использует cookie: сессия входа и настройки интерфейса, без рекламных трекеров. Продолжая пользоваться сервисом, ты соглашаешься с <a href="/cookies">политикой использования cookie</a>.</span>
+  <button onclick="ckOk()">Хорошо</button>
+</div>
+<script>
+  try{ if(localStorage.getItem('peleng_ck')==='1') document.getElementById('ckb').hidden=true; }catch(e){}
+  function ckOk(){ try{localStorage.setItem('peleng_ck','1')}catch(e){} document.getElementById('ckb').hidden=true; }
+</script>
 
 <!-- поддержка / обратная связь -->
 <div class="fbwrap" id="fbwrap" hidden onclick="if(event.target===this)fbClose()">
