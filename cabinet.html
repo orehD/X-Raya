@@ -178,6 +178,8 @@
 
 <script>
   const $=id=>document.getElementById(id);
+  /* БЕТА: тарифы и оплата скрыты, Pro выдаётся вручную. После беты поставить false. */
+  const BETA=true;
   /* партнёрская метка: ловим и тут (вдруг реф-ссылка вела сразу в кабинет) */
   try{
     const r=new URLSearchParams(location.search).get('ref');
@@ -198,20 +200,21 @@
           const d=new Date(me.proUntil);
           const dd=d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'});
           $('cSub').innerHTML='до '+dd+' <span class="opt">· осталось '+me.daysLeft+' дн.</span>'+
-            '<button class="pbtn renew" onclick="renewShow()">Продлить</button>';
-          if(me.daysLeft<=5) $('cSub').innerHTML+='<div class="soon">Подписка скоро закончится — продли, чтобы не потерять автопроверку.</div>';
+            (BETA?'':'<button class="pbtn renew" onclick="renewShow()">Продлить</button>');
+          if(me.daysLeft<=5 && !BETA) $('cSub').innerHTML+='<div class="soon">Подписка скоро закончится — продли, чтобы не потерять автопроверку.</div>';
         } else {
           $('cSub').textContent='бессрочно';
         }
       }
       $('cSearches').textContent=me.searches;
       $('cContacts').textContent=me.contacts;
-      $('proHint').textContent = me.plan==='pro'
+      $('proHint').innerHTML = me.plan==='pro'
         ? 'Pro активен: раскрытие контактов, AI-разбор и автопроверка выдачи включены.'
-        : 'Раскрытие контактов и AI уже доступны после входа. Автопроверка выдачи — в Pro.';
+        : 'Раскрытие контактов и AI уже доступны после входа. Автопроверка выдачи — в Pro'+
+          (BETA?': на время беты выдаём его бесплатно — <a href="/beta" style="color:var(--amber)">оставь заявку</a>.':'.');
       $('pwState').textContent = me.hasPw ? '— задан' : '— не задан';
       if(me.hasPw) $('pwMsg').textContent='Пароль задан. Здесь можно его сменить.';
-      if(me.plan!=='pro' || new URLSearchParams(location.search).get('pay')==='1')
+      if(!BETA && (me.plan!=='pro' || new URLSearchParams(location.search).get('pay')==='1'))
         $('upsell').classList.remove('hidden');
       if(me.plan==='pro') $('upsellH').textContent='Продление Pro';
     }catch(_){

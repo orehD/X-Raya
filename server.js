@@ -389,7 +389,10 @@ function handleLead(req, res) {
       return send(res, 400, 'application/json', JSON.stringify({ error: 'некорректный email' }));
     if (!seenLeads.has(email)) {
       seenLeads.add(email);
-      const rec = JSON.stringify({ email, at: new Date().toISOString(), ref: String(body.ref || '').slice(0, 60) });
+      const tg = String(body.tg || '').trim().slice(0, 60);
+      const about = String(body.about || '').trim().slice(0, 300);
+      const rec = JSON.stringify({ email, at: new Date().toISOString(), ref: String(body.ref || '').slice(0, 60),
+        tg: tg || undefined, about: about || undefined });
       try {
         fs.mkdirSync(path.dirname(LEADS_FILE), { recursive: true });
         fs.appendFileSync(LEADS_FILE, rec + '\n');
@@ -399,7 +402,9 @@ function handleLead(req, res) {
         fetch('https://api.telegram.org/bot' + tk + '/sendMessage', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ chat_id: chat, text: '🎯 Peleng: новая заявка на Pro\n' + email }),
+          body: JSON.stringify({ chat_id: chat, text: '🧪 Peleng: заявка на бета-тест\n' + email +
+            (tg ? '\ntg: ' + tg : '') + (about ? '\nо себе: ' + about : '') +
+            (body.ref ? '\nпартнёр: ' + String(body.ref).slice(0, 60) : '') + '\n→ выдай Pro в /stats' }),
         }).catch(() => {});
       }
       console.log('lead:', email);
@@ -819,6 +824,12 @@ const server = http.createServer((req, res) => {
   if (req.method === 'POST' && req.url === '/api/promo') return handlePromo(req, res);
   if (req.method === 'POST' && req.url === '/api/feedback') return handleFeedback(req, res);
   if (req.method === 'POST' && req.url.split('?')[0] === '/api/admin/plan') return handleAdminPlan(req, res);
+  if (req.method === 'GET' && req.url.split('?')[0] === '/beta') {
+    return fs.readFile(path.join(__dirname, 'beta.html'), (err, data) => {
+      if (err) return send(res, 500, 'text/plain', 'beta.html not found');
+      send(res, 200, 'text/html; charset=utf-8', data);
+    });
+  }
   if (req.method === 'GET' && req.url.split('?')[0] === '/help') {
     return fs.readFile(path.join(__dirname, 'help.html'), (err, data) => {
       if (err) return send(res, 500, 'text/plain', 'help.html not found');

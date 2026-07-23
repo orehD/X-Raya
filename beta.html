@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Peleng — бета-тест</title>
+<meta name="description" content="Запишись на бета-тест Peleng: полный Pro-доступ бесплатно за обратную связь.">
+<script>(function(){try{var t=localStorage.getItem('peleng_theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<style>
+  :root{color-scheme:dark; --bg:#12100A; --panel:#1E190F; --panel2:#171309; --line:#332B18; --line2:#463A20;
+    --amber:#F2A93B; --amber-hi:#FFC96B; --amber-dim:rgba(242,169,59,.14);
+    --red:#E0472F; --txt:#EDE6D4; --muted:#9A9077;
+    --mono:'JetBrains Mono',Menlo,Consolas,monospace; --body:'IBM Plex Sans',-apple-system,sans-serif}
+  :root[data-theme="light"]{color-scheme:light; --bg:#EFE9DA; --panel:#F8F3E8; --panel2:#E9E1CE;
+    --line:#DBD1B9; --line2:#C6B994; --amber:#AF6D08; --amber-hi:#875000; --amber-dim:rgba(175,109,8,.15);
+    --red:#CE3E28; --txt:#231E13; --muted:#6C5F42}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:400 14px/1.65 var(--body);padding:34px 18px 80px;
+    display:flex;justify-content:center}
+  .wrap{width:100%;max-width:520px}
+  .logo{font:700 15px var(--mono);letter-spacing:.2em;color:var(--txt);text-decoration:none}
+  .logo b{color:var(--amber)}
+  h1{font:600 15px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--amber);margin:26px 0 6px}
+  .sub{color:var(--muted);font-size:13.5px;margin-bottom:22px}
+  .panel{background:var(--panel);border:1px solid rgba(242,169,59,.32);border-radius:12px;padding:24px;
+    background:linear-gradient(180deg, var(--amber-dim), var(--panel) 55%)}
+  .deal{margin:0 0 18px;padding-left:18px;font-size:13.5px}
+  .deal li{margin-bottom:6px}
+  label{display:block;font:500 10.5px var(--mono);letter-spacing:.2em;text-transform:uppercase;color:var(--muted);
+    margin:14px 0 7px}
+  input,textarea{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--txt);
+    font:400 14px var(--mono);padding:11px 13px}
+  textarea{font-family:var(--body);resize:vertical;min-height:64px}
+  input:focus,textarea:focus{outline:none;border-color:rgba(242,169,59,.5)}
+  button{background:var(--amber);color:#1A1508;border:none;border-radius:8px;cursor:pointer;
+    font:600 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:12px 22px;margin-top:16px}
+  button:hover{filter:brightness(1.08)}
+  button:disabled{opacity:.55;pointer-events:none}
+  .err{color:#E2705A;font-size:12.5px;margin-top:10px;min-height:16px}
+  .ok{color:var(--amber-hi);font-size:13.5px;line-height:1.7}
+  .note{color:var(--muted);font:400 11.5px/1.6 var(--body);margin-top:14px}
+  .note a{color:var(--muted)}
+  .back{display:inline-block;margin-top:26px;color:var(--muted);text-decoration:none;font:400 13px var(--mono)}
+  .back:hover{color:var(--amber)}
+  .hidden{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="logo" href="/"><b>P</b>ELENG</a>
+  <h1>Бета-тест</h1>
+  <div class="sub">Peleng — сорсинг-разведка: готовые Boolean и X-Ray запросы по 30+ каналам, проверка выдачи, контакты кандидатов.</div>
+
+  <div class="panel">
+    <div id="form">
+      <ul class="deal">
+        <li><b>Ты получаешь</b> полный Pro-доступ бесплатно на время беты: автопроверка выдачи, AI-инструменты, раскрытие контактов.</li>
+        <li><b>Мы просим</b> обратную связь: что удобно, что бесит, чего не хватает.</li>
+      </ul>
+      <label for="em">Email</label>
+      <input type="email" id="em" placeholder="you@company.ru" autocomplete="email">
+      <label for="tg">Telegram <span style="text-transform:none;letter-spacing:0">— чтобы связаться (необязательно)</span></label>
+      <input id="tg" placeholder="@nickname" autocomplete="off">
+      <label for="about">Кого сорсишь <span style="text-transform:none;letter-spacing:0">(необязательно)</span></label>
+      <textarea id="about" placeholder="Например: IT в продуктовые компании, иногда non-IT…"></textarea>
+      <button id="go" onclick="betaSubmit()">Записаться на бету</button>
+      <div class="err" id="err"></div>
+      <div class="note">Нажимая кнопку, соглашаешься с <a href="/privacy">политикой обработки данных</a>. Пара писем о бете, без спама.</div>
+    </div>
+    <div id="done" class="hidden">
+      <div class="ok">✓ Заявка принята! Включим тебе Pro и напишем на почту — обычно в течение дня.<br><br>
+      А базовый поиск работает уже сейчас, без ожидания:</div>
+      <button onclick="location.href='/'">Открыть Peleng →</button>
+    </div>
+  </div>
+
+  <a class="back" href="/">← Вернуться к Peleng</a>
+</div>
+
+<script>
+  /* партнёрская метка — first-touch, как на главной */
+  try{
+    var r=new URLSearchParams(location.search).get('ref');
+    if(r && !localStorage.getItem('peleng_ref')) localStorage.setItem('peleng_ref', r.slice(0,60));
+  }catch(e){}
+  async function betaSubmit(){
+    var em=document.getElementById('em').value.trim(), btn=document.getElementById('go'),
+        err=document.getElementById('err');
+    err.textContent='';
+    if(!em){ err.textContent='Введи email'; return; }
+    btn.disabled=true; btn.textContent='Отправляю…';
+    try{
+      var ref=''; try{ ref=new URLSearchParams(location.search).get('ref')||localStorage.getItem('peleng_ref')||''; }catch(e){}
+      var res=await fetch('/api/lead',{method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({email:em, tg:document.getElementById('tg').value.trim(),
+          about:document.getElementById('about').value.trim(), ref:ref})});
+      var d=await res.json();
+      if(!res.ok) throw new Error(d.error||'не получилось — попробуй ещё раз');
+      document.getElementById('form').classList.add('hidden');
+      document.getElementById('done').classList.remove('hidden');
+    }catch(e){
+      err.textContent=e.message;
+      btn.disabled=false; btn.textContent='Записаться на бету';
+    }
+  }
+  document.getElementById('em').addEventListener('keydown',function(e){ if(e.key==='Enter') betaSubmit(); });
+</script>
+</body>
+</html>
