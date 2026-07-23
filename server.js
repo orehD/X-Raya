@@ -912,4 +912,9 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(PORT, () => console.log('Peleng запущен на порту ' + PORT));
+server.listen(PORT, () => {
+  console.log('Peleng запущен на порту ' + PORT);
+  if (process.env.UNISENDER_GO_API_KEY) console.log('Почта: Unisender Go (РФ, без трансграничной передачи)');
+  else if (process.env.RESEND_API_KEY) console.log('⚠ Почта: Resend (Ирландия) — это трансграничная передача; настрой UNISENDER_GO_API_KEY и удали RESEND_API_KEY');
+  else console.log('⚠ Почта не настроена — вход по коду работать не будет (нужен UNISENDER_GO_API_KEY)');
+});
