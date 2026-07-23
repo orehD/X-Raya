@@ -1,0 +1,11 @@
+.git
+data
+data-test-backup
+*.md
+*.docx
+*.xlsx
+api
+tools
+*.py
+relay-worker.js
+generate-fonts.js
