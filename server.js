@@ -92,7 +92,8 @@ function handleAI(req, res) {
 
 // ═══════════ Аккаунты: пользователи, сессии, magic-link ═══════════
 // Вход без паролей: email → письмо со ссылкой (Resend) → подписанная cookie-сессия.
-// Env: RESEND_API_KEY (отправка писем), RESEND_FROM (адрес отправителя, по умолчанию
+// Env: UNISENDER_GO_API_KEY (отправка писем через РФ-сервис, приоритет) или RESEND_API_KEY (запасной),
+//      MAIL_FROM / RESEND_FROM (адрес отправителя, по умолчанию
 //      onboarding@resend.dev — до верификации домена в Resend письма идут только владельцу аккаунта!),
 //      SESSION_SECRET (не обязателен — сгенерится и сохранится в data/session.key),
 //      AUTH_DEV=1 (только локально: вместо письма вернуть ссылку в ответе).
@@ -175,13 +176,35 @@ function checkPw(pw, stored) {
 // одноразовые коды входа (жизнь 10 минут, 5 попыток)
 const loginCodes = new Map(); // email → {code, exp, tries}
 // отправка письма через Resend (fire-and-forget использовать с .catch)
+// Отправка писем. Приоритет — российский Unisender Go (данные не покидают РФ,
+// уведомление РКН о трансграничной передаче не нужно); Resend — запасной вариант.
+function mailReady() { return !!(process.env.UNISENDER_GO_API_KEY || process.env.RESEND_API_KEY); }
 async function sendEmail(to, subject, html) {
+  const from = process.env.MAIL_FROM || process.env.RESEND_FROM || 'Peleng <onboarding@resend.dev>';
+  const ugKey = process.env.UNISENDER_GO_API_KEY;
+  if (ugKey) {
+    const m = from.match(/^(.*?)\s*<(.+)>$/);
+    const r = await fetch('https://go1.unisender.ru/ru/transactional/api/v1/email/send.json', {
+      method: 'POST',
+      headers: { 'X-API-KEY': ugKey, 'content-type': 'application/json' },
+      body: JSON.stringify({ message: {
+        recipients: [{ email: to }],
+        subject,
+        body: { html },
+        from_email: m ? m[2] : from,
+        from_name: m ? m[1] : 'Peleng',
+      } }),
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || d.status === 'error') throw new Error((d && d.message) || 'не удалось отправить письмо');
+    return d;
+  }
   const key = process.env.RESEND_API_KEY;
-  if (!key) throw new Error('RESEND_API_KEY не задан');
+  if (!key) throw new Error('Отправка писем не настроена (UNISENDER_GO_API_KEY или RESEND_API_KEY)');
   const r = await fetch('https://api.resend.com/emails', {
     method: 'POST',
     headers: { authorization: 'Bearer ' + key, 'content-type': 'application/json' },
-    body: JSON.stringify({ from: process.env.RESEND_FROM || 'Peleng <onboarding@resend.dev>', to: [to], subject, html }),
+    body: JSON.stringify({ from, to: [to], subject, html }),
   });
   const d = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error((d && (d.message || d.error)) || 'не удалось отправить письмо');
@@ -209,10 +232,9 @@ function handleAuthRequest(req, res) {
     const link = baseUrl(req) + '/auth?token=' + encodeURIComponent(makeToken('login', email, 20 * 60e3));
     const code = String(crypto.randomInt(100000, 1000000));
     loginCodes.set(email, { code, exp: Date.now() + 10 * 60e3, tries: 0 });
-    const key = process.env.RESEND_API_KEY;
-    if (!key) {
+    if (!mailReady()) {
       if (process.env.AUTH_DEV === '1') return send(res, 200, 'application/json', JSON.stringify({ ok: true, link, code }));
-      return send(res, 501, 'application/json', JSON.stringify({ error: 'Отправка писем не настроена (RESEND_API_KEY)' }));
+      return send(res, 501, 'application/json', JSON.stringify({ error: 'Отправка писем не настроена (UNISENDER_GO_API_KEY или RESEND_API_KEY)' }));
     }
     try {
       await sendEmail(email, code + ' — код для входа в Peleng',
