@@ -824,11 +824,10 @@ const server = http.createServer((req, res) => {
   if (req.method === 'POST' && req.url === '/api/promo') return handlePromo(req, res);
   if (req.method === 'POST' && req.url === '/api/feedback') return handleFeedback(req, res);
   if (req.method === 'POST' && req.url.split('?')[0] === '/api/admin/plan') return handleAdminPlan(req, res);
+  // запись на бету = регистрация на главной; старые ссылки /beta ведём туда (метка ?ref сохраняется)
   if (req.method === 'GET' && req.url.split('?')[0] === '/beta') {
-    return fs.readFile(path.join(__dirname, 'beta.html'), (err, data) => {
-      if (err) return send(res, 500, 'text/plain', 'beta.html not found');
-      send(res, 200, 'text/html; charset=utf-8', data);
-    });
+    const qs = req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '';
+    res.writeHead(302, { location: '/' + qs }); return res.end();
   }
   if (req.method === 'GET' && req.url.split('?')[0] === '/help') {
     return fs.readFile(path.join(__dirname, 'help.html'), (err, data) => {

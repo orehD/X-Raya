@@ -211,7 +211,7 @@
       $('proHint').innerHTML = me.plan==='pro'
         ? 'Pro активен: раскрытие контактов, AI-разбор и автопроверка выдачи включены.'
         : 'Раскрытие контактов и AI уже доступны после входа. Автопроверка выдачи — в Pro'+
-          (BETA?': на время беты выдаём его бесплатно — <a href="/beta" style="color:var(--amber)">оставь заявку</a>.':'.');
+          (BETA?': на время беты включаем его бесплатно — <a href="/#support" style="color:var(--amber)">напиши в поддержку</a>.':'.');
       $('pwState').textContent = me.hasPw ? '— задан' : '— не задан';
       if(me.hasPw) $('pwMsg').textContent='Пароль задан. Здесь можно его сменить.';
       if(!BETA && (me.plan!=='pro' || new URLSearchParams(location.search).get('pay')==='1'))

@@ -207,6 +207,29 @@ body.glitching .logo{animation:glitch .4s steps(3,end) 1}
 #boot.out{opacity:0;pointer-events:none}
 #boot pre{font:400 13px/2 var(--f-mono);color:var(--muted);margin:0;min-width:min(360px,84vw);white-space:pre-wrap}
 #boot pre::after{content:"▍";color:var(--red);animation:blink 1s steps(2) infinite}
+/* ── бета-гейт: вход обязателен ── */
+#gate{position:fixed;inset:0;z-index:70;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto}
+#gate[hidden]{display:none}
+.gate-box{width:100%;max-width:400px}
+.gate-logo{font:700 16px var(--f-mono);letter-spacing:.22em;color:var(--txt)}
+.gate-logo b{color:var(--amber)}
+.gate-cap{font:600 10.5px/1 var(--f-mono);letter-spacing:.24em;text-transform:uppercase;color:var(--amber);margin:22px 0 8px}
+.gate-sub{color:var(--muted);font-size:13.5px;line-height:1.6;margin:0 0 18px}
+.gate-panel{background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:22px}
+.gate-panel label{display:block;font:500 10.5px var(--f-mono);letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin:0 0 7px}
+.gate-panel label+label,.gate-panel input+label{margin-top:14px}
+.gate-panel input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--txt);font:400 14px var(--f-mono);padding:11px 13px}
+.gate-panel input:focus{outline:none;border-color:rgba(242,169,59,.5)}
+.gate-btn{width:100%;background:var(--amber);color:#1A1508;border:none;border-radius:8px;cursor:pointer;font:600 12px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;padding:12px 22px;margin-top:16px}
+.gate-btn:hover{filter:brightness(1.08)}
+.gate-btn:disabled{opacity:.55;pointer-events:none}
+.gate-err{color:#E2705A;font-size:12.5px;margin-top:10px;min-height:16px}
+.gate-alt{background:none;border:none;cursor:pointer;color:var(--muted);font:400 12px var(--f-mono);padding:0;margin-top:12px;text-decoration:underline;text-underline-offset:3px}
+.gate-alt:hover{color:var(--amber)}
+.gate-note{color:var(--muted);font-size:11.5px;line-height:1.6;margin-top:14px}
+.gate-note a{color:var(--muted)}
+.gate-sent{color:var(--muted);font-size:12.5px;line-height:1.6;margin:0 0 14px}
+.gate-sent b{color:var(--amber-hi);font-weight:600}
 .radar .r-label{position:absolute;left:50%;bottom:13px;transform:translateX(-50%);
   font:500 9.5px/1 var(--f-mono);letter-spacing:.4em;text-transform:uppercase;color:#6E6753}
 
@@ -700,6 +723,36 @@ body.working .radar{width:238px;height:238px}
 <body>
 <script>/* тема применяется до отрисовки — без вспышки */(function(){try{var t=localStorage.getItem('peleng_theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 <div id="boot"><pre></pre></div>
+<!-- бета-гейт: приложение открывается после входа по почте -->
+<div id="gate" hidden>
+  <div class="gate-box">
+    <div class="gate-logo"><b>P</b>ELENG</div>
+    <div class="gate-cap">Закрытая бета</div>
+    <p class="gate-sub">Peleng — сорсинг-разведка: готовые Boolean и X-Ray запросы по 30+ каналам, проверка выдачи, контакты кандидатов. На время беты вход по почте — весь функционал открывается сразу после входа.</p>
+    <div class="gate-panel">
+      <div id="gStep1">
+        <label for="gEm">Email</label>
+        <input type="email" id="gEm" placeholder="you@company.ru" autocomplete="email">
+        <div id="gPwRow" hidden>
+          <label for="gPw" style="margin-top:14px">Пароль</label>
+          <input type="password" id="gPw" autocomplete="current-password">
+        </div>
+        <button class="gate-btn" id="gGo" onclick="gateGo()">Получить код на почту</button>
+        <div class="gate-err" id="gErr1"></div>
+        <button class="gate-alt" id="gPwToggle" onclick="gateTogglePw()">У меня есть пароль</button>
+        <div class="gate-note">Нажимая кнопку, соглашаешься с <a href="/privacy">политикой обработки данных</a>. Письма — только о входе и бете, без спама.</div>
+      </div>
+      <div id="gStep2" hidden>
+        <p class="gate-sent">Отправили 6-значный код на <b id="gSentTo"></b>. Если письма нет — проверь «Спам».</p>
+        <label for="gCode">Код из письма</label>
+        <input id="gCode" inputmode="numeric" autocomplete="one-time-code" placeholder="000000" maxlength="6">
+        <button class="gate-btn" id="gGo2" onclick="gateCode()">Войти</button>
+        <div class="gate-err" id="gErr2"></div>
+        <button class="gate-alt" onclick="gateBack()">← Другая почта</button>
+      </div>
+    </div>
+  </div>
+</div>
 <div class="grain" aria-hidden="true"></div>
 <div class="topbar">
   <span class="tb-left"><i class="rec"></i>Сеанс активен</span>
@@ -771,7 +824,7 @@ body.working .radar{width:238px;height:238px}
   <i class="ck tl"></i><i class="ck tr"></i><i class="ck bl"></i><i class="ck br"></i>
   <div class="pro-head">
     <div class="pro-cap">Peleng Pro // бета-тест</div>
-    <p class="pro-txt">Базовый поиск по 30+ каналам — бесплатно, без ограничений и регистрации. Pro-инструменты на время беты выдаём бесплатно — за обратную связь.</p>
+    <p class="pro-txt">Базовый поиск по 30+ каналам уже открыт. Pro-инструменты на время беты включаем бесплатно — за обратную связь.</p>
   </div>
   <ul class="pro-feats">
     <li><span class="pf-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 7 8.5 6 8.5-6"/><circle cx="18.5" cy="16" r="2.6" fill="var(--panel2)"/><path d="M18.5 14.8v1.2l.9.6"/></svg></span><b>Открытие контактов</b><i>Email и телефон кандидата прямо в выдаче — без ручного пробива по сервисам.</i></li>
@@ -780,7 +833,7 @@ body.working .radar{width:238px;height:238px}
     <li><span class="pf-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/><path d="M9 13.5h6M9 16h4"/></svg></span><b>Подборки кандидатов</b><i>Сохраняй найденных, помечай статусы и возвращайся к поиску позже.</i></li>
   </ul>
   <div class="pro-f">
-    <a class="pro-pay" href="/beta">Записаться на бета-тест →</a>
+    <a class="pro-pay" href="#support" onclick="fbOpen()">Попросить Pro на время беты →</a>
   </div>
 </section>
 
@@ -1689,12 +1742,15 @@ let IS_PRO = (function(){
     return lsGet('peleng_pro')==='1';
   }catch(_){ return false; }
 })();
-/* аккаунт: подтягиваем сессию, обновляем шапку и Pro-флаг */
+/* аккаунт: подтягиваем сессию, обновляем шапку и Pro-флаг.
+   BETA_GATE: на время беты приложение открывается только после входа по почте.
+   После беты поставить false — гейт исчезнет, ничего больше менять не нужно. */
+const BETA_GATE=true;
 let ME=null;
 (async function(){
   try{
     const r=await fetch('/api/me');
-    if(!r.ok) return;
+    if(!r.ok){ if(BETA_GATE) gateShow(); return; }
     ME=await r.json();
     if(ME.plan==='pro') IS_PRO=true;
     const a=document.getElementById('acctLink');
@@ -1703,8 +1759,75 @@ let ME=null;
       const p=document.getElementById('pro');
       if(p) p.style.display='none'; // у Pro нечего продавать — убираем плашку целиком
     }
-  }catch(_){}
+  }catch(_){ if(BETA_GATE) gateShow(); }
 })();
+/* ── бета-гейт ── */
+function gateShow(){
+  document.getElementById('gate').hidden=false;
+  document.body.style.overflow='hidden';
+  setTimeout(()=>{ const em=document.getElementById('gEm'); if(em) em.focus(); }, 100);
+}
+function gateTogglePw(){
+  const row=document.getElementById('gPwRow'), t=document.getElementById('gPwToggle');
+  row.hidden=!row.hidden;
+  t.textContent=row.hidden?'У меня есть пароль':'Войти по коду из письма';
+  document.getElementById('gGo').textContent=row.hidden?'Получить код на почту':'Войти';
+  if(!row.hidden) document.getElementById('gPw').focus();
+}
+async function gateGo(){
+  const em=document.getElementById('gEm').value.trim().toLowerCase(),
+        pwRow=document.getElementById('gPwRow'), pw=document.getElementById('gPw').value,
+        btn=document.getElementById('gGo'), err=document.getElementById('gErr1');
+  err.textContent='';
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(em)){ err.textContent='Введи почту — на неё придёт код для входа'; return; }
+  btn.disabled=true;
+  try{
+    if(!pwRow.hidden && pw){ // вход по паролю
+      const r=await fetch('/api/auth/password',{method:'POST',headers:{'content-type':'application/json'},
+        body:JSON.stringify({email:em, password:pw})});
+      const d=await r.json();
+      if(!r.ok) throw new Error(d.error||'не получилось — попробуй ещё раз');
+      location.reload(); return;
+    }
+    let ref=''; try{ ref=new URLSearchParams(location.search).get('ref')||lsGet('peleng_ref')||''; }catch(_){}
+    const r=await fetch('/api/auth/request',{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({email:em, ref:ref})});
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.error||'не получилось — попробуй ещё раз');
+    document.getElementById('gSentTo').textContent=em;
+    document.getElementById('gStep1').hidden=true;
+    document.getElementById('gStep2').hidden=false;
+    const c=document.getElementById('gCode');
+    if(d.code) c.value=d.code; // AUTH_DEV: код приходит в ответе
+    c.focus();
+  }catch(e){ err.textContent=e.message; }
+  btn.disabled=false;
+}
+async function gateCode(){
+  const em=document.getElementById('gEm').value.trim().toLowerCase(),
+        code=document.getElementById('gCode').value.trim(),
+        btn=document.getElementById('gGo2'), err=document.getElementById('gErr2');
+  err.textContent='';
+  if(code.length!==6){ err.textContent='Код — 6 цифр из письма'; return; }
+  btn.disabled=true;
+  try{
+    const r=await fetch('/api/auth/code',{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({email:em, code:code})});
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.error||'не получилось — попробуй ещё раз');
+    location.reload();
+  }catch(e){ err.textContent=e.message; btn.disabled=false; }
+}
+function gateBack(){
+  document.getElementById('gStep2').hidden=true;
+  document.getElementById('gStep1').hidden=false;
+  document.getElementById('gErr2').textContent='';
+  document.getElementById('gEm').focus();
+}
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Enter' || document.getElementById('gate').hidden) return;
+  if(!document.getElementById('gStep2').hidden) gateCode(); else gateGo();
+});
 /* ── поддержка / обратная связь ── */
 function fbOpen(){
   const w=document.getElementById('fbwrap'); w.hidden=false;
